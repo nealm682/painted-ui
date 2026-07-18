@@ -40,8 +40,14 @@
 
 - Ingredients 1–3 reproduced in a single-file Canvas prototype with no model
   in the loop: [[sources/experiment-01-canvas-compositor]].
-- Ingredient 4 (bespoke content) untested — needs an LLM emitting scene
-  graphs live. **Next experiment.**
+- The full stream-transition vocabulary (dissolve/zoom/flyout/morph)
+  reproduced from an 8-verb patch protocol at ~1.1 Kbit/s:
+  [[sources/experiment-02-transition-stream]] →
+  [[techniques/transition-choreography]].
+- Ingredient 4 (bespoke content): harness live —
+  [[sources/experiment-03-live-llm-painter]] streams real model output as
+  scene patches, with the agentic click-loop. Protocol fits a ~30-line
+  system prompt. **Benchmarks pending first keyed run.**
 
 ## The goal
 

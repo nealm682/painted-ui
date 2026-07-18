@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>exp-03 — live LLM painter (patch streaming by request)</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#0c0b10;font-family:Georgia,serif}
+  canvas{display:block;width:100vw;height:100vh}
+  #bar{position:fixed;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;
+       background:rgba(14,13,20,.82);border:1px solid #2c2840;border-radius:12px;padding:10px 12px;
+       backdrop-filter:blur(6px);z-index:10;align-items:center;max-width:92vw}
+  #bar input[type=text],#bar input[type=password]{background:#16141f;border:1px solid #2c2840;color:#efeae0;
+       border-radius:8px;padding:8px 10px;font:14px Georgia;outline:none}
+  #prompt{width:min(420px,50vw)}
+  #key{width:150px;font-size:11px!important}
+  #model{background:#16141f;color:#8a86a0;border:1px solid #2c2840;border-radius:8px;font:11px monospace;padding:8px 4px}
+  button{background:#e8a34c;border:0;border-radius:8px;padding:8px 14px;font:14px Georgia;cursor:pointer}
+  #demo{background:#2c2840;color:#c9c4dd}
+  #status{position:fixed;top:74px;left:50%;transform:translateX(-50%);color:#8a86a0;font:12px monospace;z-index:10}
+  #stream{position:fixed;left:12px;bottom:10px;max-width:46vw;color:#5d5878;font:10.5px/1.4 monospace;
+          pointer-events:none;white-space:pre-wrap;opacity:.9}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bar">
+  <input id="prompt" type="text" placeholder="ask for a scene… e.g. 'a cozy dashboard for my reading list'">
+  <button id="go">Paint</button>
+  <button id="demo">Demo (no key)</button>
+  <input id="key" type="password" placeholder="Anthropic API key">
+  <select id="model">
+    <option>claude-sonnet-5</option>
+    <option>claude-haiku-4-5-20251001</option>
+    <option>claude-opus-4-8</option>
+  </select>
+</div>
+<div id="status">no key needed for Demo · with a key, the model paints your request live · click glowing elements to talk back</div>
+<div id="stream"></div>
+<script>
+/* ============================================================
+   exp-03: ingredient 4 goes live. A real LLM receives your
+   request, streams JSONL scene patches, and the compositor
+   mounts each patch THE MOMENT ITS LINE CLOSES — token pacing
+   becomes the reveal. Clicking an interactive node sends the
+   semantic event back to the model, which streams more patches:
+   the agentic loop, held in patches.
+   ============================================================ */
+
+// ---------------- protocol spec given to the model ----------------
+const SYSTEM = `You are a UI painter. You do not write prose. You emit a scene as JSONL: exactly one JSON object per line, no markdown fences, no commentary.
+
+Canvas: x,y are fractions of the viewport (0..1, center-based). z is draw order (0 = back).
+
+Ops:
+{"op":"palette","set":{"bg0":"#hex","bg1":"#hex","ink":"#hex","accent":"#hex","soft":"#hex"}}            // always first
+{"op":"add","enter":{"kind":"dissolve|zoom|flyin|rise","from":"left|right","dur":600..1200},"node":{...}}
+{"op":"update","id":"...","dur":600..1600,"set":{...}}      // tween numeric/color props; {"text":"..","crossfade":true} for text
+{"op":"remove","id":"...","exit":{"kind":"dissolve|flyout|shrink","to":"left|right","dur":500..800}}
+{"op":"note","text":"short narration shown to the user"}
+{"op":"done"}                                                // always last
+
+Node kinds:
+{"id":"bg","kind":"gradient","from":"bg0","to":"bg1","z":0,"semantic":"..."}                                  // full-screen
+{"id":"..","kind":"disc","x":.5,"y":.3,"r":.08,"fill":"accent","glow":true,"z":2,"semantic":".."}
+{"id":"..","kind":"card","x":.5,"y":.6,"w":.24,"h":.3,"img":7,"label":"..","z":4,"semantic":".."}             // img: any integer seed → abstract art
+{"id":"..","kind":"text","x":.5,"y":.2,"size":.05,"fill":"ink","text":"..","z":5,"semantic":".."}
+{"id":"..","kind":"pill","x":.5,"y":.85,"w":.2,"h":.06,"fill":"accent","text":"..","z":6,"semantic":"..","interactive":true}
+
+Rules:
+- Color values: palette names (bg0,bg1,ink,accent,soft) or #hex.
+- First scene: 12–22 ops. Start with palette, then gradient bg, build back-to-front. Vary enter kinds; stagger content like a painter blocking in a canvas.
+- Every node gets a "semantic" description. Anything a user might tap: "interactive":true (pills always).
+- When you receive {"event":"click",...}: respond with a SHORT patch stream (3–10 ops) that mutates the existing scene. Prefer update/morph of existing ids over remove+add. Never re-send the whole scene. End with {"op":"done"}.
+- Compose beautifully: generous whitespace, 2–4 focal elements, harmonious palette. You are painting, not filling a form.`;
+
+// ---------------- compositor + transition engine (from exp-02) ----------------
+const cv=document.getElementById("c"),ctx=cv.getContext("2d");
+const logEl=document.getElementById("stream"),statusEl=document.getElementById("status");
+let W=0,H=0,DPR=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+addEventListener("resize",resize);resize();
+const EASE={out:t=>1-Math.pow(1-t,3),inout:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
+const lerp=(a,b,t)=>a+(b-a)*t;
+function hex(c){const n=parseInt(c.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255];}
+function mix(c1,c2,t){const a=hex(c1),b=hex(c2);return`rgb(${a.map((v,i)=>Math.round(lerp(v,b[i],t))).join(",")})`;}
+let palette={bg0:"#241b3e",bg1:"#0c0b10",ink:"#f2ecdf",accent:"#e8a34c",soft:"#7a5fb8"};
+const nodes=new Map();
+const now=()=>performance.now();
+function tween(n,key,to,dur,ease){n.tweens[key]={from:n.props[key],to,t0:now(),dur,ease:ease||"out"};}
+function cur(n,key){const tw=n.tweens[key];if(!tw)return n.props[key];
+  const t=Math.min(1,(now()-tw.t0)/tw.dur),e=EASE[tw.ease](t);
+  if(t>=1){n.props[key]=tw.to;delete n.tweens[key];return tw.to;}
+  const f=tw.from,o=tw.to;
+  return typeof f==="string"?mix(colv(f),colv(o),e):lerp(f,o,e);}
+function colv(c){c=palette[c]||c;return c.startsWith("rgb")?c:(c.startsWith("#")?c:"#888888");}
+const assets={};
+function asset(seed){if(assets[seed])return assets[seed];
+  const s=document.createElement("canvas");s.width=s.height=512;const g=s.getContext("2d");
+  let r=(seed*2654435761)%2147483647||1;const rnd=()=>((r=r*16807%2147483647)/2147483647);
+  const hue=rnd()*360,bg=g.createLinearGradient(0,0,0,512);
+  bg.addColorStop(0,`hsl(${hue},45%,${20+rnd()*20}%)`);bg.addColorStop(1,`hsl(${(hue+40)%360},50%,10%)`);
+  g.fillStyle=bg;g.fillRect(0,0,512,512);
+  for(let i=0;i<7;i++){g.fillStyle=`hsla(${(hue+rnd()*80)%360},55%,${30+rnd()*40}%,${.15+rnd()*.3})`;
+    g.beginPath();g.ellipse(rnd()*512,rnd()*512,60+rnd()*160,40+rnd()*120,rnd()*3,0,7);g.fill();}
+  return assets[seed]=s;}
+let ops=0;
+function applyPatch(p){
+  ops++;logEl.textContent=(logEl.textContent+"\n→ "+JSON.stringify(p).slice(0,90)).split("\n").slice(-7).join("\n");
+  if(p.op==="palette"){palette={...palette,...p.set};return;}
+  if(p.op==="note"){statusEl.textContent="🎨 "+p.text;return;}
+  if(p.op==="done"){statusEl.textContent+=" · scene complete — click glowing elements";return;}
+  if(p.op==="add"&&p.node){
+    const n={props:{...p.node},tweens:{},alpha:0,imgPrev:null,born:now()};
+    const e=p.enter||{kind:"dissolve",dur:700};n.enter=e;n.enterT0=now();
+    if(e.kind==="flyin"){const fx=n.props.x;n.props.x=e.from==="left"?-0.3:1.3;tween(n,"x",fx,e.dur||700,"out");}
+    if(e.kind==="rise"){const fy=n.props.y;n.props.y=fy+0.06;tween(n,"y",fy,e.dur||700,"out");}
+    nodes.set(p.node.id,n);return;}
+  const n=nodes.get(p.id);if(!n)return;
+  if(p.op==="update"&&p.set){
+    for(const[k,v]of Object.entries(p.set)){
+      if(k==="text"&&(p.crossfade||p.set.crossfade)){n.textPrev=n.props.text;n.textT0=now();n.textDur=p.dur||700;n.props.text=v;}
+      else if(k==="img"){n.imgPrev=n.props.img;n.imgT0=now();n.imgDur=p.dur||1200;n.props.img=v;}
+      else if(typeof v==="number"||typeof v==="string"&&(v.startsWith("#")||palette[v]))tween(n,k,v,p.dur||700,p.ease||"inout");
+      else n.props[k]=v;}
+    return;}
+  if(p.op==="remove"){const e=p.exit||{kind:"dissolve",dur:600};n.exit=e;n.exitT0=now();
+    if(e.kind==="flyout")tween(n,"x",e.to==="left"?-0.4:1.4,e.dur||600,"inout");
+    if(e.kind==="shrink"){if(n.props.w)tween(n,"w",n.props.w*.05,e.dur||600,"inout");
+      if(n.props.h)tween(n,"h",n.props.h*.05,e.dur||600,"inout");
+      if(n.props.r)tween(n,"r",0.001,e.dur||600,"inout");}}
+}
+let hover=null;
+function draw(){
+  ctx.clearRect(0,0,W,H);const min=Math.min(W,H),tt=now()/1000;
+  for(const[id,n]of[...nodes].sort((a,b)=>(a[1].props.z||0)-(b[1].props.z||0))){
+    if(n.exit){const u=(now()-n.exitT0)/(n.exit.dur||600);if(u>=1){nodes.delete(id);continue;}n.alpha=1-u;}
+    else n.alpha=Math.min(1,(now()-n.enterT0)/(n.enter.dur||700));
+    const P=n.props,x=cur(n,"x")*W,y=cur(n,"y")*H;ctx.globalAlpha=n.alpha;
+    const hovered=hover===id&&(P.interactive||P.kind==="pill");
+    if(P.kind==="gradient"){const g=ctx.createLinearGradient(0,0,0,H);
+      g.addColorStop(0,colv(P.from||"bg0"));g.addColorStop(1,colv(P.to||"bg1"));
+      ctx.fillStyle=g;ctx.fillRect(0,0,W,H);n.hit=null;}
+    else if(P.kind==="disc"){const R=cur(n,"r")*min*(n.enter.kind==="zoom"?lerp(.5,1,EASE.out(n.alpha)):1)*(hovered?1.08:1);
+      const fill=colv(cur(n,"fill")||"accent");
+      if(P.glow){ctx.shadowColor=fill;ctx.shadowBlur=hovered?55:35;}
+      ctx.fillStyle=fill;ctx.beginPath();ctx.arc(x,y,Math.max(0,R*(1+.02*Math.sin(tt*1.2+x))),0,7);ctx.fill();ctx.shadowBlur=0;
+      n.hit={x,y,r:R};}
+    else if(P.kind==="text"){const size=(cur(n,"size")||.04)*min;
+      ctx.textAlign="center";ctx.textBaseline="middle";ctx.font=`${size}px Georgia`;
+      const fill=colv(cur(n,"fill")||"ink");
+      if(n.textPrev!==undefined){const u=Math.min(1,(now()-n.textT0)/n.textDur);
+        ctx.globalAlpha=n.alpha*(1-u);ctx.fillStyle=fill;ctx.fillText(n.textPrev,x,y);
+        ctx.globalAlpha=n.alpha*u;ctx.fillText(P.text,x,y);if(u>=1)delete n.textPrev;}
+      else{ctx.fillStyle=fill;ctx.fillText(P.text||"",x,y);}
+      n.hit={x,y,w:ctx.measureText(P.text||"").width+16,h:size+10};}
+    else if(P.kind==="card"){const w=Math.max(0,cur(n,"w")*W),h=Math.max(0,cur(n,"h")*H),rad=Math.min(w,h)*.06;
+      ctx.save();ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,rad);ctx.clip();
+      const kb=1.06+.05*Math.sin(tt*.35+(P.img||0)),dx=Math.sin(tt*.22+(P.img||0))*w*.03;
+      const di=(seed,a)=>{ctx.globalAlpha=n.alpha*a;ctx.drawImage(asset(seed||1),x-w*kb/2+dx,y-h*kb/2,w*kb,h*kb);};
+      if(n.imgPrev!=null){const u=Math.min(1,(now()-n.imgT0)/n.imgDur);di(n.imgPrev,1);di(P.img,u);if(u>=1)n.imgPrev=null;}
+      else di(P.img,1);
+      ctx.globalAlpha=n.alpha;const bh=Math.max(26,h*.14);
+      ctx.fillStyle="rgba(8,8,14,.55)";ctx.fillRect(x-w/2,y+h/2-bh,w,bh);
+      ctx.fillStyle=colv("ink");ctx.font=`${Math.max(12,min*.02)}px Georgia`;ctx.textAlign="left";ctx.textBaseline="middle";
+      ctx.fillText(P.label||"",x-w/2+10,y+h/2-bh/2);
+      if(hovered){ctx.strokeStyle=colv("accent");ctx.lineWidth=2;ctx.strokeRect(x-w/2+1,y-h/2+1,w-2,h-2);}
+      ctx.restore();n.hit={x,y,w,h};}
+    else if(P.kind==="pill"){const w=Math.max(cur(n,"w")*W,120),h=Math.max(cur(n,"h")*H,40),s=hovered?1.06:1;
+      ctx.fillStyle=colv(cur(n,"fill")||"accent");
+      ctx.shadowColor=colv("accent");ctx.shadowBlur=hovered?30:12;
+      ctx.beginPath();ctx.roundRect(x-w*s/2,y-h*s/2,w*s,h*s,h*s/2);ctx.fill();ctx.shadowBlur=0;
+      ctx.fillStyle=colv("bg1");ctx.font=`${h*.4}px Georgia`;ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText(P.text||"",x,y);n.hit={x,y,w:w*s,h:h*s};}
+    ctx.globalAlpha=1;}
+  requestAnimationFrame(draw);}
+requestAnimationFrame(draw);
+function hitTest(px,py){
+  for(const[id,n]of[...nodes].sort((a,b)=>(b[1].props.z||0)-(a[1].props.z||0))){
+    const h=n.hit;if(!h||n.exit)continue;
+    if(h.r!=null){if(Math.hypot(px-h.x,py-h.y)<h.r+6)return id;}
+    else if(h.w!=null&&Math.abs(px-h.x)<h.w/2+6&&Math.abs(py-h.y)<h.h/2+6)return id;}
+  return null;}
+addEventListener("mousemove",e=>{const id=hitTest(e.clientX,e.clientY);hover=id;
+  const n=id&&nodes.get(id);cv.style.cursor=n&&(n.props.interactive||n.props.kind==="pill")?"pointer":"default";});
+
+// ---------------- streaming JSONL parser (one code path for API + demo) ----------------
+let buf="";
+function feed(text){buf+=text;let i;
+  while((i=buf.indexOf("\n"))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
+    if(!line||line.startsWith("```"))continue;
+    try{applyPatch(JSON.parse(line));}catch(e){/* incomplete/invalid line — skip */}}}
+function flush(){if(buf.trim()){try{applyPatch(JSON.parse(buf.trim()));}catch(e){}}buf="";}
+
+// ---------------- the agentic loop: request → stream → click → stream ----------------
+const messages=[];let assistantAcc="",busy=false,liveMode=false;
+async function callModel(userContent){
+  const key=document.getElementById("key").value.trim();
+  if(!key){statusEl.textContent="no API key — use Demo, or paste a key from console.anthropic.com";return;}
+  localStorage.setItem("exp03key",key);
+  busy=true;liveMode=true;assistantAcc="";messages.push({role:"user",content:userContent});
+  statusEl.textContent="…model is painting";
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+      headers:{"content-type":"application/json","x-api-key":key,
+        "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:document.getElementById("model").value,max_tokens:4000,
+        system:SYSTEM,messages,stream:true})});
+    if(!res.ok){statusEl.textContent="API error "+res.status+": "+(await res.text()).slice(0,120);busy=false;return;}
+    const reader=res.body.getReader(),dec=new TextDecoder();let sse="";
+    while(true){const{done,value}=await reader.read();if(done)break;
+      sse+=dec.decode(value,{stream:true});let j;
+      while((j=sse.indexOf("\n\n"))>=0){const evt=sse.slice(0,j);sse=sse.slice(j+2);
+        for(const l of evt.split("\n"))if(l.startsWith("data: ")){
+          try{const d=JSON.parse(l.slice(6));
+            if(d.type==="content_block_delta"&&d.delta&&d.delta.text){assistantAcc+=d.delta.text;feed(d.delta.text);}
+          }catch(e){}}}}
+    flush();messages.push({role:"assistant",content:assistantAcc});
+  }catch(e){statusEl.textContent="request failed: "+e.message;}
+  busy=false;}
+document.getElementById("go").onclick=()=>{const p=document.getElementById("prompt").value.trim();
+  if(!p||busy)return;nodes.clear();ops=0;logEl.textContent="";messages.length=0;callModel(p);};
+document.getElementById("prompt").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("go").click();});
+document.getElementById("key").value=localStorage.getItem("exp03key")||"";
+addEventListener("click",e=>{
+  if(e.target.closest("#bar"))return;
+  const id=hitTest(e.clientX,e.clientY);if(!id)return;
+  const n=nodes.get(id);if(!(n.props.interactive||n.props.kind==="pill"))return;
+  const ev=JSON.stringify({event:"click",node:id,semantic:n.props.semantic||"",label:n.props.text||n.props.label||""});
+  if(liveMode&&!busy)callModel(ev);
+  else if(!liveMode)demoReact(id);});
+
+// ---------------- demo mode: canned JSONL through the same feed() pipeline ----------------
+const DEMO=`{"op":"palette","set":{"bg0":"#1a2438","bg1":"#0c0b10","ink":"#f2ecdf","accent":"#7fd4c1","soft":"#4a5a8a"}}
+{"op":"note","text":"blocking in the canvas…"}
+{"op":"add","enter":{"kind":"dissolve","dur":900},"node":{"id":"bg","kind":"gradient","from":"bg0","to":"bg1","z":0,"semantic":"dusk sky"}}
+{"op":"add","enter":{"kind":"zoom","dur":1000},"node":{"id":"orb","kind":"disc","x":0.76,"y":0.24,"r":0.07,"fill":"accent","glow":true,"z":2,"semantic":"glowing orb","interactive":true}}
+{"op":"add","enter":{"kind":"rise","dur":900},"node":{"id":"title","kind":"text","x":0.38,"y":0.26,"size":0.055,"fill":"ink","text":"Tidepools","z":3,"semantic":"title"}}
+{"op":"note","text":"laying in the collection…"}
+{"op":"add","enter":{"kind":"flyin","from":"right","dur":750},"node":{"id":"c1","kind":"card","x":0.26,"y":0.62,"w":0.2,"h":0.28,"img":3,"label":"Anemone","z":4,"semantic":"tidepool photo: anemone","interactive":true}}
+{"op":"add","enter":{"kind":"flyin","from":"right","dur":750},"node":{"id":"c2","kind":"card","x":0.5,"y":0.62,"w":0.2,"h":0.28,"img":8,"label":"Starfish","z":4,"semantic":"tidepool photo: starfish","interactive":true}}
+{"op":"add","enter":{"kind":"flyin","from":"right","dur":750},"node":{"id":"c3","kind":"card","x":0.74,"y":0.62,"w":0.2,"h":0.28,"img":15,"label":"Kelp","z":4,"semantic":"tidepool photo: kelp","interactive":true}}
+{"op":"add","enter":{"kind":"rise","dur":800},"node":{"id":"cta","kind":"pill","x":0.5,"y":0.88,"w":0.18,"h":0.058,"fill":"accent","text":"Explore","z":6,"semantic":"primary action"}}
+{"op":"done"}`;
+const DEMO_REACT={"c2":`{"op":"note","text":"focusing the starfish…"}
+{"op":"remove","id":"c1","exit":{"kind":"flyout","to":"left","dur":650}}
+{"op":"remove","id":"c3","exit":{"kind":"flyout","to":"right","dur":650}}
+{"op":"update","id":"c2","dur":1100,"set":{"x":0.5,"y":0.55,"w":0.62,"h":0.56,"label":"Starfish — low tide"}}
+{"op":"update","id":"title","dur":800,"set":{"x":0.5,"y":0.14}}
+{"op":"done"}`,
+"orb":`{"op":"note","text":"the orb answers…"}
+{"op":"update","id":"orb","dur":1400,"set":{"x":0.5,"y":0.4,"r":0.13,"fill":"#e8a34c"}}
+{"op":"update","id":"title","dur":900,"set":{"text":"Low Tide at Dusk","crossfade":true}}
+{"op":"done"}`};
+function playCanned(s){const lines=(s+"\n").split("");let k=0;
+  const iv=setInterval(()=>{for(let n=0;n<3&&k<lines.length;n++)feed(lines[k++]);
+    if(k>=lines.length)clearInterval(iv);},16);}   // ~180 chars/s ≈ token pacing
+document.getElementById("demo").onclick=()=>{nodes.clear();ops=0;logEl.textContent="";liveMode=false;playCanned(DEMO);};
+function demoReact(id){const r=DEMO_REACT[id]||DEMO_REACT["orb"];playCanned(r);}
+</script>
+</body>
+</html>

@@ -29,8 +29,8 @@ Content catalog. Read this first on every query. Updated on every ingest.
   and video gen can't; semantic cache keys, pre-generation.
 - [[concepts/latency-and-streaming]] — perceived-speed tricks; streaming
   scene graphs as the visible painting act.
-- [[concepts/cost-model]] — maintained $/user comparison; first measured
-  number filed (12,000× bandwidth advantage, exp-01).
+- [[concepts/cost-model]] — maintained $/user comparison; measured numbers
+  from exp-01 (12,000× bandwidth) and exp-02 (~1.1 Kbit/s patch stream).
 
 ## Techniques
 
@@ -52,4 +52,17 @@ Content catalog. Read this first on every query. Updated on every ingest.
 - [[sources/experiment-01-canvas-compositor]] — source #2: own build.
   Ingredients 1–3 reproduced in an 8 KB Canvas file; first cost measurement.
 - [[sources/experiment-02-transition-stream]] — source #3: own build. The
-  stream-like transition voca
+  stream-like transition vocabulary (dissolve/zoom/flyout/morph/image-swap)
+  reproduced from an 8-verb patch stream at ~1.1 Kbit/s.
+- [[sources/experiment-03-live-llm-painter]] — source #4: own build. Live
+  harness: a real Claude model paints scenes by request via streamed JSONL
+  patches; clicks loop back as conversation. Benchmarks pending.
+
+## Comparisons
+
+*(none yet — filed from queries as they happen)*
+
+## Planned pages (mentioned, not yet created)
+
+- `concepts/a2ui-and-standards` — awaiting a source on agent-to-UI /
+  declarative UI protocols.

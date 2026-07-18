@@ -81,3 +81,10 @@ sync current mount files in, commit, then
 Neal: native Windows git works normally — you can `git clone
 painted-ui.git.bundle` or just `git init` in the folder yourself; the stale
 partial `.git/` dir left by the first attempt is safe to delete.
+
+**Second sandbox quirk (observed 2026-07-18):** sandbox reads of files edited
+host-side can be stale or *truncated mid-write*. The host files themselves are
+fine — only the sandbox view lies. Before committing: check every wiki .md
+ends with a trailing newline; rebuild any flagged file in the worktree from
+known-good content rather than trusting the mount copy. Newly created files
+sync reliably; edited files don't.

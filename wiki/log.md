@@ -32,3 +32,14 @@ vocabulary, ~1.1 Kbit/s vs ~2,000 Kbit/s for video. Ingested as source #3 →
 [[techniques/transition-choreography]]. Insight logged: ambient motion must
 run *through* transitions or swaps read as loading, not repainting.
 Next: exp-03 (real LLM emits the patch stream — the agentic loop).
+
+## [2026-07-18] experiment | exp-03 live LLM painter
+
+Built `raw/experiments/exp-03-live-llm-painter/` per Neal's request to see
+the LLM do it live: browser-direct streaming call to a Claude model, patch
+protocol as a ~30-line system prompt, JSONL ops mounted as lines close
+(token pacing = the reveal), click events looped back as conversation
+messages. Ingested as source #4 → [[sources/experiment-03-live-llm-painter]].
+Ingredient 4 of [[concepts/the-illusion]] moves from "untested" to "harness
+live, benchmarks pending." Next: first keyed run + benchmark log; exp-04
+(cached raster assets in the img slot).

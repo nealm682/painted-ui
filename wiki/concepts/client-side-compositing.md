@@ -29,4 +29,14 @@ build-in reveal over a scene-graph in a single Canvas file:
 [[sources/experiment-01-canvas-compositor]]. exp-02 adds the full transition
 vocabulary (dissolve/zoom/flyout/morph/palette tween/image cross-dissolve)
 driven by a patch stream, and establishes a rule: **ambient motion must keep
-running through transitions** — an im
+running through transitions** — an image that drifts while cross-dissolving
+reads as repainted; one that freezes reads as loading
+([[sources/experiment-02-transition-stream]],
+[[techniques/transition-choreography]]). exp-03 drives the same engine from
+live model output ([[sources/experiment-03-live-llm-painter]]).
+
+## Open questions
+
+- Which motion signatures do users actually associate with "model painting
+  live" vs. generic web animation? (Needs user testing.)
+- Canvas2D vs. WebGL vs. WebGPU breakpoints for particle-heavy scenes.

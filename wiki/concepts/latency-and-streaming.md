@@ -10,7 +10,9 @@ craftsmanship, not lag.
 - **Streaming tokens as visible layout.** Parse the scene-graph stream
   incrementally ([[concepts/scene-graph-approach]]); mount and animate each
   node the moment its JSON closes. The UI assembles itself in reading order —
-  which *is* the painted-live effect ([[concepts/the-illusion]]).
+  which *is* the painted-live effect ([[concepts/the-illusion]]). Made real
+  in exp-03: token pacing is the only timing source
+  ([[sources/experiment-03-live-llm-painter]]).
 - **Skeleton-to-detail.** Emit coarse geometry first (blobs, blocks, palette),
   refine with detail nodes in later tokens. Mirrors how a painter blocks in a
   canvas.
@@ -30,4 +32,7 @@ craftsmanship, not lag.
 ## Open questions
 
 - Incremental JSON parsing ergonomics: best format for stream-mountable scene
-  graphs (
+  graphs (JSONL of node patches? length-prefixed?). exp-03 uses JSONL —
+  works, but malformed-line rates need measurement.
+- At what token throughput does layout-streaming feel "live" — is standard
+  LLM streaming speed already enough?

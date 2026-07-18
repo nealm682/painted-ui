@@ -88,5 +88,8 @@ These tells are the test plan for every prototype in `raw/experiments/`.
 ## Status
 
 Ingredients 1–3: reproduced in miniature in
-[[sources/experiment-01-canvas-compositor]]. Ingredient 4: requires a live
-model in the loop — the next experiment.
+[[sources/experiment-01-canvas-compositor]]; transition vocabulary in
+[[sources/experiment-02-transition-stream]]. Ingredient 4: live harness
+built — a real model streams the patch protocol by request, with click
+events looping back as conversation ([[sources/experiment-03-live-llm-painter]]).
+First live-run benchmarks pending.
