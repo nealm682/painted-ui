@@ -70,3 +70,14 @@ cross-links, gaps fillable via web search. Suggest new questions and sources.
 ## Git
 The wiki root is a git repo. Commit after every ingest/lint with a message
 matching the log entry (e.g. `ingest: flipbook launch thread`).
+
+**Sandbox quirk:** the mounted folder allows file writes but not deletes or
+new files inside previously-copied directories, so a live `.git` cannot be
+maintained from the sandbox. Instead, history lives in
+`painted-ui.git.bundle` at the wiki root (single-file overwrite — works).
+Session workflow: `git clone painted-ui.git.bundle /tmp/pui && cd /tmp/pui`,
+sync current mount files in, commit, then
+`git bundle create <mount>/painted-ui/painted-ui.git.bundle --all`.
+Neal: native Windows git works normally — you can `git clone
+painted-ui.git.bundle` or just `git init` in the folder yourself; the stale
+partial `.git/` dir left by the first attempt is safe to delete.
