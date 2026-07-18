@@ -34,7 +34,9 @@ Content catalog. Read this first on every query. Updated on every ingest.
 
 ## Techniques
 
-*(none yet — technique pages get created as recipes firm up from experiments)*
+- [[techniques/transition-choreography]] — replicate video-UI dissolves,
+  zooms, flyouts, and morphs from a streamed patch protocol; 8 verbs, no
+  pixels generated. Distilled from exp-02.
 
 ## Entities
 
@@ -49,12 +51,5 @@ Content catalog. Read this first on every query. Updated on every ingest.
   Apr 2026. Seeds the whole wiki.
 - [[sources/experiment-01-canvas-compositor]] — source #2: own build.
   Ingredients 1–3 reproduced in an 8 KB Canvas file; first cost measurement.
-
-## Comparisons
-
-*(none yet — filed from queries as they happen)*
-
-## Planned pages (mentioned, not yet created)
-
-- `concepts/a2ui-and-standards` — awaiting a source on agent-to-UI /
-  declarative UI protocols.
+- [[sources/experiment-02-transition-stream]] — source #3: own build. The
+  stream-like transition voca

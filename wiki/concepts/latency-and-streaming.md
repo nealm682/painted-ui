@@ -20,7 +20,9 @@ craftsmanship, not lag.
 - **Websocket/SSE patterns.** Push scene-graph patches over a persistent
   connection — same transport shape as [[entities/flipbook]]'s frame stream
   ([[sources/flipbook-thread]]), but carrying ~KB of structure instead of
-  ~MB/s of pixels.
+  ~MB/s of pixels. Measured in exp-02: a 20-op scene sequence streams at
+  ~1.1 Kbit/s ([[sources/experiment-02-transition-stream]],
+  [[techniques/transition-choreography]]).
 - **Optimistic local response.** Hover/click feedback is client-side and
   instant ([[concepts/interactivity-from-semantics]]); only *new content*
   waits on the model.
@@ -28,6 +30,4 @@ craftsmanship, not lag.
 ## Open questions
 
 - Incremental JSON parsing ergonomics: best format for stream-mountable scene
-  graphs (JSONL of node patches? length-prefixed?).
-- At what token throughput does layout-streaming feel "live" — is standard
-  LLM streaming speed already enough?
+  graphs (

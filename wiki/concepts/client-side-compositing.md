@@ -26,10 +26,7 @@ operator nothing per user.
 
 First prototype implements Ken Burns, ambient particles, spring reflow, and
 build-in reveal over a scene-graph in a single Canvas file:
-[[sources/experiment-01-canvas-compositor]].
-
-## Open questions
-
-- Which motion signatures do users actually associate with "model painting
-  live" vs. generic web animation? (Needs user testing.)
-- Canvas2D vs. WebGL vs. WebGPU breakpoints for particle-heavy scenes.
+[[sources/experiment-01-canvas-compositor]]. exp-02 adds the full transition
+vocabulary (dissolve/zoom/flyout/morph/palette tween/image cross-dissolve)
+driven by a patch stream, and establishes a rule: **ambient motion must keep
+running through transitions** — an im

@@ -28,11 +28,12 @@ argument is in place; **actual numbers are TODO** as sources come in.
   (38 MB/min at 5 Mbps) → **~12,000× advantage per minute on screen**, and
   server GPU-seconds ≈ 0 vs. one dedicated stream per user.
   Source: [[sources/experiment-01-canvas-compositor]].
+- **Streaming rate (measured, exp-02):** a 20-op, 18-second animated scene
+  sequence (dissolves, morphs, flyouts, image swap) streams at ~2.4 KB total
+  ≈ **1.1 Kbit/s vs ~2,000 Kbit/s** for a 2 Mbps video stream (~1,800×),
+  resolution-independent. Source:
+  [[sources/experiment-02-transition-stream]].
 
 ## Numbers wanted (TODO)
 
-- Modal GPU pricing (e.g., $/hr for the class of GPU that runs an optimized
-  LTX-class model at 24fps 1080p) → $/user-hour for the expensive path.
-- LLM token pricing × typical scene-graph size → $/interaction, cheap path.
-- Image-gen $/asset and realistic cache-hit rates → hybrid path.
-- Evidence: [[sources/flipbook-thread]] (waiting rooms = capacity rationing).
+- Modal GPU pricing (e.g., $/hr for the class of GPU that runs an

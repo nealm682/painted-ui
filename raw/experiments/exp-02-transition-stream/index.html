@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>exp-02 — streamed scene patches with transition choreography</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#0c0b10;font-family:Georgia,serif}
+  canvas{display:block;width:100vw;height:100vh}
+  #stream{position:fixed;left:12px;bottom:10px;max-width:46vw;color:#6f6a88;
+          font:11px/1.45 monospace;pointer-events:none;white-space:pre-wrap;opacity:.85}
+  #hint{position:fixed;right:14px;bottom:10px;color:#6f6a88;font:11px monospace}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="stream"></div>
+<div id="hint">click anywhere → next patch arrives immediately</div>
+<script>
+/* ============================================================
+   exp-02: replicate the "streaming video UI" feel — dissolves,
+   zooms, flyouts, morphs — from a STREAM OF SCENE PATCHES.
+
+   Architecture under test:
+     [simulated LLM/agent] --emits--> patch ops over time
+     [transition engine]   --plays--> each patch as choreography,
+                                      never as an instant state swap
+   The model streams STRUCTURE + transition hints (bytes);
+   the client renders MOTION (its own GPU). No pixels generated,
+   no video streamed. Every visual behavior seen in video-gen UIs
+   (dissolve / zoom / flyout / morph / image swap) maps to a verb
+   in the patch protocol.
+   ============================================================ */
+
+// ---------- The patch stream an agent would emit ----------
+// op: add | update | remove | palette   (+ enter/exit transition hints)
+const STREAM = [
+ {at: 400, op:"palette", set:{bg0:"#241b3e",bg1:"#0c0b10",ink:"#f2ecdf",accent:"#e8a34c",soft:"#7a5fb8"}},
+ {at: 500, op:"add", enter:{kind:"dissolve",dur:900},
+   node:{id:"bg",kind:"gradient",x:.5,y:.5,w:1,h:1,from:"bg0",to:"bg1",z:0,semantic:"sky"}},
+ {at: 900, op:"add", enter:{kind:"zoom",dur:1100},
+   node:{id:"sun",kind:"disc",x:.72,y:.30,r:.09,fill:"#e8a34c",glow:1,z:2,semantic:"the sun"}},
+ {at:1500, op:"add", enter:{kind:"rise",dur:900},
+   node:{id:"title",kind:"text",x:.34,y:.32,size:.06,fill:"ink",text:"Field Notes",z:3,semantic:"title"}},
+ // --- shared-element MORPH: sun glides & recolors into a moon; palette shifts ---
+ {at:4200, op:"palette", set:{bg0:"#101d33",accent:"#9fb4e8"}, dur:1600},
+ {at:4200, op:"update", id:"sun", dur:1600, ease:"inout",
+   set:{x:.80,y:.16,r:.05,fill:"#e6ecf8"}, note:"sun→moon (same node, tweened)"},
+ {at:4300, op:"update", id:"title", dur:900, set:{text:"Night Notes"}, crossfade:true},
+ // --- cards FLY IN staggered from the right; moon stays ---
+ {at:6300, op:"add", enter:{kind:"flyin",from:"right",dur:750},
+   node:{id:"card1",kind:"card",x:.24,y:.62,w:.21,h:.30,fill:"#1c2438",img:11,label:"Ridge",z:4,semantic:"card: ridge photo"}},
+ {at:6600, op:"add", enter:{kind:"flyin",from:"right",dur:750},
+   node:{id:"card2",kind:"card",x:.50,y:.62,w:.21,h:.30,fill:"#1c2438",img:22,label:"Lake",z:4,semantic:"card: lake photo"}},
+ {at:6900, op:"add", enter:{kind:"flyin",from:"right",dur:750},
+   node:{id:"card3",kind:"card",x:.76,y:.62,w:.21,h:.30,fill:"#1c2438",img:33,label:"Pines",z:4,semantic:"card: pines photo"}},
+ // --- FOCUS: card2 morphs to hero (FLIP-style), siblings fly/dissolve out ---
+ {at:9800, op:"remove", id:"card1", exit:{kind:"flyout",to:"left",dur:650}},
+ {at:9800, op:"remove", id:"card3", exit:{kind:"flyout",to:"right",dur:650}},
+ {at:9900, op:"update", id:"card2", dur:1100, ease:"inout",
+   set:{x:.5,y:.55,w:.66,h:.58,label:"Lake — evening"}, note:"card→hero morph"},
+ {at:10000,op:"update", id:"title", dur:800, set:{x:.5,y:.14}},
+ // --- IMAGE SWAP: same node, new "generated asset" cross-dissolves in ---
+ {at:13200,op:"update", id:"card2", dur:1400, set:{img:44,label:"Lake — night"},
+   note:"cached asset swap: cross-dissolve, Ken Burns never stops"},
+ // --- teardown & loop ---
+ {at:16800,op:"remove", id:"card2", exit:{kind:"shrink",dur:700}},
+ {at:16900,op:"remove", id:"title", exit:{kind:"dissolve",dur:600}},
+ {at:17000,op:"remove", id:"sun",   exit:{kind:"dissolve",dur:600}},
+ {at:17400,op:"remove", id:"bg",    exit:{kind:"dissolve",dur:800}},
+ {at:18300,op:"loop"}
+];
+
+// ---------- Compositor + transition engine ----------
+const cv=document.getElementById("c"),ctx=cv.getContext("2d"),logEl=document.getElementById("stream");
+let W=0,H=0,DPR=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+addEventListener("resize",resize);resize();
+
+const EASE={out:t=>1-Math.pow(1-t,3),inout:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
+const lerp=(a,b,t)=>a+(b-a)*t;
+function hex(c){const n=parseInt(c.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255];}
+function mix(c1,c2,t){const a=hex(c1),b=hex(c2);return`rgb(${a.map((v,i)=>Math.round(lerp(v,b[i],t))).join(",")})`;}
+
+let palette={},palTween=null;
+const nodes=new Map(); // id -> {props, tweens:{key:{from,to,t0,dur,ease}}, alpha, entering/exiting}
+function tween(n,key,to,dur,ease){n.tweens[key]={from:n.props[key],to,t0:now(),dur,ease:ease||"out"};}
+function now(){return performance.now();}
+function cur(n,key){
+  const tw=n.tweens[key];if(!tw)return n.props[key];
+  const t=Math.min(1,(now()-tw.t0)/tw.dur),e=EASE[tw.ease](t);
+  if(t>=1){n.props[key]=tw.to;delete n.tweens[key];return tw.to;}
+  return typeof tw.from==="string"?mix(tw.from,tw.to,e):lerp(tw.from,tw.to,e);
+}
+
+// procedural "generated assets" (stand-ins for cached image-gen results)
+const assets={};
+function asset(seed){
+  if(assets[seed])return assets[seed];
+  const s=document.createElement("canvas");s.width=s.height=512;const g=s.getContext("2d");
+  let r=seed;const rnd=()=>((r=r*16807%2147483647)/2147483647);
+  const hue=rnd()*360;
+  const bg=g.createLinearGradient(0,0,0,512);
+  bg.addColorStop(0,`hsl(${hue},45%,${20+rnd()*20}%)`);bg.addColorStop(1,`hsl(${(hue+40)%360},50%,10%)`);
+  g.fillStyle=bg;g.fillRect(0,0,512,512);
+  for(let i=0;i<7;i++){g.fillStyle=`hsla(${(hue+rnd()*80)%360},55%,${30+rnd()*40}%,${.15+rnd()*.3})`;
+    g.beginPath();g.ellipse(rnd()*512,rnd()*512,60+rnd()*160,40+rnd()*120,rnd()*3,0,7);g.fill();}
+  return assets[seed]=s;
+}
+
+function applyPatch(p){
+  logPatch(p);
+  if(p.op==="loop"){t0=now();nodes.clear();cursor=0;logEl.textContent="";return;}
+  if(p.op==="palette"){
+    if(p.dur){palTween={from:{...palette},to:{...palette,...p.set},t0:now(),dur:p.dur};}
+    else palette={...palette,...p.set};
+    return;
+  }
+  if(p.op==="add"){
+    const n={props:{...p.node},tweens:{},alpha:0,imgPrev:null,imgT:1,born:now()};
+    const e=p.enter||{kind:"dissolve",dur:600};
+    n.enter=e;n.enterT0=now();
+    if(e.kind==="flyin"){const off=e.from==="right"?1.3:-0.3;n.props._fx=n.props.x;n.props.x=off;tween(n,"x",n.props._fx,e.dur,"out");}
+    if(e.kind==="rise"){n.props._fy=n.props.y;n.props.y=n.props.y+0.06;tween(n,"y",n.props._fy,e.dur,"out");}
+    nodes.set(p.node.id,n);return;
+  }
+  const n=nodes.get(p.id);if(!n)return;
+  if(p.op==="update"){
+    for(const[k,v]of Object.entries(p.set)){
+      if(k==="text"&&p.crossfade){n.textPrev=n.props.text;n.textT0=now();n.textDur=p.dur;n.props.text=v;}
+      else if(k==="img"){n.imgPrev=n.props.img;n.imgT=0;n.imgT0=now();n.imgDur=p.dur;n.props.img=v;}
+      else if(k==="label"||typeof v==="string"&&!v.startsWith("#"))n.props[k]=v;
+      else tween(n,k,v,p.dur||600,p.ease);
+    }return;
+  }
+  if(p.op==="remove"){
+    const e=p.exit||{kind:"dissolve",dur:500};n.exit=e;n.exitT0=now();
+    if(e.kind==="flyout")tween(n,"x",e.to==="right"?1.4:-0.4,e.dur,"inout");
+    if(e.kind==="shrink"){tween(n,"w",(n.props.w||0)*.05,e.dur,"inout");tween(n,"h",(n.props.h||0)*.05,e.dur,"inout");}
+  }
+}
+
+let shown=0;
+function logPatch(p){
+  if(p.op==="loop")return;
+  const s=JSON.stringify(p,(k,v)=>k==="at"?undefined:v);
+  logEl.textContent=(logEl.textContent+"\n→ "+(s.length>92?s.slice(0,92)+"…":s)).split("\n").slice(-7).join("\n");
+}
+
+let t0=now(),cursor=0;
+addEventListener("click",()=>{if(cursor<STREAM.length){const p=STREAM[cursor];t0=now()-p.at;}});
+
+function draw(){
+  const t=now()-t0;
+  while(cursor<STREAM.length&&STREAM[cursor].at<=t){applyPatch(STREAM[cursor++]);}
+  if(cursor>=STREAM.length&&STREAM[STREAM.length-1].op==="loop")cursor=0;
+  if(palTween){const u=Math.min(1,(now()-palTween.t0)/palTween.dur);
+    for(const k in palTween.to)palette[k]=palTween.to[k].startsWith("#")&&palTween.from[k]?mix(palTween.from[k],palTween.to[k],EASE.out(u)):palTween.to[k];
+    if(u>=1)palTween=null;}
+  ctx.clearRect(0,0,W,H);
+  const min=Math.min(W,H),tt=t/1000;
+  for(const[id,n]of[...nodes].sort((a,b)=>(a[1].props.z||0)-(b[1].props.z||0))){
+    // enter/exit alpha
+    if(n.exit){const u=(now()-n.exitT0)/n.exit.dur;if(u>=1){nodes.delete(id);continue;}n.alpha=1-u;}
+    else{const u=Math.min(1,(now()-n.enterT0)/(n.enter.dur||600));n.alpha=u;}
+    const P=n.props,x=cur(n,"x")*W,y=cur(n,"y")*H;
+    ctx.globalAlpha=n.alpha;
+    const col=c=>palette[c]||c;
+    if(P.kind==="gradient"){
+      const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,col(P.from));g.addColorStop(1,col(P.to));
+      ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    }else if(P.kind==="disc"){
+      const R=cur(n,"r")*min*(n.enter.kind==="zoom"?lerp(.5,1,EASE.out(Math.min(1,(now()-n.enterT0)/n.enter.dur))):1);
+      const fill=cur(n,"fill");
+      if(P.glow){ctx.shadowColor=fill;ctx.shadowBlur=40;}
+      ctx.fillStyle=fill;ctx.beginPath();ctx.arc(x,y,R*(1+.02*Math.sin(tt*1.2)),0,7);ctx.fill();ctx.shadowBlur=0;
+    }else if(P.kind==="text"){
+      ctx.textAlign="center";ctx.textBaseline="middle";const size=cur(n,"size")*min;
+      ctx.font=`${size}px Georgia`;
+      if(n.textPrev!==undefined){const u=Math.min(1,(now()-n.textT0)/n.textDur);
+        ctx.globalAlpha=n.alpha*(1-u);ctx.fillStyle=col(P.fill);ctx.fillText(n.textPrev,x,y);
+        ctx.globalAlpha=n.alpha*u;ctx.fillText(P.text,x,y);if(u>=1)delete n.textPrev;
+      }else{ctx.fillStyle=col(P.fill);ctx.fillText(P.text,x,y);}
+    }else if(P.kind==="card"){
+      const w=cur(n,"w")*W,h=cur(n,"h")*H,rad=Math.min(w,h)*.06;
+      ctx.save();ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,rad);ctx.clip();
+      // Ken Burns on the "generated asset" — never stops, even mid-swap
+      const kb=1.06+.05*Math.sin(tt*.35+(P.img||0)),dx=Math.sin(tt*.22+(P.img||0))*w*.03;
+      const drawImg=(seed,alpha)=>{ctx.globalAlpha=n.alpha*alpha;
+        ctx.drawImage(asset(seed),x-w*kb/2+dx,y-h*kb/2,w*kb,h*kb);};
+      if(n.imgPrev!=null){const u=Math.min(1,(now()-n.imgT0)/n.imgDur);
+        drawImg(n.imgPrev,1);drawImg(P.img,u);if(u>=1)n.imgPrev=null;}
+      else drawImg(P.img,1);
+      ctx.globalAlpha=n.alpha;
+      ctx.fillStyle="rgba(8,8,14,.55)";ctx.fillRect(x-w/2,y+h/2-Math.max(28,h*.14),w,Math.max(28,h*.14));
+      ctx.fillStyle=col("ink");ctx.font=`${Math.max(13,min*.022)}px Georgia`;ctx.textAlign="left";ctx.textBaseline="middle";
+      ctx.fillText(P.label,x-w/2+12,y+h/2-Math.max(28,h*.14)/2);
+      ctx.restore();
+    }
+    ctx.globalAlpha=1;
+  }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
