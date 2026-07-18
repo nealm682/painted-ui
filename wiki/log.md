@@ -69,3 +69,13 @@ sanitizer (unit-tested on the failing payload). Filed the general lesson in
 [[techniques/transition-choreography]] open questions territory: **models
 imitate examples over rules; grammar escape hatches and sloppy examples are
 protocol bugs.** Two live failures → two protocol-reliability data points.
+
+## [2026-07-18] milestone | exp-03 run 3: first successful live paint ✅
+
+v3 worked on Neal's machine — a real model painted a requested scene via
+streamed patches, live. Ingredient 4 of [[concepts/the-illusion]] now has an
+existence proof; [[thesis]] evidence updates from "benchmarks pending" to
+"live paint confirmed, benchmarks pending." Built companion teaching page
+`how-it-works.html` in the exp-03 folder: interactive step-through of the
+four decoupled loops (conversation / network read / brace-depth parse /
+60fps render), with run-1/run-2 failure quirks reproduced in its demo stream.

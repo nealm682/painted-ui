@@ -114,3 +114,16 @@ passed. The v2 nudge fired but repainted in the same style.
 **Lesson (stronger form of Run 1's):** models imitate examples over rules —
 the examples ARE the spec. And layered defense works: prompt fixes the
 source, sanitizer forgives stragglers, ⚠ counter catches what's left.
+
+### [2026-07-18] Run 3 (Neal, sonnet-5) — ✅ FIRST SUCCESSFUL LIVE PAINT
+
+v3 confirmed working: model streams the scene by request, nodes mount at
+token pacing. Ingredient 4 of the illusion now has a live existence proof.
+Reliability journey: v1 narration escape-hatch → v2 parser/nudge → v3
+decimal fix → success. Still wanted: formal benchmark pass (time-to-first-
+paint, ops/sec, parse rate across models) — see plan above.
+
+**Companion file:** `how-it-works.html` — interactive step-through of the
+four-loop architecture (conversation → network read → brace-depth parser →
+independent rAF render), with the run-2 quirks (chunk splits mid-key,
+pretty-printed object, `.5` decimals) reproduced in the teaching stream.

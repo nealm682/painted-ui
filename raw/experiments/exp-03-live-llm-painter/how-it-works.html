@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>how exp-03 works — the four loops</title>
+<style>
+  :root{--bg:#0c0b10;--panel:#14121c;--edge:#2c2840;--ink:#efeae0;--dim:#8a86a0;
+        --accent:#e8a34c;--green:#7fd4c1;--red:#e86a6a;--str:#c9a0e8}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Georgia,serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:26px 20px 80px}
+  h1{font-size:26px;margin:0 0 4px}  h2{font-size:18px;margin:26px 0 8px;color:var(--accent)}
+  .sub{color:var(--dim);margin-bottom:20px}
+  /* pipeline diagram */
+  .pipe{display:flex;gap:0;align-items:stretch;flex-wrap:wrap;margin:14px 0 6px}
+  .stage{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--edge);border-radius:10px;
+         padding:10px 12px;position:relative;margin-right:26px}
+  .stage:last-child{margin-right:0}
+  .stage:not(:last-child):after{content:"→";position:absolute;right:-22px;top:40%;color:var(--accent);font-size:18px}
+  .stage b{display:block;font-size:13px;color:var(--accent)} .stage span{font-size:12px;color:var(--dim)}
+  .stage .hz{font-size:11px;color:var(--green);font-family:monospace}
+  /* lab grid */
+  .lab{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .panel{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px;min-height:150px}
+  .panel h3{margin:0 0 8px;font-size:13px;color:var(--accent);font-family:monospace;font-weight:normal}
+  .mono{font:12px/1.5 monospace;white-space:pre-wrap;word-break:break-all}
+  .chunk{display:inline-block;border:1px solid var(--edge);border-radius:6px;padding:2px 6px;margin:2px;
+         font:11px monospace;color:var(--dim)}
+  .chunk.cur{border-color:var(--accent);color:var(--ink)}
+  .chunk.used{opacity:.28;text-decoration:line-through}
+  #buf span{border-radius:2px}
+  .inobj{color:var(--green)} .instr{color:var(--str)} .outside{color:#555066}
+  .cursor{background:var(--accent);color:#0c0b10}
+  .badge{display:inline-block;font:11px monospace;border:1px solid var(--edge);border-radius:10px;
+         padding:1px 8px;margin-right:6px;color:var(--dim)}
+  .badge.on{color:var(--green);border-color:var(--green)}
+  .op{font:11px monospace;padding:2px 4px;border-left:2px solid var(--green);margin:3px 0;color:var(--dim)}
+  .op.fix{border-left-color:var(--accent)} .op b{color:var(--ink)}
+  canvas{background:#0a0910;border-radius:8px;width:100%;display:block}
+  /* controls */
+  .ctl{display:flex;gap:8px;align-items:center;margin:14px 0;flex-wrap:wrap}
+  button{background:var(--accent);border:0;border-radius:8px;padding:7px 14px;font:14px Georgia;cursor:pointer}
+  button.ghost{background:var(--edge);color:var(--ink)}
+  .ctl label{color:var(--dim);font-size:13px}
+  .key{background:var(--panel);border:1px solid var(--edge);border-left:3px solid var(--accent);
+       border-radius:8px;padding:12px 16px;margin:18px 0}
+  code{background:#1b1826;border-radius:4px;padding:1px 5px;font-size:13px;color:var(--green)}
+  .loopcard{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px 16px;margin:10px 0}
+  .loopcard b{color:var(--accent)}
+  pre{background:#100e17;border:1px solid var(--edge);border-radius:8px;padding:10px;font:12px/1.5 monospace;
+      overflow-x:auto;color:var(--dim)} pre em{color:var(--green);font-style:normal}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>How the live painter works</h1>
+<div class="sub">Four loops at four speeds, decoupled through one piece of shared state: the <b>node map</b>.</div>
+
+<div class="pipe">
+  <div class="stage"><b>Loop 1 · Conversation</b><span>your request / your click → one model call each</span><div class="hz">~per interaction</div></div>
+  <div class="stage"><b>Loop 2 · Network read</b><span>await reader.read() → SSE chunks of raw text</span><div class="hz">~20–60×/sec</div></div>
+  <div class="stage"><b>Loop 3 · Parser scan</b><span>brace-depth scan → complete {…} → applyPatch()</span><div class="hz">per chunk</div></div>
+  <div class="stage"><b>Loop 4 · Render</b><span>requestAnimationFrame draws whatever nodes exist</span><div class="hz">60×/sec, never waits</div></div>
+</div>
+
+<h2>Watch it happen</h2>
+<div class="ctl">
+  <button id="play">▶ Play</button>
+  <button id="stepc" class="ghost">Step 1 char</button>
+  <button id="stepk" class="ghost">Step 1 chunk</button>
+  <button id="reset" class="ghost">Reset</button>
+  <label>speed <input id="speed" type="range" min="1" max="60" value="18"></label>
+</div>
+
+<div class="lab">
+  <div class="panel"><h3>1 · SSE chunks (network read loop)</h3>
+    <div id="chunks"></div></div>
+  <div class="panel"><h3>2 · buffer + brace-depth scanner</h3>
+    <div style="margin-bottom:6px">
+      <span class="badge" id="bdepth">depth 0</span>
+      <span class="badge" id="bstr">inString</span>
+      <span class="badge" id="bstate">idle</span>
+    </div>
+    <div id="buf" class="mono">&nbsp;</div></div>
+  <div class="panel"><h3>3 · applyPatch(op) — extracted objects</h3>
+    <div id="ops"></div></div>
+  <div class="panel"><h3>4 · render loop (independent, 60fps)</h3>
+    <canvas id="mini" width="480" height="270"></canvas>
+    <div class="mono" style="margin-top:6px;color:var(--dim)">rAF ticks: <span id="ticks">0</span> · network: <span id="net">idle</span></div></div>
+</div>
+
+<div class="key"><b>The key idea:</b> the render loop (4) never waits for the network (2). Streaming
+<i>mutates state</i>; rendering <i>samples state</i>. A node mounted mid-stream simply starts
+existing — and its enter animation plays while later tokens are still arriving. That overlap
+is the entire "painted live" effect: <b>token pacing becomes choreography.</b></div>
+
+<h2>The four loops in the real code</h2>
+
+<div class="loopcard"><b>Loop 1 — the agentic conversation.</b> Each Paint or click pushes a user
+message and calls the model once. Clicks send <code>{"event":"click","semantic":…}</code>, so the
+model sees its own scene history and replies with a short mutation — not a repaint.
+<pre>messages.push({role:"user",content:userContent});   <em>// your turn</em>
+… stream runs …
+messages.push({role:"assistant",content:assistantAcc}); <em>// its turn, remembered</em></pre></div>
+
+<div class="loopcard"><b>Loop 2 — the network read.</b> Yes: this is the streaming loop you asked
+about. <code>fetch</code> returns a byte stream; we loop on <code>await reader.read()</code>. Each
+wake-up delivers a chunk of Server-Sent Events; each <code>content_block_delta</code> inside holds a
+few characters of the model's text. Chunks split <i>anywhere</i> — mid-word, mid-number.
+<pre>while(true){ const {done,value}=await reader.read(); if(done)break;
+  …parse SSE events…  feed(delta.text); }   <em>// feed() gets arbitrary fragments</em></pre></div>
+
+<div class="loopcard"><b>Loop 3 — the parser scan.</b> <code>feed()</code> appends the fragment to a
+buffer and walks it character by character, tracking <code>depth</code> (brace nesting),
+<code>inStr</code> (inside quotes — braces in strings don't count), and <code>esc</code> (backslash).
+When depth returns to 0, one complete <code>{…}</code> exists → <code>JSON.parse</code> →
+<code>applyPatch</code>. Incomplete tails wait in the buffer for the next chunk. This is why
+pretty-printing, fences, and prose can't break it — and the sanitizer fallback forgives
+<code>.5</code>-style decimals (run 2's lesson).</div>
+
+<div class="loopcard"><b>Loop 4 — the render loop.</b> <code>requestAnimationFrame(draw)</code> runs
+60×/sec no matter what the network does. It iterates the node map, asks each tween for its
+current value (<code>cur(n,"x")</code>), and draws. Enter/exit/morph animations are just
+functions of <i>time since the patch arrived</i> — no timeline, no queue, no coordination
+with the stream at all.</div>
+
+<h2>Why this feels like painting</h2>
+<p>A web page loads, then shows. A video streams pixels that are already composed. This does neither:
+structure arrives in reading order at token speed, each piece animates in as it lands, ambient
+motion never stops, and the next interaction mutates the living scene instead of replacing it.
+The model is the <i>director</i>; your GPU is the <i>painter</i>; the stream is the <i>brush moving
+across the canvas</i>.</p>
+
+<script>
+// ---------- the demo stream: real quirks included ----------
+const RAW=[
+'{"op":"palette","set":{"bg0":"#1a2438","accent":"#7fd4c1","ink":"#f2ecdf"}}\n{"op":"add","enter":{"ki',
+'nd":"dissolve","dur":800},"node":{"id":"bg","kind":"gradient","z":0}}\n{\n  "op": "add",\n  "enter": {"kind":"zoom","dur":900},',
+'\n  "node": {"id":"sun","kind":"disc","x":0.75,"y":0.32,"r":0.11,"fill":"accent","z":1}\n}\n',
+'{"op":"note","text":"blocking in the scene…"}\n{"op":"add","enter":{"kind":"rise","dur":700},"node":{"id":"title","kind":"text","x":0.38,"y":0.3',
+'2,"text":"Hello, Neal","z":2}}\n',
+'{"op":"add","enter":{"kind":"flyin","dur":700},"node":{"id":"card","kind":"rect","x":.5,"y":.68,"w":.5,"h":.3,"fill":"#24304a","z":1}}\n{"op":"done"}'
+];
+// chunk 2 splits mid-key; chunk 3 is pretty-printed; last chunk has .5 decimals (run-2 bug, sanitized)
+
+// ---------- panels ----------
+const chunksEl=document.getElementById("chunks"),bufEl=document.getElementById("buf"),
+opsEl=document.getElementById("ops"),bd=document.getElementById("bdepth"),
+bs=document.getElementById("bstr"),bst=document.getElementById("bstate"),netEl=document.getElementById("net");
+
+// ---------- scanner state (persistent, char-at-a-time for teaching) ----------
+let ci=0,pos=0,buf="",depth=0,inStr=false,esc=false,start=-1,done=false;
+const nodes=new Map();const palette={bg0:"#1a2438",accent:"#7fd4c1",ink:"#f2ecdf"};
+function reset(){ci=0;pos=0;buf="";depth=0;inStr=false;esc=false;start=-1;done=false;
+  nodes.clear();opsEl.innerHTML="";Object.assign(palette,{bg0:"#1a2438",accent:"#7fd4c1",ink:"#f2ecdf"});render();}
+function sanitize(c){return c.replace(/([:\[,]\s*)\.(\d)/g,"$10.$2").replace(/,\s*([}\]])/g,"$1");}
+function applyPatch(p,fixed){
+  const d=document.createElement("div");d.className="op"+(fixed?" fix":"");
+  d.innerHTML="<b>"+p.op+"</b> "+(p.node?("→ mount <b>"+p.node.id+"</b> ("+p.node.kind+", enter:"+((p.enter||{}).kind||"dissolve")+")"):
+    p.op==="palette"?"→ retint globals":p.op==="note"?("“"+p.text+"”"):"")+(fixed?" · <b>sanitized .5→0.5</b>":"");
+  opsEl.appendChild(d);
+  if(p.op==="palette")Object.assign(palette,p.set);
+  if(p.op==="add")nodes.set(p.node.id,{p:p.node,e:p.enter||{kind:"dissolve",dur:700},t0:performance.now()});
+}
+function stepChar(){
+  if(done)return false;
+  if(pos>=buf.length){ // need next chunk (network loop wakes up)
+    if(ci>=RAW.length){done=true;netEl.textContent="idle (stream ended)";bst.textContent="done";return false;}
+    buf+=RAW[ci];netEl.textContent="chunk "+(ci+1)+"/"+RAW.length+" arrived";ci++;renderChunks();return true;}
+  const ch=buf[pos];
+  if(inStr){if(esc)esc=false;else if(ch==="\\")esc=true;else if(ch==='"')inStr=false;}
+  else if(ch==='"'){if(depth>0)inStr=true;}
+  else if(ch==="{"){if(depth===0)start=pos;depth++;}
+  else if(ch==="}"&&depth>0){depth--;
+    if(depth===0&&start>=0){const chunk=buf.slice(start,pos+1);
+      try{applyPatch(JSON.parse(chunk),false);}
+      catch(e){try{applyPatch(JSON.parse(sanitize(chunk)),true);}catch(e2){}}
+      start=-1;}}
+  pos++;return true;}
+function stepChunk(){const target=ci+1;while(!done&&(ci<target||pos<buf.length))if(!stepChar())break;render();}
+// ---------- rendering the teaching panels ----------
+function renderChunks(){chunksEl.innerHTML=RAW.map((c,i)=>{
+  const cls=i<ci-1?"chunk used":i===ci-1?"chunk cur":"chunk";
+  const t=c.replace(/\n/g,"⏎");return `<span class="${cls}">${t.length>44?t.slice(0,44)+"…":t}</span>`;}).join("");}
+function renderBuf(){
+  const from=Math.max(0,pos-90);let html="";
+  // recompute coloring states for the visible window (cheap, teaching-scale)
+  let d2=0,s2=false,e2=false;
+  for(let i=0;i<buf.length;i++){const ch=buf[i];
+    let cls=d2>0?(s2?"instr":"inobj"):"outside";
+    if(i===pos)cls="cursor";
+    if(i>=from&&i<pos+30)html+=`<span class="${cls}">${ch==="\n"?"⏎":ch.replace("<","&lt;")}</span>`;
+    if(s2){if(e2)e2=false;else if(ch==="\\")e2=true;else if(ch==='"')s2=false;}
+    else if(ch==='"'){if(d2>0)s2=true;}
+    else if(ch==="{")d2++;else if(ch==="}"&&d2>0)d2--;}
+  bufEl.innerHTML=html||"&nbsp;";
+  bd.textContent="depth "+depth;bd.className="badge"+(depth>0?" on":"");
+  bs.className="badge"+(inStr?" on":"");
+  bst.textContent=done?"done":start>=0?"reading object…":"between objects";}
+function render(){renderChunks();renderBuf();}
+// ---------- controls ----------
+let playing=false,acc=0;
+document.getElementById("play").onclick=e=>{playing=!playing;e.target.textContent=playing?"❚❚ Pause":"▶ Play";};
+document.getElementById("stepc").onclick=()=>{stepChar();render();};
+document.getElementById("stepk").onclick=stepChunk;
+document.getElementById("reset").onclick=()=>{playing=false;document.getElementById("play").textContent="▶ Play";reset();};
+// ---------- loop 4: the independent render loop ----------
+const cv=document.getElementById("mini"),ctx=cv.getContext("2d");let ticks=0;
+function draw(){
+  ticks++;if(ticks%30===0)document.getElementById("ticks").textContent=ticks;
+  const W=cv.width,H=cv.height,t=performance.now();
+  // playing: advance scanner at chosen speed (chars per frame)
+  if(playing){const n=+document.getElementById("speed").value;for(let i=0;i<n;i++)if(!stepChar())break;render();}
+  ctx.clearRect(0,0,W,H);
+  const col=c=>palette[c]||c;
+  const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,nodes.has("bg")?col("bg0"):"#0a0910");bg.addColorStop(1,"#0a0910");
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  for(const[id,n]of nodes){
+    const u=Math.min(1,(t-n.t0)/(n.e.dur||700)),ease=1-Math.pow(1-u,3);const P=n.p;
+    ctx.globalAlpha=u;
+    let x=(P.x||0.5)*W,y=(P.y||0.5)*H;
+    if(n.e.kind==="rise")y+=(1-ease)*18;
+    if(n.e.kind==="flyin")x+=(1-ease)*(W*0.5);
+    if(P.kind==="disc"){const r=(P.r||0.1)*H*(n.e.kind==="zoom"?0.5+0.5*ease:1)*(1+0.03*Math.sin(t/900));
+      ctx.shadowColor=col(P.fill||"accent");ctx.shadowBlur=20;
+      ctx.fillStyle=col(P.fill||"accent");ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.shadowBlur=0;}
+    else if(P.kind==="text"){ctx.fillStyle=col("ink");ctx.font=Math.round(H*0.09)+"px Georgia";
+      ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(P.text||"",x,y);}
+    else if(P.kind==="rect"){const w=(P.w||0.3)*W,h=(P.h||0.2)*H;
+      ctx.fillStyle=P.fill&&P.fill.startsWith("#")?P.fill:col(P.fill||"accent");
+      ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,8);ctx.fill();}
+    ctx.globalAlpha=1;}
+  requestAnimationFrame(draw);}
+reset();requestAnimationFrame(draw);
+</script>
+</div>
+</body>
+</html>
