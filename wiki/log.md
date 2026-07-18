@@ -43,3 +43,18 @@ messages. Ingested as source #4 → [[sources/experiment-03-live-llm-painter]].
 Ingredient 4 of [[concepts/the-illusion]] moves from "untested" to "harness
 live, benchmarks pending." Next: first keyed run + benchmark log; exp-04
 (cached raster assets in the img slot).
+
+## [2026-07-18] first live results | exp-03 run 1 failed → v2 shipped
+
+Neal's first keyed runs ("make a car calendar", sonnet-5): model emitted
+palette + bg + a *note describing* the calendar + done. Two bugs diagnosed:
+(1) the `note` op was an escape hatch — the model narrated instead of
+painting; (2) the strict one-JSON-per-line parser silently dropped any
+pretty-printed ops. v2: brace-depth streaming parser (unit-tested against
+hostile input), hardened prompt (note never substitutes; grid recipe),
+`rect` node kind, self-healing sparse-scene nudge, Raw-stream download.
+Full incident writeup in exp-03 `notes.md` run log. **First real protocol-
+reliability data point** for [[concepts/latency-and-streaming]] and
+[[techniques/transition-choreography]]: grammar escape hatches become the
+model's path of least resistance; silent error handling hides partial
+compliance.

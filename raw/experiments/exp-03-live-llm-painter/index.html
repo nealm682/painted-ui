@@ -27,6 +27,7 @@
   <input id="prompt" type="text" placeholder="ask for a scene… e.g. 'a cozy dashboard for my reading list'">
   <button id="go">Paint</button>
   <button id="demo">Demo (no key)</button>
+  <button id="raw" title="download the model's raw streamed output" style="background:#2c2840;color:#8a86a0">Raw</button>
   <input id="key" type="password" placeholder="Anthropic API key">
   <select id="model">
     <option>claude-sonnet-5</option>
@@ -62,16 +63,20 @@ Ops:
 Node kinds:
 {"id":"bg","kind":"gradient","from":"bg0","to":"bg1","z":0,"semantic":"..."}                                  // full-screen
 {"id":"..","kind":"disc","x":.5,"y":.3,"r":.08,"fill":"accent","glow":true,"z":2,"semantic":".."}
+{"id":"..","kind":"rect","x":.5,"y":.5,"w":.11,"h":.09,"fill":"soft","stroke":"accent","z":3,"semantic":"..","interactive":true}   // panels, tiles, grid cells
 {"id":"..","kind":"card","x":.5,"y":.6,"w":.24,"h":.3,"img":7,"label":"..","z":4,"semantic":".."}             // img: any integer seed → abstract art
 {"id":"..","kind":"text","x":.5,"y":.2,"size":.05,"fill":"ink","text":"..","z":5,"semantic":".."}
 {"id":"..","kind":"pill","x":.5,"y":.85,"w":.2,"h":.06,"fill":"accent","text":"..","z":6,"semantic":"..","interactive":true}
 
 Rules:
 - Color values: palette names (bg0,bg1,ink,accent,soft) or #hex.
-- First scene: 12–22 ops. Start with palette, then gradient bg, build back-to-front. Vary enter kinds; stagger content like a painter blocking in a canvas.
+- YOU PAINT WITH NODES. The "note" op is optional garnish — it NEVER substitutes for painting. Describing content in a note instead of emitting its nodes is a failure. A first scene with fewer than 10 visible nodes is a failure.
+- First scene: 14–40 ops. Start with palette, then gradient bg, build back-to-front. Vary enter kinds; stagger content like a painter blocking in a canvas.
+- Grids (calendars, dashboards, galleries): emit one rect per cell plus text labels at regular positions, e.g. 7 columns → x = 0.14 + 0.12*col, y = 0.35 + 0.13*row. Emit every cell — do not summarize.
 - Every node gets a "semantic" description. Anything a user might tap: "interactive":true (pills always).
 - When you receive {"event":"click",...}: respond with a SHORT patch stream (3–10 ops) that mutates the existing scene. Prefer update/morph of existing ids over remove+add. Never re-send the whole scene. End with {"op":"done"}.
-- Compose beautifully: generous whitespace, 2–4 focal elements, harmonious palette. You are painting, not filling a form.`;
+- Output exactly one compact JSON object per line. Never pretty-print. No markdown fences. No prose.
+- Compose beautifully: generous whitespace, clear hierarchy, harmonious palette. You are painting, not filling a form.`;
 
 // ---------------- compositor + transition engine (from exp-02) ----------------
 const cv=document.getElementById("c"),ctx=cv.getContext("2d");
@@ -103,9 +108,11 @@ function asset(seed){if(assets[seed])return assets[seed];
   for(let i=0;i<7;i++){g.fillStyle=`hsla(${(hue+rnd()*80)%360},55%,${30+rnd()*40}%,${.15+rnd()*.3})`;
     g.beginPath();g.ellipse(rnd()*512,rnd()*512,60+rnd()*160,40+rnd()*120,rnd()*3,0,7);g.fill();}
   return assets[seed]=s;}
-let ops=0;
+let ops=0,addCount=0;
 function applyPatch(p){
-  ops++;logEl.textContent=(logEl.textContent+"\n→ "+JSON.stringify(p).slice(0,90)).split("\n").slice(-7).join("\n");
+  ops++;if(p.op==="add")addCount++;
+  logEl.textContent=(logEl.textContent+"\n→ "+JSON.stringify(p).slice(0,90)).split("\n").slice(-7).join("\n");
+  if(busy&&p.op!=="note"&&p.op!=="done")statusEl.textContent=`…model is painting · ${ops} ops, ${addCount} nodes${unparsed?" · ⚠ "+unparsed+" unparsed":""}`;
   if(p.op==="palette"){palette={...palette,...p.set};return;}
   if(p.op==="note"){statusEl.textContent="🎨 "+p.text;return;}
   if(p.op==="done"){statusEl.textContent+=" · scene complete — click glowing elements";return;}
@@ -165,6 +172,13 @@ function draw(){
       ctx.fillText(P.label||"",x-w/2+10,y+h/2-bh/2);
       if(hovered){ctx.strokeStyle=colv("accent");ctx.lineWidth=2;ctx.strokeRect(x-w/2+1,y-h/2+1,w-2,h-2);}
       ctx.restore();n.hit={x,y,w,h};}
+    else if(P.kind==="rect"){const w=Math.max(0,cur(n,"w")*W),h=Math.max(0,cur(n,"h")*H),rad=Math.min(w,h)*.16;
+      ctx.fillStyle=colv(cur(n,"fill")||"soft");
+      ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,rad);ctx.fill();
+      if(P.stroke||hovered){ctx.strokeStyle=colv(P.stroke||"accent");ctx.lineWidth=hovered?2.5:1.2;ctx.stroke();}
+      if(P.label||P.text){ctx.fillStyle=colv("ink");ctx.font=`${Math.max(11,Math.min(w,h)*.32)}px Georgia`;
+        ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(P.label||P.text,x,y);}
+      n.hit={x,y,w,h};}
     else if(P.kind==="pill"){const w=Math.max(cur(n,"w")*W,120),h=Math.max(cur(n,"h")*H,40),s=hovered?1.06:1;
       ctx.fillStyle=colv(cur(n,"fill")||"accent");
       ctx.shadowColor=colv("accent");ctx.shadowBlur=hovered?30:12;
@@ -183,27 +197,42 @@ function hitTest(px,py){
 addEventListener("mousemove",e=>{const id=hitTest(e.clientX,e.clientY);hover=id;
   const n=id&&nodes.get(id);cv.style.cursor=n&&(n.props.interactive||n.props.kind==="pill")?"pointer":"default";});
 
-// ---------------- streaming JSONL parser (one code path for API + demo) ----------------
-let buf="";
-function feed(text){buf+=text;let i;
-  while((i=buf.indexOf("\n"))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);
-    if(!line||line.startsWith("```"))continue;
-    try{applyPatch(JSON.parse(line));}catch(e){/* incomplete/invalid line — skip */}}}
-function flush(){if(buf.trim()){try{applyPatch(JSON.parse(buf.trim()));}catch(e){}}buf="";}
+// ------- streaming patch parser: brace-depth scan, one code path for API + demo -------
+// Extracts every complete top-level {...} regardless of newlines, pretty-printing,
+// fences, or commas between objects. Incomplete tail waits for more tokens.
+let buf="",unparsed=0,rawLog="";
+function feed(text){
+  buf+=text;rawLog+=text;
+  let start=-1,depth=0,inStr=false,esc=false,lastEnd=0;
+  for(let i=0;i<buf.length;i++){const ch=buf[i];
+    if(inStr){if(esc)esc=false;else if(ch==="\\")esc=true;else if(ch==='"')inStr=false;continue;}
+    if(ch==='"'){if(depth>0)inStr=true;continue;}
+    if(ch==="{"){if(depth===0)start=i;depth++;}
+    else if(ch==="}"&&depth>0){depth--;
+      if(depth===0&&start>=0){const chunk=buf.slice(start,i+1);lastEnd=i+1;
+        try{applyPatch(JSON.parse(chunk));}
+        catch(e){unparsed++;
+          logEl.textContent=(logEl.textContent+"\n⚠ unparsed obj: "+chunk.slice(0,70)).split("\n").slice(-7).join("\n");}
+        start=-1;}}}
+  buf=(depth>0&&start>=0)?buf.slice(start):buf.slice(lastEnd||buf.length);
+}
+function flush(){buf="";}
 
 // ---------------- the agentic loop: request → stream → click → stream ----------------
-const messages=[];let assistantAcc="",busy=false,liveMode=false;
+const messages=[];let assistantAcc="",busy=false,liveMode=false,nudged=false;
 async function callModel(userContent){
   const key=document.getElementById("key").value.trim();
   if(!key){statusEl.textContent="no API key — use Demo, or paste a key from console.anthropic.com";return;}
   localStorage.setItem("exp03key",key);
+  const isInitial=messages.length===0;
+  if(isInitial){addCount=0;unparsed=0;rawLog="";}
   busy=true;liveMode=true;assistantAcc="";messages.push({role:"user",content:userContent});
   statusEl.textContent="…model is painting";
   try{
     const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
       headers:{"content-type":"application/json","x-api-key":key,
         "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-      body:JSON.stringify({model:document.getElementById("model").value,max_tokens:4000,
+      body:JSON.stringify({model:document.getElementById("model").value,max_tokens:8000,
         system:SYSTEM,messages,stream:true})});
     if(!res.ok){statusEl.textContent="API error "+res.status+": "+(await res.text()).slice(0,120);busy=false;return;}
     const reader=res.body.getReader(),dec=new TextDecoder();let sse="";
@@ -216,9 +245,19 @@ async function callModel(userContent){
           }catch(e){}}}}
     flush();messages.push({role:"assistant",content:assistantAcc});
   }catch(e){statusEl.textContent="request failed: "+e.message;}
-  busy=false;}
+  busy=false;
+  // self-healing: if the model narrated instead of painting, send one corrective nudge
+  if(isInitial&&addCount<6&&!nudged){nudged=true;
+    statusEl.textContent="scene too sparse ("+addCount+" nodes) — nudging the model to actually paint…";
+    callModel(JSON.stringify({event:"system",error:"You emitted only "+addCount+
+      " nodes. A note is not a painting. Emit the FULL scene now: 14+ ops, every grid cell as a rect node, one compact JSON object per line."}));}
+}
 document.getElementById("go").onclick=()=>{const p=document.getElementById("prompt").value.trim();
-  if(!p||busy)return;nodes.clear();ops=0;logEl.textContent="";messages.length=0;callModel(p);};
+  if(!p||busy)return;nodes.clear();ops=0;nudged=false;logEl.textContent="";messages.length=0;callModel(p);};
+document.getElementById("raw").onclick=()=>{
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([rawLog||"(no live run yet)"],{type:"text/plain"}));
+  a.download="exp03-raw-stream.txt";a.click();};
 document.getElementById("prompt").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("go").click();});
 document.getElementById("key").value=localStorage.getItem("exp03key")||"";
 addEventListener("click",e=>{
