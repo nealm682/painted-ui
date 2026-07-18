@@ -58,3 +58,14 @@ reliability data point** for [[concepts/latency-and-streaming]] and
 [[techniques/transition-choreography]]: grammar escape hatches become the
 model's path of least resistance; silent error handling hides partial
 compliance.
+
+## [2026-07-18] live results | exp-03 run 2 failed → v3: examples ARE the spec
+
+Run 2 ("ferrari dashboard"): v2 diagnostics surfaced 20 unparsed adds — root
+cause was the protocol spec itself: example nodes used JS-style `.5` decimals,
+the model imitated them, strict JSON.parse rejected every coordinate-bearing
+node. v3: examples corrected to `0.5` + STRICT JSON rule + parser fallback
+sanitizer (unit-tested on the failing payload). Filed the general lesson in
+[[techniques/transition-choreography]] open questions territory: **models
+imitate examples over rules; grammar escape hatches and sloppy examples are
+protocol bugs.** Two live failures → two protocol-reliability data points.

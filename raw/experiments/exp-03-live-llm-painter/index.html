@@ -62,11 +62,11 @@ Ops:
 
 Node kinds:
 {"id":"bg","kind":"gradient","from":"bg0","to":"bg1","z":0,"semantic":"..."}                                  // full-screen
-{"id":"..","kind":"disc","x":.5,"y":.3,"r":.08,"fill":"accent","glow":true,"z":2,"semantic":".."}
-{"id":"..","kind":"rect","x":.5,"y":.5,"w":.11,"h":.09,"fill":"soft","stroke":"accent","z":3,"semantic":"..","interactive":true}   // panels, tiles, grid cells
-{"id":"..","kind":"card","x":.5,"y":.6,"w":.24,"h":.3,"img":7,"label":"..","z":4,"semantic":".."}             // img: any integer seed → abstract art
-{"id":"..","kind":"text","x":.5,"y":.2,"size":.05,"fill":"ink","text":"..","z":5,"semantic":".."}
-{"id":"..","kind":"pill","x":.5,"y":.85,"w":.2,"h":.06,"fill":"accent","text":"..","z":6,"semantic":"..","interactive":true}
+{"id":"..","kind":"disc","x":0.5,"y":0.3,"r":0.08,"fill":"accent","glow":true,"z":2,"semantic":".."}
+{"id":"..","kind":"rect","x":0.5,"y":0.5,"w":0.11,"h":0.09,"fill":"soft","stroke":"accent","z":3,"semantic":"..","interactive":true}   // panels, tiles, grid cells
+{"id":"..","kind":"card","x":0.5,"y":0.6,"w":0.24,"h":0.3,"img":7,"label":"..","z":4,"semantic":".."}             // img: any integer seed → abstract art
+{"id":"..","kind":"text","x":0.5,"y":0.2,"size":0.05,"fill":"ink","text":"..","z":5,"semantic":".."}
+{"id":"..","kind":"pill","x":0.5,"y":0.85,"w":0.2,"h":0.06,"fill":"accent","text":"..","z":6,"semantic":"..","interactive":true}
 
 Rules:
 - Color values: palette names (bg0,bg1,ink,accent,soft) or #hex.
@@ -76,6 +76,7 @@ Rules:
 - Every node gets a "semantic" description. Anything a user might tap: "interactive":true (pills always).
 - When you receive {"event":"click",...}: respond with a SHORT patch stream (3–10 ops) that mutates the existing scene. Prefer update/morph of existing ids over remove+add. Never re-send the whole scene. End with {"op":"done"}.
 - Output exactly one compact JSON object per line. Never pretty-print. No markdown fences. No prose.
+- STRICT JSON: every number needs a leading digit — 0.5, never .5. Double quotes only. No trailing commas.
 - Compose beautifully: generous whitespace, clear hierarchy, harmonious palette. You are painting, not filling a form.`;
 
 // ---------------- compositor + transition engine (from exp-02) ----------------
@@ -211,8 +212,13 @@ function feed(text){
     else if(ch==="}"&&depth>0){depth--;
       if(depth===0&&start>=0){const chunk=buf.slice(start,i+1);lastEnd=i+1;
         try{applyPatch(JSON.parse(chunk));}
-        catch(e){unparsed++;
-          logEl.textContent=(logEl.textContent+"\n⚠ unparsed obj: "+chunk.slice(0,70)).split("\n").slice(-7).join("\n");}
+        catch(e){
+          // tolerate JS-flavored decimals (.5 → 0.5) and trailing commas
+          try{applyPatch(JSON.parse(chunk
+            .replace(/([:\[,]\s*)\.(\d)/g,"$10.$2")
+            .replace(/,\s*([}\]])/g,"$1")));}
+          catch(e2){unparsed++;
+            logEl.textContent=(logEl.textContent+"\n⚠ unparsed obj: "+chunk.slice(0,70)).split("\n").slice(-7).join("\n");}}
         start=-1;}}}
   buf=(depth>0&&start>=0)?buf.slice(start):buf.slice(lastEnd||buf.length);
 }

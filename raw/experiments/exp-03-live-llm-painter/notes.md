@@ -92,3 +92,25 @@ Screen changed color; nothing was painted.
 **Lesson for the wiki:** protocol design is behavior design — an escape
 hatch in the grammar (note) becomes the model's path of least resistance,
 and silent error handling turns partial compliance into invisible failure.
+
+### [2026-07-18] Run 2 (Neal, sonnet-5, "make a ferrari dashboard") — FAILURE → v3
+
+**Observed:** streaming visible, 6 ops / 2 nodes parsed, **⚠ 20 unparsed**
+adds. Diagnostics from v2 worked exactly as designed — the unparsed log
+identified the payloads.
+
+**Diagnosis:** my own protocol spec. The example nodes in the system prompt
+used JS-flavored decimals (`"x":.5`). The model imitated the examples —
+faithfully — and `JSON.parse` rejects `.5` (strict JSON needs `0.5`). Every
+node carrying coordinates failed; palette/gradient/note/done (no decimals)
+passed. The v2 nudge fired but repainted in the same style.
+
+**v3 fixes:**
+- Spec examples corrected to `0.5` notation + explicit STRICT JSON rule.
+- Parser fallback sanitizer: `.5 → 0.5` (value positions only — decimals
+  inside strings untouched) + trailing-comma strip. Unit-tested against the
+  exact gearbox payload from the failing run.
+
+**Lesson (stronger form of Run 1's):** models imitate examples over rules —
+the examples ARE the spec. And layered defense works: prompt fixes the
+source, sanitizer forgives stragglers, ⚠ counter catches what's left.
