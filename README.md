@@ -9,7 +9,8 @@ method are separable: an LLM streams a few kilobytes of **scene patches**,
 and a client-side compositor animates them at display frame rate. The model
 is the director; your device is the painter; the token stream is the brush.
 
-**📄 Read the paper: [`publication/painted-ui.md`](publication/painted-ui.md)**
+**🏠 Main overview: [`index.html`](index.html)** — Painted UI: A Semantic Choreography
+Runtime for Generative Interfaces · **📄 The paper: [`publication/painted-ui.md`](publication/painted-ui.md)**
 ([styled HTML](publication/painted-ui.html)) · **🎨 One-page pitch with a live sample: [`pitch.html`](pitch.html)**
 
 ## What the reference point looks like

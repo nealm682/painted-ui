@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Painted UI — A Semantic Choreography Runtime for Generative Interfaces</title>
+<style>
+  :root{
+    --bg:#080910;
+    --bg2:#10131d;
+    --panel:rgba(19,23,35,.78);
+    --panel2:rgba(29,35,52,.72);
+    --line:rgba(255,255,255,.11);
+    --ink:#f5f1e8;
+    --muted:#a4a8b7;
+    --accent:#f3a64b;
+    --accent2:#7fe1cc;
+    --violet:#ab9cff;
+    --danger:#ef8f87;
+    --shadow:0 24px 80px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;background:var(--bg)}
+  body{margin:0;color:var(--ink);background:
+    radial-gradient(circle at 80% 0%,rgba(171,156,255,.12),transparent 32%),
+    radial-gradient(circle at 10% 18%,rgba(127,225,204,.10),transparent 28%),
+    linear-gradient(180deg,var(--bg),#0b0d14 48%,#07080c);
+    font:16px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    overflow-x:hidden;
+  }
+  a{color:inherit}
+  .noise{position:fixed;inset:0;pointer-events:none;opacity:.05;z-index:20;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E")}
+  .wrap{width:min(1180px,calc(100% - 36px));margin:0 auto}
+  .nav{position:sticky;top:0;z-index:10;backdrop-filter:blur(18px);background:rgba(8,9,16,.7);border-bottom:1px solid var(--line)}
+  .navin{height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;letter-spacing:.01em}
+  .brandmark{width:30px;height:30px;border-radius:50%;position:relative;background:conic-gradient(from 40deg,var(--accent),var(--violet),var(--accent2),var(--accent));box-shadow:0 0 28px rgba(243,166,75,.25)}
+  .brandmark:after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--bg)}
+  .links{display:flex;gap:20px;color:var(--muted);font-size:14px}
+  .links a{text-decoration:none}.links a:hover{color:var(--ink)}
+  .hero{min-height:calc(100vh - 64px);display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;padding:74px 0 88px}
+  .eyebrow{display:inline-flex;gap:8px;align-items:center;padding:7px 11px;border:1px solid var(--line);border-radius:99px;background:rgba(255,255,255,.035);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2)}
+  .pulse{width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 0 0 rgba(127,225,204,.5);animation:pulse 2s infinite}
+  @keyframes pulse{70%{box-shadow:0 0 0 10px rgba(127,225,204,0)}100%{box-shadow:0 0 0 0 rgba(127,225,204,0)}}
+  h1{font:700 clamp(48px,7vw,92px)/.96 Georgia,"Times New Roman",serif;letter-spacing:-.045em;margin:22px 0 22px;max-width:820px}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-size:clamp(18px,2vw,23px);color:#cbcdd5;max-width:760px;margin:0 0 30px}
+  .actions{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{appearance:none;border:0;border-radius:11px;padding:12px 17px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:9px}
+  .primary{background:var(--accent);color:#18110a;box-shadow:0 14px 34px rgba(243,166,75,.18)}
+  .secondary{background:rgba(255,255,255,.045);color:var(--ink);border:1px solid var(--line)}
+  .hero-note{margin-top:22px;font-size:13px;color:var(--muted)}
+  .stage-card{position:relative;border:1px solid var(--line);border-radius:26px;background:linear-gradient(180deg,rgba(28,34,51,.86),rgba(12,15,24,.94));box-shadow:var(--shadow);overflow:hidden;min-height:560px}
+  .stage-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+  .dots{display:flex;gap:7px}.dots span{width:8px;height:8px;border-radius:50%;background:#394054}.dots span:first-child{background:var(--danger)}.dots span:nth-child(2){background:#e5c665}.dots span:nth-child(3){background:var(--accent2)}
+  #heroCanvas{display:block;width:100%;height:500px;background:linear-gradient(180deg,#14182a,#0a0c14)}
+  .legend{position:absolute;left:18px;bottom:18px;right:18px;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{padding:7px 10px;border-radius:99px;background:rgba(5,7,12,.68);border:1px solid var(--line);font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:#cad0dc}
+  section{padding:100px 0}
+  .section-kicker{color:var(--accent2);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
+  h2{font:700 clamp(34px,4.6vw,58px)/1.05 Georgia,"Times New Roman",serif;letter-spacing:-.025em;margin:10px 0 18px}
+  .section-lede{max-width:760px;color:var(--muted);font-size:19px;margin-bottom:36px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .role{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;min-height:235px;overflow:hidden}
+  .role:before{content:"";position:absolute;inset:auto -25% -35% 35%;height:130px;border-radius:50%;filter:blur(30px);background:var(--glow,rgba(243,166,75,.12))}
+  .role .num{font:12px ui-monospace,monospace;color:var(--muted)}
+  .role h3{font:700 24px Georgia,serif;margin:36px 0 8px}
+  .role p{color:var(--muted);margin:0}
+  .role strong{color:var(--ink)}
+  .flow{display:grid;grid-template-columns:1fr 80px 1fr 80px 1fr 80px 1fr;align-items:center;margin-top:28px}
+  .flowbox{background:var(--panel2);border:1px solid var(--line);padding:20px;border-radius:16px;text-align:center;min-height:135px;display:flex;flex-direction:column;justify-content:center}
+  .flowbox b{font-size:17px}.flowbox span{color:var(--muted);font-size:13px;margin-top:5px}
+  .arrow{height:2px;background:linear-gradient(90deg,var(--accent2),var(--accent));position:relative;opacity:.75}
+  .arrow:after{content:"";position:absolute;right:-1px;top:-4px;border-left:8px solid var(--accent);border-top:5px solid transparent;border-bottom:5px solid transparent}
+  .proof{display:grid;grid-template-columns:.9fr 1.1fr;gap:28px;align-items:stretch}
+  .code-card,.demo-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+  .cardhead{padding:14px 17px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;color:var(--muted);font-size:13px}
+  pre{margin:0;padding:22px;overflow:auto;font:13px/1.72 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#c8cbd5;min-height:390px}
+  pre .k{color:var(--accent)}pre .v{color:var(--accent2)}pre .c{color:#73798a}
+  #pipelineCanvas{display:block;width:100%;height:390px;background:#0a0c13}
+  .controls{padding:13px 16px;border-top:1px solid var(--line);display:flex;gap:9px;flex-wrap:wrap}
+  button.small{background:#242a3a;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer}.small.active{background:var(--accent);color:#17110b}
+  .comparison{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .compare{border:1px solid var(--line);border-radius:20px;padding:25px;background:var(--panel);position:relative;overflow:hidden}
+  .compare h3{font:700 26px Georgia,serif;margin:0 0 12px}.compare p{color:var(--muted)}
+  .compare ul{padding-left:20px;color:#d3d5dd}.compare li{margin:8px 0}
+  .good{border-color:rgba(127,225,204,.25)}
+  .bad{border-color:rgba(239,143,135,.18)}
+  .honesty{display:grid;grid-template-columns:1.15fr .85fr;gap:24px}
+  .quote{padding:31px;background:linear-gradient(145deg,rgba(243,166,75,.11),rgba(171,156,255,.08));border:1px solid var(--line);border-radius:20px;font:700 29px/1.3 Georgia,serif}
+  .quote span{display:block;color:var(--muted);font:14px/1.6 Inter,sans-serif;margin-top:16px}
+  .limits{display:grid;gap:10px}.limit{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px 17px;color:var(--muted)}.limit b{color:var(--ink)}
+  .cta{border:1px solid var(--line);border-radius:28px;padding:50px;background:
+    radial-gradient(circle at 80% 20%,rgba(127,225,204,.16),transparent 32%),
+    radial-gradient(circle at 10% 90%,rgba(243,166,75,.14),transparent 34%),
+    var(--panel);text-align:center;box-shadow:var(--shadow)}
+  .cta h2{max-width:780px;margin:0 auto 16px}.cta p{max-width:720px;margin:0 auto 28px;color:var(--muted);font-size:18px}
+  footer{padding:34px 0 55px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}.reveal.on{opacity:1;transform:none}
+  @media(max-width:950px){.hero,.proof,.honesty{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr}.arrow{width:2px;height:40px;margin:auto;background:linear-gradient(var(--accent2),var(--accent))}.arrow:after{right:-4px;top:auto;bottom:-1px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid var(--accent);border-bottom:0}.stage-card{min-height:500px}}
+  @media(max-width:620px){.links{display:none}.grid4,.comparison{grid-template-columns:1fr}.hero{padding-top:46px}.stage-card{min-height:440px}#heroCanvas{height:410px}section{padding:72px 0}.cta{padding:32px 20px}.quote{font-size:23px}}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.pulse{animation:none}}
+</style>
+</head>
+<body>
+<div class="noise"></div>
+<nav class="nav">
+  <div class="wrap navin">
+    <div class="brand"><span class="brandmark"></span> Painted UI</div>
+    <div class="links"><a href="#architecture">Architecture</a><a href="#proof">Proof</a><a href="#enterprise">Enterprise</a><a href="#next">Next experiment</a></div>
+  </div>
+</nav>
+
+<main>
+  <section class="hero wrap">
+    <div>
+      <div class="eyebrow"><span class="pulse"></span> Research prototype · generative interface runtime</div>
+      <h1>The model <em>directs.</em><br>Your device paints.</h1>
+      <p class="lede">Painted UI is a semantic choreography runtime for AI-authored interfaces. The model streams meaning. A local motion policy turns that meaning into governed behavior. A real-time compositor renders the evolving scene.</p>
+      <div class="actions">
+        <a class="btn primary" href="#proof">See the pipeline animate →</a>
+        <a class="btn secondary" href="#enterprise">Why it matters</a>
+      </div>
+      <div class="hero-note">Not video generation. Not arbitrary model-written frontend code. A compact semantic protocol with deterministic client-side execution.</div>
+    </div>
+    <div class="stage-card">
+      <div class="stage-head"><span>live semantic scene</span><div class="dots"><span></span><span></span><span></span></div></div>
+      <canvas id="heroCanvas"></canvas>
+      <div class="legend"><span class="chip">streaming patches</span><span class="chip">persistent identity</span><span class="chip">local choreography</span><span class="chip">60 fps compositor</span></div>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <div class="wrap reveal">
+      <div class="section-kicker">The architecture</div>
+      <h2>Four roles. One shared stage.</h2>
+      <p class="section-lede">The architecture works because intelligence, motion policy, state, and rendering are separated. Each operates at its own speed without blocking the others.</p>
+      <div class="grid4">
+        <article class="role" style="--glow:rgba(243,166,75,.15)"><span class="num">01 · LLM / agent</span><h3>Director</h3><p>Decides <strong>what exists</strong> and <strong>what changes</strong>. Emits semantic operations instead of pixels or animation timelines.</p></article>
+        <article class="role" style="--glow:rgba(171,156,255,.14)"><span class="num">02 · local policy</span><h3>Choreographer</h3><p>Decides <strong>how changes move</strong>: verb, duration, easing, direction, and stagger. Deterministic and brand-governed.</p></article>
+        <article class="role" style="--glow:rgba(127,225,204,.14)"><span class="num">03 · node map</span><h3>Stage</h3><p>Holds persistent semantic objects. Stable IDs preserve identity, enabling morphing, continuity, and interruption handling.</p></article>
+        <article class="role" style="--glow:rgba(239,143,135,.12)"><span class="num">04 · compositor</span><h3>Painter</h3><p>Reads current state and redraws continuously. It executes approved verbs at display speed and never waits for the network.</p></article>
+      </div>
+      <div class="flow">
+        <div class="flowbox"><b>“Focus the cost card”</b><span>semantic intent</span></div><div class="arrow"></div>
+        <div class="flowbox"><b>update · id: cost</b><span>small structured patch</span></div><div class="arrow"></div>
+        <div class="flowbox"><b>morph · 1100 ms</b><span>local motion policy</span></div><div class="arrow"></div>
+        <div class="flowbox"><b>continuous scene</b><span>rendered locally</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="proof">
+    <div class="wrap reveal">
+      <div class="section-kicker">Working proof</div>
+      <h2>Streaming mutates. Rendering samples.</h2>
+      <p class="section-lede">The scene does not wait for a finished response. Each completed semantic operation updates shared state immediately, while the compositor keeps animating independently.</p>
+      <div class="proof">
+        <div class="code-card">
+          <div class="cardhead"><span>semantic stream</span><span>~kilobytes, once</span></div>
+          <pre><span class="c">// The model says what changes.</span>
+{ <span class="k">"op"</span>: <span class="v">"add"</span>,
+  <span class="k">"node"</span>: {
+    <span class="k">"id"</span>: <span class="v">"growth"</span>,
+    <span class="k">"kind"</span>: <span class="v">"card"</span>,
+    <span class="k">"semantic"</span>: <span class="v">"quarterly growth"</span>
+  }
+}
+
+{ <span class="k">"op"</span>: <span class="v">"update"</span>,
+  <span class="k">"id"</span>: <span class="v">"growth"</span>,
+  <span class="k">"set"</span>: { <span class="k">"focus"</span>: <span class="v">true</span> }
+}
+
+<span class="c">// The client decides how it moves.</span>
+choreograph(patch) → {
+  <span class="k">kind</span>: <span class="v">"morph"</span>,
+  <span class="k">duration</span>: <span class="v">1100</span>,
+  <span class="k">ease</span>: <span class="v">"inout"</span>
+}</pre>
+        </div>
+        <div class="demo-card">
+          <div class="cardhead"><span>same scene · different choreography</span><span id="modeLabel">house policy: calm</span></div>
+          <canvas id="pipelineCanvas"></canvas>
+          <div class="controls">
+            <button class="small active" data-mode="calm">Calm policy</button>
+            <button class="small" data-mode="energetic">Energetic policy</button>
+            <button class="small" data-mode="none">No choreography</button>
+            <button class="small" id="replayBtn">Replay</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="enterprise">
+    <div class="wrap reveal">
+      <div class="section-kicker">Enterprise value</div>
+      <h2>Generative UI with a governance boundary.</h2>
+      <p class="section-lede">The model controls meaning and intent. The product team controls visual language, motion, accessibility policy, and rendering code.</p>
+      <div class="comparison">
+        <div class="compare bad">
+          <h3>Model micromanages the UI</h3>
+          <p>High expressiveness, but every detail becomes a probabilistic output.</p>
+          <ul><li>More tokens and latency</li><li>Inconsistent brand behavior</li><li>Difficult to unit test</li><li>Unsafe to allow arbitrary code</li><li>Transitions may conflict or snap</li></ul>
+        </div>
+        <div class="compare good">
+          <h3>Model directs a governed runtime</h3>
+          <p>Meaning stays generative while execution remains deterministic.</p>
+          <ul><li>Small allow-listed protocol</li><li>Versioned motion design system</li><li>Replayable and auditable patches</li><li>Client-side performance</li><li>Optional model overrides within policy</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap reveal">
+      <div class="section-kicker">The honest claim</div>
+      <h2>A distinctive synthesis—not magic.</h2>
+      <div class="honesty">
+        <div class="quote">“Traditional design systems govern what components look like. Painted UI adds a governed vocabulary for how generated experiences come into existence and change over time.”<span>The contribution is the composition: semantic streaming, persistent identity, local choreography, and continuous rendering.</span></div>
+        <div class="limits">
+          <div class="limit"><b>Established ingredients:</b> scene graphs, tweening, streaming protocols, game loops, and immediate-mode rendering.</div>
+          <div class="limit"><b>Distinctive synthesis:</b> using those ingredients as a semantic motion runtime for model-authored interfaces.</div>
+          <div class="limit"><b>Not yet proven:</b> broad enterprise task coverage, accessibility, measurable usability gains, and superiority to component UI.</div>
+          <div class="limit"><b>Likely production form:</b> a hybrid—standard accessible components plus Painted UI for focus, continuity, explanation, and transitions.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="next">
+    <div class="wrap reveal">
+      <div class="cta">
+        <div class="section-kicker">Recommended next step</div>
+        <h2>Prove it on one real workflow.</h2>
+        <p>Generate a result set, focus one item, morph it into detail, complete an action, then return without losing spatial context. Measure task completion, perceived latency, comprehension, and preference against a conventional generative UI.</p>
+        <a class="btn primary" href="#architecture">Paint meaning, not pixels ↑</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">Painted UI · semantic choreography runtime for generative interfaces · executive concept demo</div></footer>
+
+<script>
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DPR=Math.min(devicePixelRatio||1,2);
+function fitCanvas(c,h){const r=c.getBoundingClientRect();c.width=Math.max(1,Math.floor(r.width*DPR));c.height=Math.floor(h*DPR);return {w:c.width,h:c.height}}
+const ease=u=>u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;
+const clamp=u=>Math.max(0,Math.min(1,u));
+
+// HERO — semantic objects draw and morph continuously.
+const hc=document.getElementById('heroCanvas'),hx=hc.getContext('2d');let HS={w:0,h:0};
+function sizeHero(){HS=fitCanvas(hc,500)}addEventListener('resize',sizeHero);sizeHero();
+const start=performance.now();
+function heroLoop(t){
+  const {w,h}=HS;hx.clearRect(0,0,w,h);
+  const g=hx.createLinearGradient(0,0,0,h);g.addColorStop(0,'#171d35');g.addColorStop(1,'#090b13');hx.fillStyle=g;hx.fillRect(0,0,w,h);
+  const s=(t-start)/1000;
+  // ambient grid
+  hx.strokeStyle='rgba(255,255,255,.045)';hx.lineWidth=1;
+  for(let x=0;x<w;x+=42*DPR){hx.beginPath();hx.moveTo(x,0);hx.lineTo(x,h);hx.stroke()}
+  for(let y=0;y<h;y+=42*DPR){hx.beginPath();hx.moveTo(0,y);hx.lineTo(w,y);hx.stroke()}
+  const items=[
+    {x:.18,y:.60,label:'Growth',delay:.2},{x:.50,y:.60,label:'Costs',delay:.55},{x:.82,y:.60,label:'Outlook',delay:.9}
+  ];
+  items.forEach((it,i)=>{
+    const u=clamp((s-it.delay)/1.0),e=ease(u);let x=it.x*w,y=it.y*h;
+    const focus=(Math.sin(s*.55)>0.25&&i===1);const fw=focus?.30:.19,fh=focus?.32:.24;
+    const ww=(.19+(fw-.19)*ease(clamp((Math.sin(s*.55)-.25)*2.4)))*w;
+    const hh=(.24+(fh-.24)*ease(clamp((Math.sin(s*.55)-.25)*2.4)))*h;
+    x+=(1-e)*(i===0?-w*.22:i===2?w*.22:0);y+=(1-e)*h*.06;
+    hx.globalAlpha=u;hx.fillStyle=focus?'rgba(127,225,204,.16)':'rgba(255,255,255,.06)';hx.strokeStyle=focus?'rgba(127,225,204,.55)':'rgba(255,255,255,.13)';hx.lineWidth=1.3*DPR;
+    roundRect(hx,x-ww/2,y-hh/2,ww,hh,18*DPR);hx.fill();hx.stroke();
+    hx.fillStyle='#f5f1e8';hx.font=`${14*DPR}px Georgia`;hx.textAlign='center';hx.fillText(it.label,x,y+4*DPR);
+    hx.globalAlpha=1;
+  });
+  // streaming brush line
+  const pathY=h*.27,prog=(s%4)/4;hx.strokeStyle='#f3a64b';hx.lineWidth=2.2*DPR;hx.beginPath();hx.moveTo(w*.12,pathY);hx.quadraticCurveTo(w*.4,pathY-h*.18,w*.58,pathY);hx.quadraticCurveTo(w*.76,pathY+h*.11,w*.88,pathY-h*.04);hx.setLineDash([Math.max(1,prog*w*.9),w]);hx.stroke();hx.setLineDash([]);
+  const bx=w*(.12+.76*prog),by=pathY-Math.sin(prog*Math.PI*2)*h*.07;hx.fillStyle='#f3a64b';hx.shadowColor='#f3a64b';hx.shadowBlur=18*DPR;hx.beginPath();hx.arc(bx,by,4.5*DPR,0,Math.PI*2);hx.fill();hx.shadowBlur=0;
+  requestAnimationFrame(heroLoop)
+}
+requestAnimationFrame(heroLoop);
+
+function roundRect(c,x,y,w,h,r){r=Math.min(r,w/2,h/2);c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+
+// PIPELINE DEMO
+const pc=document.getElementById('pipelineCanvas'),px=pc.getContext('2d');let PS={w:0,h:0};
+function sizePipe(){PS=fitCanvas(pc,390)}addEventListener('resize',sizePipe);sizePipe();
+let mode='calm',epoch=performance.now();
+const modes={calm:{speed:1,stagger:.22},energetic:{speed:1.7,stagger:.08},none:{speed:50,stagger:0}};
+function replay(){epoch=performance.now()}
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');mode=b.dataset.mode;document.getElementById('modeLabel').textContent=mode==='none'?'no choreography':`house policy: ${mode}`;replay()});
+document.getElementById('replayBtn').onclick=replay;
+function pipeLoop(t){
+  const {w,h}=PS;px.clearRect(0,0,w,h);const g=px.createLinearGradient(0,0,0,h);g.addColorStop(0,'#13182a');g.addColorStop(1,'#090b12');px.fillStyle=g;px.fillRect(0,0,w,h);
+  const cfg=modes[mode],s=((t-epoch)/1000)*cfg.speed;
+  const labels=['Growth','Costs','Outlook'];
+  labels.forEach((lab,i)=>{
+    let u=clamp((s-.25-i*cfg.stagger)/.8);if(mode==='none')u=u>0?1:0;const e=ease(u);let x=(.2+i*.3)*w,y=.61*h+(1-e)*.08*h;let ww=.2*w,hh=.30*h;
+    if(s>2.5&&i===1){let f=clamp((s-2.5)/1.1);if(mode==='none')f=f>0?1:0;f=ease(f);ww=(.2+.35*f)*w;hh=(.30+.17*f)*h;y=(.61-.08*f)*h}
+    if(s>2.65&&i!==1){let out=clamp((s-2.65)/.6);if(mode==='none')out=out>0?1:0;u*=1-out;x+=(i===0?-1:1)*out*w*.35}
+    px.globalAlpha=u;px.fillStyle=i===1?'rgba(127,225,204,.14)':'rgba(255,255,255,.055)';px.strokeStyle=i===1?'rgba(127,225,204,.52)':'rgba(255,255,255,.13)';px.lineWidth=1.2*DPR;roundRect(px,x-ww/2,y-hh/2,ww,hh,16*DPR);px.fill();px.stroke();px.fillStyle='#f5f1e8';px.textAlign='center';px.font=`${14*DPR}px Georgia`;px.fillText(lab,x,y+4*DPR);px.globalAlpha=1;
+  });
+  px.fillStyle='rgba(255,255,255,.65)';px.font=`${12*DPR}px ui-monospace`;px.textAlign='left';px.fillText('same semantic operations',18*DPR,25*DPR);
+  if(s>4.2)epoch=performance.now();requestAnimationFrame(pipeLoop)
+}
+requestAnimationFrame(pipeLoop);
+
+const obs=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&e.target.classList.add('on')),{threshold:.12});document.querySelectorAll('.reveal').forEach(x=>obs.observe(x));
+</script>
+</body>
+</html>

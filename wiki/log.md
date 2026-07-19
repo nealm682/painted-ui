@@ -308,3 +308,13 @@ a live one-patch-at-a-time pipeline demo with narrated trace (script →
 choreographer → stage → painter) including an idle-proof breathing glow
 (the painter never stops). Ends with the keeper paragraph and companion
 links.
+
+## [2026-07-19] asset | Neal's overview explainer installed as index.html
+
+Neal supplied an HTML explainer ("Painted UI — A Semantic Choreography
+Runtime for Generative Interfaces") to serve as the repo's main
+description. Scanned clean (no employer mentions, no keys, no external
+resources), script syntax verified, installed at repo root as
+`index.html` — chosen deliberately so that enabling GitHub Pages makes it
+the homepage at nealm682.github.io/painted-ui/ with zero further setup.
+README front matter reordered: overview → paper → pitch.
