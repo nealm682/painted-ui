@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painted UI — the interface that paints itself</title>
+<style>
+ :root{--bg:#0b0a10;--panel:#14121c;--edge:#2c2840;--ink:#efe9dc;--dim:#8a86a0;--accent:#e8a34c;--green:#7fd4c1}
+ html{background:var(--bg);scroll-behavior:smooth}
+ body{margin:0;color:var(--ink);font:17px/1.65 Georgia,serif}
+ .wrap{max-width:860px;margin:0 auto;padding:48px 20px 90px}
+ h1{font-size:clamp(30px,5vw,44px);line-height:1.15;margin:8px 0 10px}
+ h2{font-size:21px;color:var(--accent);margin:40px 0 10px}
+ .kicker{color:var(--green);font:13px monospace;letter-spacing:.12em;text-transform:uppercase}
+ .lead{font-size:20px;color:#d8d2c4}
+ .dim{color:var(--dim)} .g{color:var(--green)} .a{color:var(--accent)}
+ canvas{width:100%;height:340px;display:block;border-radius:14px;background:#08070d;border:1px solid var(--edge)}
+ .demo-note{font:12px monospace;color:var(--dim);margin-top:6px;display:flex;justify-content:space-between}
+ .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:14px 0}
+ .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:13px 16px}
+ .card b{color:var(--accent);display:block;margin-bottom:4px;font-size:15px}
+ .card span{font-size:14px;color:var(--dim)}
+ .nums{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+ .num{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:14px;text-align:center}
+ .num b{display:block;font-size:26px;color:var(--green)} .num span{font-size:12.5px;color:var(--dim)}
+ .quote{border-left:3px solid var(--accent);padding:4px 18px;margin:18px 0;color:#d8d2c4;font-style:italic}
+ a{color:var(--green);text-decoration:none;border-bottom:1px solid var(--edge)}
+ .cta{display:inline-block;background:var(--accent);color:#0b0a10;border-radius:10px;padding:10px 20px;
+      font-size:16px;border:0;margin:8px 10px 0 0}
+ .foot{margin-top:44px;font-size:13px;color:var(--dim)}
+ button.replay{background:var(--panel);color:var(--dim);border:1px solid var(--edge);border-radius:8px;
+      padding:3px 12px;font:12px monospace;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="kicker">painted ui · a research project by neal m.</div>
+<h1>What if the interface didn't load —<br>what if it was <span class="a">painted</span>?</h1>
+<p class="lead">In 2026, Flipbook showed a UI generated entirely as live video by a diffusion model.
+It feels like watching a screen being painted for you, in the moment. It also costs a dedicated
+GPU per viewer, every second. <b>I found that the magic and the cost are separable.</b></p>
+
+<!-- ================= LIVE SAMPLE ================= -->
+<h2>Watch (live — this is not a video)</h2>
+<canvas id="demo"></canvas>
+<div class="demo-note"><span id="dstate">sketching…</span>
+ <span><button class="replay" onclick="restart()">↻ repaint</button></span></div>
+
+<h2>The idea in one sentence</h2>
+<p>The feeling of a "model-painted" screen is a <b>behavior bundle</b> — fluid layout, live motion,
+universal interactivity, bespoke content — and none of it requires generating pixels.
+An LLM streams a few <span class="g">kilobytes of scene patches</span>; your own device paints
+them at 60fps. <b>The model is the director; your device is the painter; the token stream is
+the brush.</b></p>
+
+<div class="cols">
+ <div class="card"><b>Streams meaning, not pixels</b><span>Ordinary generative UI streams <i>what components exist</i>. Painted UI streams <i>how a persistent scene evolves</i> — and a local choreographer turns every change into motion.</span></div>
+ <div class="card"><b>Token pacing = choreography</b><span>Elements mount the instant their JSON closes, mid-stream. The reveal isn't a loading state — it's the show.</span></div>
+ <div class="card"><b>Alive between interactions</b><span>Ambient motion never stops; scenes drift from dusk to night; imagery quietly repaints itself. Idle cost: zero.</span></div>
+ <div class="card"><b>Everything responds</b><span>Every element carries semantic identity — exact hit-testing for free, and the model can make anything interactive with a one-line patch.</span></div>
+</div>
+
+<h2>The economics</h2>
+<div class="nums">
+ <div class="num"><b>0</b><span>server GPUs required</span></div>
+ <div class="num"><b>~12,000×</b><span>less bandwidth than a 2 Mbps UI video stream (measured)</span></div>
+ <div class="num"><b>~1 kbit/s</b><span>full animated scene stream (measured)</span></div>
+ <div class="num"><b>$0</b><span>cost between interactions — the scene lives on your silicon</span></div>
+</div>
+<p class="dim">Video-generated UI pays per user-second forever. Painted UI pays per interaction —
+a few hundred tokens — and on-device small models can take even that to zero.</p>
+
+<h2>What an independent review said</h2>
+<div class="quote">"A model can direct a continuously animated, interactive, persistent visual world
+using tiny semantic patches, while the user's device performs the actual painting. That is a real
+and compelling result." <span class="dim">— independent technical audit, July 2026</span></div>
+
+<h2>Where it goes</h2>
+<p>Not "a cheaper Flipbook" — a <b>runtime for cinematic agent interfaces</b>. Agents declare
+semantic intent (compatible with declarative protocols like A2UI); an organization supplies its
+component catalog and motion grammar; a versioned choreographer enforces brand and accessibility;
+cached generated assets supply richness; and the question every agent product now faces gets an
+answer: <i>once the agent has declared the interface, how should it come alive?</i></p>
+
+<p style="margin-top:26px">
+ <a class="cta" href="https://github.com/nealm682/painted-ui">Explore the repo</a>
+ <a class="cta" style="background:var(--panel);color:var(--ink);border:1px solid var(--edge)"
+    href="https://github.com/nealm682/painted-ui/blob/main/publication/painted-ui.md">Read the paper</a>
+</p>
+
+<div class="foot">Working prototypes, measurements, and failure logs are in the repository —
+including a live painter you can run with your own API key. Honest status: the mechanism is proven;
+the perceptual studies are in progress. MIT licensed. — Neal M.</div>
+</div>
+
+<script>
+/* ---- embedded sample: sketch → paint → alive, in miniature ---- */
+const cv=document.getElementById("demo"),ctx=cv.getContext("2d"),state=document.getElementById("dstate");
+let W=0,H=0;function size(){const r=cv.getBoundingClientRect();W=cv.width=r.width*2;H=cv.height=680;
+ ctx.setTransform(1,0,0,1,0,0);}
+addEventListener("resize",size);size();
+const RED=matchMedia("(prefers-reduced-motion: reduce)").matches,AMB=RED?0.3:1;
+const now=()=>performance.now(),lerp=(a,b,t)=>a+(b-a)*t;
+const eIO=u=>u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2,eO=u=>1-Math.pow(1-u,3);
+function mixc(c1,c2,t){const h=c=>[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)];
+ const a=h(c1),b=h(c2);return`rgb(${a.map((v,i)=>Math.round(lerp(v,b[i],t))).join(",")})`;}
+const DUSK={s1:"#2e2450",s2:"#0d0b13",ink:"#efe9dc",sea:"#1d2c4b",hi:"#7fd4c1",acc:"#e8a34c"};
+const NIGHT={s1:"#0c1830",s2:"#06080f",ink:"#e6ebf4",sea:"#0e1729",hi:"#9fb4e8",acc:"#9fb4e8"};
+let cyc=0;const pal=k=>mixc(DUSK[k],NIGHT[k],cyc);
+function pts(f,n){const a=[];for(let i=0;i<=n;i++)a.push(f(i/n));return a;}
+const coast=()=>pts(u=>[u*W,H*0.62+Math.sin(u*5+0.7)*H*0.03+Math.sin(u*13)*H*0.012],80);
+const sun=()=>{const cx=W*0.78,cy=H*0.26,r=H*0.09;
+ return pts(u=>[cx+Math.cos(u*6.283-1.57)*r,cy+Math.sin(u*6.283-1.57)*r],40);};
+const hill=()=>pts(u=>[u*W,H*0.52+Math.sin(u*3.1+1.6)*H*0.05-((u-0.35)**2)*H*0.25],60);
+function partial(P,p,w){let total=0;for(let i=1;i<P.length;i++)total+=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]);
+ let need=total*p,tip=P[0];
+ ctx.strokeStyle=pal("ink");ctx.lineWidth=w;ctx.lineJoin=ctx.lineCap="round";
+ ctx.beginPath();ctx.moveTo(P[0][0],P[0][1]);
+ for(let i=1;i<P.length&&need>0;i++){const seg=Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]);
+  if(seg<=need){ctx.lineTo(P[i][0],P[i][1]);tip=P[i];need-=seg;}
+  else{const u=need/seg;tip=[lerp(P[i-1][0],P[i][0],u),lerp(P[i-1][1],P[i][1],u)];ctx.lineTo(tip[0],tip[1]);need=0;}}
+ ctx.stroke();return tip;}
+let plan,done,active,phase,t0;
+function restart(){plan=[
+ {v:"stroke",path:hill,dur:1300,w:4,label:"sketching…"},
+ {v:"stroke",path:coast,dur:1200,w:4},
+ {v:"stroke",path:sun,dur:800,w:4,label:"a circle for the sun…"},
+ {v:"fill",id:"sea",dur:1400,label:"now the paint…"},
+ {v:"fill",id:"hill",dur:1100},
+ {v:"fill",id:"sun",dur:900,label:"light…"},
+ {v:"type",text:"Painted UI",dur:1300,label:"setting the title…"},
+];done=[];active=null;phase="paint";t0=now();}
+restart();
+function drawStep(s,p,t){
+ if(s.v==="stroke"){const tip=partial(s.path(),p,s.w);if(p<1&&tip){ctx.shadowColor=pal("acc");
+  ctx.shadowBlur=26;ctx.fillStyle=pal("ink");ctx.beginPath();ctx.arc(tip[0],tip[1],7,0,7);ctx.fill();ctx.shadowBlur=0;}return;}
+ if(s.v==="fill"){const settle=eO(p),blur=(1-settle)*8;
+  ctx.save();if(blur>0.4)ctx.filter=`blur(${blur.toFixed(1)}px)`;ctx.globalAlpha=Math.min(1,p*1.5);
+  const j=(1-settle)*6*AMB;ctx.translate((Math.random()-.5)*j,(Math.random()-.5)*j);
+  if(s.id==="sea"){const C=coast();ctx.beginPath();ctx.moveTo(C[0][0],C[0][1]);
+   for(const q of C)ctx.lineTo(q[0],q[1]);ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+   const g=ctx.createLinearGradient(0,H*0.6,0,H);g.addColorStop(0,pal("sea"));g.addColorStop(1,pal("s2"));
+   ctx.fillStyle=g;ctx.fill();}
+  if(s.id==="hill"){const Hp=hill();ctx.beginPath();ctx.moveTo(Hp[0][0],Hp[0][1]);
+   for(const q of Hp)ctx.lineTo(q[0],q[1]);ctx.lineTo(W,H*0.64);ctx.lineTo(0,H*0.64);ctx.closePath();
+   ctx.fillStyle=mixc(pal("sea"),pal("s1"),0.5);ctx.fill();}
+  if(s.id==="sun"){const cx=W*0.78,cy=H*0.26,r=H*0.085;ctx.shadowColor=pal("acc");ctx.shadowBlur=60;
+   ctx.fillStyle=pal("acc");ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();ctx.shadowBlur=0;
+   if(cyc>0.35){ctx.fillStyle=pal("s1");ctx.globalAlpha*=(cyc-0.35)/0.65*0.85;
+    ctx.beginPath();ctx.arc(cx-r*0.4,cy-r*0.2,r*0.92,0,7);ctx.fill();}}
+  ctx.restore();return;}
+ if(s.v==="type"){const words=s.text.split(" "),fs=H*0.085;ctx.font=`${fs}px Georgia`;ctx.textBaseline="middle";
+  const ws=words.map(w=>ctx.measureText(w+" ").width),tot=ws.reduce((a,b)=>a+b,0);
+  let x=W*0.5-tot/2,y=H*0.20;
+  words.forEach((w,i)=>{const wp=Math.min(1,Math.max(0,p*words.length-i));
+   if(wp>0){const e=eO(wp);ctx.globalAlpha=e;ctx.fillStyle=pal("ink");
+    ctx.fillText(w,x,y+(1-e)*26);}x+=ws[i];});
+  ctx.globalAlpha=1;return;}}
+const stars=[...Array(70)].map(()=>({x:Math.random(),y:Math.random()*0.42,p:Math.random()*7}));
+let last=now(),lastF=now();
+function frame(){lastF=now();try{render();}catch(e){}requestAnimationFrame(frame);}
+setInterval(()=>{if(now()-lastF>1500)requestAnimationFrame(frame);},2000);
+function render(){const t=now();
+ cyc=0.5+0.5*Math.sin((t-t0)/16000*AMB-1.6);
+ ctx.clearRect(0,0,W,H);
+ const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,pal("s1"));g.addColorStop(1,pal("s2"));
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ ctx.fillStyle=pal("ink");
+ for(const st of stars){const tw=(0.3+0.7*Math.abs(Math.sin(t/900*AMB+st.p)))*cyc;
+  if(tw>0.02){ctx.globalAlpha=tw*0.9;ctx.fillRect(st.x*W,st.y*H,2.4,2.4);}}
+ ctx.globalAlpha=1;
+ if(phase==="paint"){
+  if(!active&&plan.length){active={...plan.shift(),t0:t};if(active.label)state.textContent=active.label;}
+  if(active){const u=Math.min(1,(t-active.t0)/active.dur);active.p=eIO(u);
+   if(u>=1){done.push(active);active=null;
+    if(!plan.length){phase="alive";state.textContent="alive — dusk is falling; it will keep painting itself";}}}}
+ for(const s of done)drawStep(s,1,t);
+ if(active)drawStep(active,active.p,t);
+ if(done.some(s=>s.id==="sea")){ctx.globalAlpha=0.5;
+  for(let k=0;k<2;k++){ctx.strokeStyle=pal("hi");ctx.lineWidth=2;ctx.beginPath();
+   for(let i=0;i<=60;i++){const u=i/60,y=H*(0.72+k*0.1)+Math.sin(u*10+t/(900+k*400)*AMB*6.28)*H*0.012;
+    ctx[i?"lineTo":"moveTo"](u*W,y);}ctx.stroke();}
+  ctx.globalAlpha=1;}
+}
+requestAnimationFrame(frame);
+window.restart=restart;
+</script>
+</body>
+</html>

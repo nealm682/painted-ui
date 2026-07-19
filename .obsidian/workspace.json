@@ -11,10 +11,14 @@
             "id": "62b1124f22fd7707",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "publication/painted-ui.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "painted-ui"
             }
           }
         ]
@@ -90,6 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "publication/painted-ui.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -99,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks"
+              "title": "Backlinks for painted-ui"
             }
           },
           {
@@ -108,11 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "publication/painted-ui.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links"
+              "title": "Outgoing links from painted-ui"
             }
           },
           {
@@ -150,12 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "publication/painted-ui.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Outline of painted-ui"
             }
           }
         ]
@@ -178,24 +185,31 @@
   },
   "active": "62b1124f22fd7707",
   "lastOpenFiles": [
+    "raw/experiments/exp-10-expressive-verbs/notes.md",
+    "raw/experiments/exp-10-expressive-verbs/notes.md.tmp.23648.45531e9198df",
+    "pitch.html",
+    "pitch.html.tmp.23648.d9ae1f80c87a",
+    "raw/experiments/exp-10-expressive-verbs/index.html",
+    "raw/experiments/exp-10-expressive-verbs",
+    "wiki/log.md.tmp.24944.1602f0784286",
+    "wiki/techniques/scene-grammar-v2.md",
+    "raw/experiments/exp-09-showcase/index.html.tmp.24944.0b0eebe73014",
+    "raw/experiments/exp-09-showcase/notes.md",
+    "raw/experiments/exp-09-showcase/index.html",
+    "raw/experiments/exp-09-showcase",
+    "wiki/sources/audit-2026-07.md.tmp.26432.8b38c5a6833a",
+    "raw/articles/audit-painted-ui-2026-07-full.md",
+    "raw/experiments/exp-08-perception-study/notes.md",
+    "wiki/sources/audit-2026-07.md",
+    "raw/articles/audit-painted-ui-2026-07.md",
     "wiki/overview.md",
     "wiki/concepts/four-loops.md",
-    "wiki/concepts/four-loops.md.tmp.26372.b4e38579f68b",
     "wiki/sources/game-loop-lineage.md",
     "raw/articles/fix-your-timestep-fiedler.md",
     "raw/articles/game-loop-nystrom.md",
-    "README.md.tmp.16844.6944c90ce38a",
     "raw/assets/flipbook-dive.gif",
-    "raw/demos/FlipBook-Demo.mp4",
-    "publication/painted-ui.md.tmp.28196.4878cfedd3ff",
-    "painted-ui.git.bundle.lock",
-    "LICENSE",
     "README.md",
-    "README.md.tmp.20468.91e70f4c2adc",
-    "publication/painted-ui.md.tmp.20468.5f967fc9a287",
-    "publication/painted-ui.html",
     "publication/painted-ui.md",
-    "publication",
     "wiki/concepts/experience-frontier.md",
     "wiki/concepts/swarm-painting.md",
     "wiki/concepts/choreographer.md",

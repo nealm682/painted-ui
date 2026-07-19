@@ -36,14 +36,26 @@
 - Scene-graph authoring proving too hard for current LLMs (unsolvable
   constraints, ugly compositions) at production reliability.
 
+## Sharpest statement of the distinction
+
+From an independent audit ([[sources/audit-2026-07]]): ordinary generative
+UI streams *what components should exist*; painted UI streams *how a
+persistent semantic scene should evolve*, while a local compositor
+continuously interprets that evolution as motion. Persistent state +
+choreography is the differentiator — not streaming per se.
+
 ## Current evidence
 
 - Ingredients 1–3 reproduced in a single-file Canvas prototype with no model
   in the loop: [[sources/experiment-01-canvas-compositor]].
-- Ingredient 4 (bespoke content): harness live —
+- Ingredient 4 (bespoke content): live paint confirmed —
   [[sources/experiment-03-live-llm-painter]] streams real model output as
   scene patches, with the agentic click-loop. Protocol fits a ~30-line
-  system prompt. **Benchmarks pending first keyed run.**
+  system prompt.
+- Independent audit ([[sources/audit-2026-07]]): architectural concept
+  confirmed at proof-of-concept level; perceptual equivalence explicitly
+  NOT yet shown — the blind three-way study (exp-08) is the designated
+  validating experiment.
 
 ## The goal
 

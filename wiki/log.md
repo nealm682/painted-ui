@@ -178,3 +178,96 @@ choreography instead of hiding it as loading; and our tweens are
 closed-form (not integrators), which is why the compositor tolerates any
 frame rate without the instability that forces game engines to fixed
 steps. Cross-linked from index, choreographer, swarm-painting.
+
+## [2026-07-19] ingest + experiment | independent audit → exp-08 built
+
+Neal commissioned an independent audit of the concept. Verdict: "more
+confident, not less" — the differentiator confirmed and sharpened
+(ordinary generative UI streams *what* components should exist; painted UI
+streams *how* a persistent semantic scene should evolve, interpreted
+continuously as motion), with honest bounds (perceptual equivalence,
+production reliability, and precedence NOT yet shown). Filed verbatim as
+source #6 → [[sources/audit-2026-07]]; distinction adopted into
+[[thesis]]. The audit specified the validating experiment; built it same
+day as `raw/experiments/exp-08-perception-study/`: blind within-subjects
+three-way comparison (instant / component-streaming / painted) of
+identical content — stream condition gets painted's element schedule so
+progressive assembly alone can't explain differences — seven 7-point
+scales worded verbatim from the audit, randomized A/B/C labels, JSON
+export, analysis plan and validity threats in notes.md. Ready for
+participants; a null result would be filed as a major finding against the
+thesis.
+
+## [2026-07-19] pilot | exp-08 first run (n=1, author): painted wins, controls tie
+
+Neal piloted exp-08: painted condition clearly best; the instant and
+streaming controls were indistinguishable in feel despite one visibly
+building progressively. The control-vs-control null is the secondary
+prediction confirmed in miniature: streaming alone does not produce the
+illusion — persistence + ambient motion + choreography is the active
+ingredient ([[sources/audit-2026-07]], [[concepts/the-illusion]]).
+Author-as-participant, hypothesis-aware: filed as pilot, excluded from
+main analysis. Manipulation strength confirmed; recruit naive
+participants next.
+
+## [2026-07-19] ⚠️ correction + full audit + exp-09 | the visual gap is the work
+
+The previous entry is contradicted by fuller feedback and stands
+corrected (appended, per guardrails — never overwritten). Full audit text
+arrived (→ `raw/articles/audit-painted-ui-2026-07-full.md`, source page
+[[sources/audit-2026-07]] rewritten): concept 9/10, synthesis 8.5,
+technical proof 7.5, **visual proof 6.5**, potential 9. Verdict: "a unique
+synthesis" — High originality precisely on the synthesis items (streaming
+patches as visible painting rhythm; video-gen aesthetics without video;
+the framing/name). Hands-on: reviewer could NOT tell exp-08's conditions
+apart, and the resize probe did nothing — root cause: exp-08's harness
+omitted spring reflow entirely and its painted condition was under-tuned.
+**exp-08 PAUSED** (correction appended to its notes). Work list adopted:
+richer primitives, constraint layout, accessibility-mirror (new planned
+page), README demo-only key warning (added), evaluation must include real
+video-diffusion condition. Reframed opportunity: "a runtime for cinematic
+agent interfaces." Built **exp-09 showcase** same day to attack the 6.5:
+visible brush painting the scene in (radial blooms from the brush's
+position), true spring re-solve on resize (row→column restack), 52 s
+dusk→night gardener cycle (sun wanes to crescent, stars arrive), imagery
+self-repainting every 14 s, hero morphs, fireflies, camera breath,
+prefers-reduced-motion respected. If exp-09 still reads as "dashboard,"
+the binding constraint is the primitive vocabulary → exp-06 WebGL next.
+
+## [2026-07-19] fix + design | exp-09 v2 self-healing; scene grammar v2 spec
+
+exp-09 froze ~50 s in on Neal's machine (clicks logged, canvas dead =
+render loop died while DOM handlers lived). Two fixes shipped: bounded
+asset pool (v1 generated new texture canvases forever — 12 canvases max
+now, verified bounded over 24 h) and a self-healing render loop
+(per-frame try/catch that always re-arms rAF, on-screen ⚠ error
+reporting, 2 s watchdog restart) — the demo now debugs itself. Field
+verification pending. Then, per Neal's pivot, designed
+[[techniques/scene-grammar-v2]] from the audit's two production-gap
+lists. Unifying diagnosis: v1 makes the model buy geometry with tokens;
+v2 buys meaning — richer primitives (path/mask/fx/texture/typography;
+verbs unlocked: strokeIn, maskReveal, materialize, inkBleed, typeSet),
+compound catalog (errors unrepresentable; the enterprise org-catalog
+story), constraint containers (collision-proof by construction;
+priorities generalize the row→column restack), and shared-element scene
+diffs (pageMorph — navigation as painting). Estimated 4–30× token
+reduction while raising the visual ceiling. exp-10 = implement Layer
+A verbs + one compound + one container.
+
+## [2026-07-19] experiment + pitch | exp-10 expressive verbs; one-page pitch
+
+Built `raw/experiments/exp-10-expressive-verbs/` — grammar v2 Layer A in
+pixels: **strokeIn** (lighthouse/coastline/sun sketched as self-drawing
+line art, brush riding the stroke tip), **materialize** (fills arrive
+blurred, settle sharp), **inkSettle** (jitter decays as pigment dries),
+**maskReveal**, **typeSet** (title sets word by word), plus a rotating
+lighthouse **beam**, waves, two-stroke birds, gardener cycle, springy
+recomposition on resize. Sketch-then-paint is the qualitative jump past
+"animated dashboard" — each verb ~30–50 compositor lines, written once,
+named by the protocol for one token. Zero canvas allocation in the loop
+(exp-09's freeze lesson); self-healing render loop standard from now on.
+Also built `pitch.html` per Neal: a one-page pitch with a LIVE embedded
+sample (same verbs in miniature — the page demonstrates what it argues),
+the what-vs-how distinction, measured numbers, audit quote, and the
+cinematic-agent-runtime framing. First-person voice throughout. README
+reordered: exp-10 is now "start here."

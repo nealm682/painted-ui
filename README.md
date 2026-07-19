@@ -10,7 +10,7 @@ and a client-side compositor animates them at display frame rate. The model
 is the director; your device is the painter; the token stream is the brush.
 
 **📄 Read the paper: [`publication/painted-ui.md`](publication/painted-ui.md)**
-([styled HTML](publication/painted-ui.html))
+([styled HTML](publication/painted-ui.html)) · **🎨 One-page pitch with a live sample: [`pitch.html`](pitch.html)**
 
 ## What the reference point looks like
 
@@ -29,9 +29,11 @@ path painting live.*
 
 | File | What it shows |
 |---|---|
+| [`raw/experiments/exp-10-expressive-verbs/`](raw/experiments/exp-10-expressive-verbs/) | **Start here.** The scene *sketches itself* stroke by stroke — lighthouse, coastline, sun as self-drawing line art — then the paint materializes in, the title sets word by word, the lamp turns, and it lives. New verbs: strokeIn, materialize, inkSettle, maskReveal, typeSet. Resize anytime. |
+| [`raw/experiments/exp-09-showcase/`](raw/experiments/exp-09-showcase/) | The living-gallery showcase: brush-bloom build, spring re-solve on resize (row→column restack), dusk-to-night gardener cycle, self-repainting imagery, hero morphs. |
 | [`raw/experiments/exp-01-canvas-compositor/`](raw/experiments/exp-01-canvas-compositor/) | Scene-graph → Canvas compositor: fluid spring reflow, ambient motion, semantic hit-testing, runtime promotion. 8 KB, no model, no server. |
 | [`raw/experiments/exp-02-transition-stream/`](raw/experiments/exp-02-transition-stream/) | The full video-UI transition vocabulary (dissolve/zoom/flyout/morph/image-swap) from an 8-verb patch stream at ~1.1 kbit/s. |
-| [`raw/experiments/exp-03-live-llm-painter/`](raw/experiments/exp-03-live-llm-painter/) | **The live painter.** Type a request → a real model streams patches → the scene paints in at token speed; clicks talk back. Demo mode needs no key; live mode needs an Anthropic API key. Includes the full failure/fix log (`notes.md`) and an interactive architecture explainer (`how-it-works.html`). |
+| [`raw/experiments/exp-03-live-llm-painter/`](raw/experiments/exp-03-live-llm-painter/) | **The live painter.** Type a request → a real model streams patches → the scene paints in at token speed; clicks talk back. Demo mode needs no key; live mode needs an Anthropic API key. Includes the full failure/fix log (`notes.md`) and an interactive architecture explainer (`how-it-works.html`). ⚠️ *Live mode is demo-only: the key sits in browser localStorage and calls the provider directly — fine on your own machine; any deployed version must use a server-side relay or short-lived credentials.* |
 | [`wiki/decks/why-four-loops.html`](wiki/decks/why-four-loops.html) | Why the architecture needs four decoupled loops; pattern lineage; prior-art map. |
 | [`wiki/decks/the-choreographer.html`](wiki/decks/the-choreographer.html) | The motion-policy layer, with a live same-stream/four-choreographies demo and unit economics. |
 

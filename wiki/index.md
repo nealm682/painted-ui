@@ -48,6 +48,10 @@ Content catalog. Read this first on every query. Updated on every ingest.
 - [[techniques/transition-choreography]] — replicate video-UI dissolves,
   zooms, flyouts, and morphs from a streamed patch protocol; 8 verbs, no
   pixels generated. Distilled from exp-02.
+- [[techniques/scene-grammar-v2]] — the expressive protocol design:
+  primitives (paths/masks/fx/texture) + compound catalog + constraint
+  containers + scene diffs; new verbs (strokeIn, materialize, pageMorph);
+  ~4–30× fewer tokens. Answers the audit's production-gap lists. exp-10.
 
 ## Decks & explainers (HTML, in `wiki/decks/`)
 
@@ -78,6 +82,10 @@ Content catalog. Read this first on every query. Updated on every ingest.
 - [[sources/game-loop-lineage]] — source #5: Nystrom's Game Loop chapter +
   Fiedler's Fix Your Timestep. The canonical simulation/render decoupling
   painted UI inherits — and the two loops + visible-mismatch it adds.
+- [[sources/audit-2026-07]] — source #6: independent audit. Confirms the
+  differentiator (streams *how* a persistent scene evolves, not *what*
+  components exist); specifies the validating experiment → built as exp-08
+  (blind three-way perception study, ready to run).
 
 ## Comparisons
 
@@ -88,3 +96,5 @@ sources are ingested)*
 
 - `concepts/a2ui-and-standards` — hunting list has the A2UI docs; ingest next.
 - `concepts/on-device-models` — awaiting WebLLM / constrained-decoding ingest.
+- `concepts/accessibility-mirror` — audit's proposal: synchronized hidden
+  DOM tree generated from node semantics, as a first-class loop.

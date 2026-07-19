@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>exp-08 — blind perception study: three renderings of one interaction</title>
+<style>
+  :root{--bg:#0c0b10;--panel:#14121c;--edge:#2c2840;--ink:#efeae0;--dim:#8a86a0;--accent:#e8a34c;--green:#7fd4c1}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.6 Georgia,serif;overflow:hidden}
+  #stage{display:block;width:100vw;height:100vh}
+  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+           background:rgba(10,9,14,.94);z-index:10}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:28px 34px;
+        max-width:640px;max-height:86vh;overflow-y:auto}
+  h1{font-size:24px;margin:0 0 10px} h2{font-size:19px;margin:0 0 12px;color:var(--accent)}
+  .dim{color:var(--dim);font-size:14px}
+  button{background:var(--accent);border:0;border-radius:8px;padding:9px 20px;font:15px Georgia;cursor:pointer;margin-top:14px}
+  .q{margin:13px 0} .q b{display:block;font-size:14.5px;margin-bottom:5px}
+  .scale{display:flex;gap:6px}
+  .scale label{flex:1;text-align:center;font:12px monospace;color:var(--dim);cursor:pointer;
+    border:1px solid var(--edge);border-radius:6px;padding:6px 0}
+  .scale input{display:none}
+  .scale input:checked+span{color:#0c0b10;font-weight:bold}
+  .scale label:has(input:checked){background:var(--accent);border-color:var(--accent)}
+  .anchors{display:flex;justify-content:space-between;font:11px monospace;color:var(--dim);margin-top:3px}
+  #hud{position:fixed;top:14px;left:50%;transform:translateX(-50%);color:var(--dim);
+       font:13px monospace;z-index:5;background:rgba(14,13,20,.8);padding:6px 14px;border-radius:8px}
+  table{border-collapse:collapse;font:12px monospace;margin-top:10px}
+  td,th{border:1px solid var(--edge);padding:4px 9px} th{color:var(--accent)}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div id="hud" style="display:none"></div>
+
+<div class="overlay" id="intro"><div class="card">
+  <h1>A short comparison study</h1>
+  <p>You'll see <b>three versions (A, B, C)</b> of the same small interface, one at a time.
+  Each one will show you a travel scene and ask you to <b>click one element</b>.
+  After each version, you'll rate your impressions on seven quick scales.</p>
+  <p class="dim">The three versions are shown in random order. There are no right answers —
+  rate what you <i>felt</i>, not what you think is expected. Takes about 3 minutes.</p>
+  <button onclick="start()">Begin</button>
+</div></div>
+
+<div class="overlay" id="ratings" style="display:none"><div class="card">
+  <h2 id="rtitle">Rate version A</h2>
+  <div id="qs"></div>
+  <button onclick="submitRatings()">Continue</button>
+</div></div>
+
+<div class="overlay" id="done" style="display:none"><div class="card">
+  <h1>Thank you</h1>
+  <p id="reveal"></p>
+  <div id="summary"></div>
+  <button onclick="download()">Download results (JSON)</button>
+</div></div>
+
+<script>
+/* ============================================================
+   exp-08: the audit's validating experiment.
+   Three renderings of IDENTICAL content and interaction:
+     instant  — conventional UI: everything updates immediately
+     stream   — component streaming: same element schedule, but
+                elements pop in unanimated; no ambient motion
+     painted  — persistent nodes + choreographed patches + ambient
+   Only presentation differs. Blind labels, randomized order,
+   7 rating scales (from the independent audit), JSON export.
+   ============================================================ */
+const QUESTIONS=[
+ ["created","It felt created just for me"],
+ ["alive","It felt alive"],
+ ["painted","It felt like it was being continuously painted"],
+ ["delight","It was visually delightful"],
+ ["responsive","It felt responsive"],
+ ["clarity","It was clear and easy to follow"],
+ ["continue","I'd want to keep interacting with it"]];
+const MODES=["instant","stream","painted"];
+const order=MODES.slice().sort(()=>Math.random()-0.5); // blind randomized order
+const results={startedAt:new Date().toISOString(),order,ratings:{},timings:{}};
+
+// ---------- identical scene script for all modes ----------
+const SCRIPT=[
+ {at:300, op:"palette",set:{bg0:"#1a2438",accent:"#7fd4c1"}},
+ {at:400, op:"add",node:{id:"bg",kind:"gradient",z:0}},
+ {at:900, op:"add",node:{id:"sun",kind:"disc",x:0.78,y:0.22,r:0.08,z:1}},
+ {at:1400,op:"add",node:{id:"title",kind:"text",x:0.5,y:0.16,size:0.062,text:"Weekend on the Coast",z:3}},
+ {at:2100,op:"add",node:{id:"c1",kind:"card",x:0.22,y:0.58,w:0.22,h:0.32,img:5, label:"Tidepools",z:2}},
+ {at:2600,op:"add",node:{id:"c2",kind:"card",x:0.5, y:0.58,w:0.22,h:0.32,img:12,label:"Lighthouse",z:2}},
+ {at:3100,op:"add",node:{id:"c3",kind:"card",x:0.78,y:0.58,w:0.22,h:0.32,img:21,label:"Dunes",z:2}},
+ {at:3800,op:"add",node:{id:"cta",kind:"pill",x:0.5,y:0.87,w:0.2,h:0.058,text:"Plan this trip",z:4}},
+];
+const FOCUS=[ // response to the click, same in all modes (presentation differs)
+ {op:"remove",id:"c1"},{op:"remove",id:"c3"},
+ {op:"update",id:"c2",set:{x:0.5,y:0.52,w:0.6,h:0.52,label:"Lighthouse — evening tour"}},
+ {op:"update",id:"title",set:{y:0.12}},
+];
+// mode presentation profiles — the ONLY thing that varies
+const PROFILE={
+ instant:{schedule:false,enter:0,ambient:false,morph:0,exit:0},
+ stream: {schedule:true, enter:0,ambient:false,morph:0,exit:0},
+ painted:{schedule:true, enter:1,ambient:true, morph:1100,exit:650},
+};
+
+// ---------- compositor ----------
+const cv=document.getElementById("stage"),ctx=cv.getContext("2d"),hud=document.getElementById("hud");
+let W,H,DPR=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);}
+addEventListener("resize",resize);resize();
+let nodes=new Map(),palette={},mode=null,phase="idle",clickable=false,trialT0=0,timers=[];
+const assets={};
+function asset(seed){if(assets[seed])return assets[seed];
+ const s=document.createElement("canvas");s.width=s.height=512;const g=s.getContext("2d");
+ let r=(seed*2654435761)%2147483647||1;const rnd=()=>((r=r*16807%2147483647)/2147483647);
+ const hue=rnd()*360,bg=g.createLinearGradient(0,0,0,512);
+ bg.addColorStop(0,`hsl(${hue},45%,${22+rnd()*18}%)`);bg.addColorStop(1,`hsl(${(hue+40)%360},50%,10%)`);
+ g.fillStyle=bg;g.fillRect(0,0,512,512);
+ for(let i=0;i<7;i++){g.fillStyle=`hsla(${(hue+rnd()*80)%360},55%,${30+rnd()*40}%,${.15+rnd()*.3})`;
+   g.beginPath();g.ellipse(rnd()*512,rnd()*512,60+rnd()*160,40+rnd()*120,rnd()*3,0,7);g.fill();}
+ return assets[seed]=s;}
+function choreograph(n){ // painted-mode enter verbs from semantics (exp-choreographer policy)
+ const P=n.p;
+ if(P.kind==="gradient")return{kind:"dissolve",dur:900};
+ if(P.x<0.25)return{kind:"flyin",from:"left",dur:750};
+ if(P.x>0.75)return{kind:"flyin",from:"right",dur:750};
+ if(P.kind==="text")return{kind:"rise",dur:850};
+ if(P.kind==="disc")return{kind:"zoom",dur:950};
+ return{kind:"dissolve",dur:800};}
+function apply(p){
+ const prof=PROFILE[mode];
+ if(p.op==="palette"){palette={...palette,...p.set};return;}
+ if(p.op==="add"){const n={p:{...p.node},tw:{},t0:performance.now()};
+   n.e=prof.enter?choreograph(n):{kind:"none",dur:0};nodes.set(p.node.id,n);return;}
+ const n=nodes.get(p.id);if(!n)return;
+ if(p.op==="update"){for(const[k,v]of Object.entries(p.set)){
+   if(typeof v==="number"&&prof.morph)n.tw[k]={from:n.p[k],to:v,t0:performance.now(),dur:prof.morph};
+   else n.p[k]=v;}return;}
+ if(p.op==="remove"){if(prof.exit){n.exit={dur:prof.exit,to:n.p.x<0.5?"left":"right"};n.xt0=performance.now();
+     n.tw.x={from:n.p.x,to:n.p.x<0.5?-0.3:1.3,t0:performance.now(),dur:prof.exit};}
+   else nodes.delete(p.id);}}
+function cur(n,k){const t=n.tw[k];if(!t)return n.p[k];
+ const u=Math.min(1,(performance.now()-t.t0)/t.dur),e=u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;
+ if(u>=1){n.p[k]=t.to;delete n.tw[k];return t.to;}return t.from+(t.to-t.from)*e;}
+function draw(){
+ const t=performance.now(),prof=mode?PROFILE[mode]:null;ctx.clearRect(0,0,W,H);
+ const g=ctx.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,nodes.has("bg")?(palette.bg0||"#1a2438"):"#0a0910");g.addColorStop(1,"#0a0910");
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ for(const[id,n]of[...nodes].sort((a,b)=>(a[1].p.z||0)-(b[1].p.z||0))){
+   let a=1;
+   if(n.exit){const u=(t-n.xt0)/n.exit.dur;if(u>=1){nodes.delete(id);continue;}a=1-u;}
+   else if(n.e&&n.e.dur){a=Math.min(1,(t-n.t0)/n.e.dur);}
+   const ease=1-Math.pow(1-a,3),P=n.p;ctx.globalAlpha=a;
+   let x=cur(n,"x")*W,y=cur(n,"y")*H;
+   if(!n.exit&&n.e){if(n.e.kind==="flyin")x+=(1-ease)*(n.e.from==="left"?-0.4:0.4)*W;
+     if(n.e.kind==="rise")y+=(1-ease)*24;}
+   const amb=prof&&prof.ambient;
+   if(P.kind==="disc"){const R=(P.r||0.08)*H*(n.e.kind==="zoom"?0.5+0.5*ease:1)*(amb?1+0.03*Math.sin(t/800):1);
+     ctx.shadowColor=palette.accent||"#7fd4c1";ctx.shadowBlur=amb?26:0;
+     ctx.fillStyle=palette.accent||"#7fd4c1";ctx.beginPath();ctx.arc(x,y,R,0,7);ctx.fill();ctx.shadowBlur=0;}
+   else if(P.kind==="text"){ctx.fillStyle="#efeae0";ctx.font=`${(cur(n,"size")||0.05)*Math.min(W,H)*1.4}px Georgia`;
+     ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(P.text,x,y);}
+   else if(P.kind==="card"){const w=cur(n,"w")*W,h=cur(n,"h")*H;
+     ctx.save();ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,10);ctx.clip();
+     const kb=amb?1.07+0.05*Math.sin(t/2800+(P.img||0)):1.0, dx=amb?Math.sin(t/4500+(P.img||0))*w*0.03:0;
+     ctx.drawImage(asset(P.img||1),x-w*kb/2+dx,y-h*kb/2,w*kb,h*kb);
+     const bh=Math.max(26,h*0.15);ctx.fillStyle="rgba(8,8,14,.55)";ctx.fillRect(x-w/2,y+h/2-bh,w,bh);
+     ctx.fillStyle="#efeae0";ctx.font=`${Math.max(13,Math.min(W,H)*0.022)}px Georgia`;
+     ctx.textAlign="left";ctx.textBaseline="middle";ctx.fillText(P.label,x-w/2+11,y+h/2-bh/2);
+     if(clickable&&id==="c2"){ctx.strokeStyle=palette.accent||"#7fd4c1";ctx.lineWidth=2.5;
+       ctx.globalAlpha=a*(amb?0.6+0.4*Math.sin(t/500):1);ctx.strokeRect(x-w/2+2,y-h/2+2,w-4,h-4);}
+     ctx.restore();n.hit={x,y,w,h};}
+   else if(P.kind==="pill"){const w=Math.max(cur(n,"w")*W,130),h=Math.max(cur(n,"h")*H,40);
+     ctx.fillStyle=palette.accent||"#7fd4c1";ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,h/2);ctx.fill();
+     ctx.fillStyle="#0c0b10";ctx.font=`${h*0.4}px Georgia`;ctx.textAlign="center";ctx.textBaseline="middle";
+     ctx.fillText(P.text,x,y);}
+   ctx.globalAlpha=1;}
+ requestAnimationFrame(draw);}
+requestAnimationFrame(draw);
+
+// ---------- trial flow ----------
+let trialIdx=0;
+function start(){document.getElementById("intro").style.display="none";runTrial();}
+function runTrial(){
+ mode=order[trialIdx];nodes.clear();palette={};phase="build";clickable=false;
+ timers.forEach(clearTimeout);timers=[];trialT0=performance.now();
+ hud.style.display="block";hud.textContent=`Version ${"ABC"[trialIdx]} — watch the scene…`;
+ const prof=PROFILE[mode];
+ for(const p of SCRIPT){
+   const when=prof.schedule?p.at:0;
+   timers.push(setTimeout(()=>apply(p),when));}
+ const total=prof.schedule?4200:600;
+ timers.push(setTimeout(()=>{clickable=true;phase="interact";
+   hud.textContent=`Version ${"ABC"[trialIdx]} — click the LIGHTHOUSE card`;},total));
+}
+addEventListener("click",e=>{
+ if(!clickable)return;
+ const n=nodes.get("c2");if(!n||!n.hit)return;
+ const h=n.hit;
+ if(Math.abs(e.clientX-h.x)<h.w/2&&Math.abs(e.clientY-h.y)<h.h/2){
+   clickable=false;results.timings["ABC"[trialIdx]]={mode,msToClick:Math.round(performance.now()-trialT0)};
+   FOCUS.forEach(apply);
+   hud.textContent=`Version ${"ABC"[trialIdx]}`;
+   timers.push(setTimeout(showRatings,PROFILE[mode].morph?1600:700));}});
+function showRatings(){
+ hud.style.display="none";
+ document.getElementById("rtitle").textContent=`Rate version ${"ABC"[trialIdx]}`;
+ document.getElementById("qs").innerHTML=QUESTIONS.map(([k,q])=>`
+  <div class="q"><b>${q}</b>
+   <div class="scale">${[1,2,3,4,5,6,7].map(v=>
+     `<label><input type="radio" name="${k}" value="${v}"><span>${v}</span></label>`).join("")}</div>
+   <div class="anchors"><span>not at all</span><span>extremely</span></div></div>`).join("");
+ document.getElementById("ratings").style.display="flex";}
+function submitRatings(){
+ const r={};for(const[k]of QUESTIONS){const el=document.querySelector(`input[name=${k}]:checked`);
+   if(!el){alert("Please answer every scale.");return;}r[k]=+el.value;}
+ results.ratings["ABC"[trialIdx]]={mode,...r};
+ document.getElementById("ratings").style.display="none";
+ trialIdx++;
+ if(trialIdx<3)runTrial();else finish();}
+function finish(){
+ nodes.clear();document.getElementById("done").style.display="flex";
+ document.getElementById("reveal").innerHTML=
+  "The versions were: "+order.map((m,i)=>`<b>${"ABC"[i]} = ${m}</b>`).join(" · ");
+ let rows=QUESTIONS.map(([k,q])=>`<tr><td>${q}</td>`+["A","B","C"].map(L=>
+   `<td>${results.ratings[L][k]}</td>`).join("")+"</tr>").join("");
+ document.getElementById("summary").innerHTML=
+  `<table><tr><th>scale</th><th>A (${order[0]})</th><th>B (${order[1]})</th><th>C (${order[2]})</th></tr>${rows}</table>`;}
+function download(){
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(new Blob([JSON.stringify(results,null,2)],{type:"application/json"}));
+ a.download=`exp08-${Date.now()}.json`;a.click();}
+window.start=start;window.submitRatings=submitRatings;window.download=download;
+</script>
+</body>
+</html>
