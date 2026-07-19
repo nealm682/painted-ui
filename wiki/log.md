@@ -135,3 +135,18 @@ levers are painterly WebGL shaders, speculative pre-paint, an infinite
 canvas with camera ops, audio choreography, and input-as-brush. Proposed
 experiment order: exp-04 assets → exp-05 SLM+grammar → exp-06 painterly
 verbs → exp-07 speculative+swarm.
+
+## [2026-07-19] publish | Painted UI paper + GitHub packaging
+
+Wrote `publication/painted-ui.md` (+ styled HTML): abstract, the
+four-ingredient decomposition, architecture (patch protocol, four loops,
+choreographer), measured evidence from exp-01/02/03 including both live
+failures as protocol-design lessons, prior-art positioning (generative UI
+assembles; painted UI paints; the term is unclaimed and hereby proposed),
+unit economics, an expanded on-device SLM endgame section (per Neal's
+emphasis: $0 tokens, grammar-guaranteed validity, offline/private,
+cloud-director + local-choreographer split), limitations, references.
+Added root README.md (repo map, working examples table, key numbers,
+roadmap exp-04→07) and MIT LICENSE. Employer-mention scan across the full
+repo: clean. Next per Neal: explainer pages for gardener/swarm/frontier
+concepts, then exp-04/05/06/07.
