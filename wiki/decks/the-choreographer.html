@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>The Choreographer — motion as policy, not model whim</title>
+<style>
+  :root{--bg:#0c0b10;--panel:#14121c;--edge:#2c2840;--ink:#efeae0;--dim:#8a86a0;
+        --accent:#e8a34c;--green:#7fd4c1;--soft:#7a5fb8;--red:#e86a6a}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 Georgia,serif}
+  .wrap{max-width:980px;margin:0 auto;padding:30px 22px 90px}
+  h1{font-size:30px;margin:0 0 6px} h2{font-size:21px;margin:34px 0 10px;color:var(--accent)}
+  .sub{color:var(--dim);margin-bottom:8px}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:13px 17px;margin:10px 0}
+  .card.key{border-left:3px solid var(--accent)}
+  table{border-collapse:collapse;font-size:14px;margin:10px 0;width:100%}
+  td,th{border:1px solid var(--edge);padding:7px 11px;text-align:left;vertical-align:top}
+  th{color:var(--accent);font-weight:normal}
+  code{background:#1b1826;border-radius:4px;padding:1px 5px;font-size:13.5px;color:var(--green)}
+  pre{background:#100e17;border:1px solid var(--edge);border-radius:8px;padding:12px;font:12.5px/1.55 monospace;
+      overflow-x:auto;color:#b9b4cc} pre em{color:var(--green);font-style:normal} pre b{color:var(--accent);font-weight:normal}
+  .roles{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}
+  .role{flex:1;min-width:190px;background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:11px 14px}
+  .role b{color:var(--accent);display:block} .role span{font-size:13.5px;color:var(--dim)}
+  canvas{background:#0a0910;border-radius:8px;width:100%;display:block}
+  .ctl{display:flex;gap:10px;align-items:center;margin:10px 0;flex-wrap:wrap}
+  button{background:var(--accent);border:0;border-radius:8px;padding:7px 15px;font:14px Georgia;cursor:pointer}
+  select{background:#16141f;color:var(--ink);border:1px solid var(--edge);border-radius:8px;padding:7px;font:13px monospace}
+  .why{font:12px monospace;color:var(--dim);min-height:34px;margin-top:6px}
+  em{color:var(--green);font-style:normal}
+  .dim{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>The Choreographer</h1>
+<div class="sub">The layer that decides <i>how</i> things move — and why it's the difference between
+a demo and something a large company can actually ship.</div>
+
+<h2>The theater metaphor (the whole architecture in one breath)</h2>
+<div class="roles">
+  <div class="role"><b>The Director</b><span>the LLM/agent. Decides <i>what</i> exists and <i>what changes</i>: "add three cards; focus the second; retitle the scene." Speaks in semantic patches.</span></div>
+  <div class="role"><b>The Choreographer</b><span>this page. Decides <i>how</i> each change moves: which verb (dissolve / flyin / morph…), how long, what easing, what stagger. Can be the model, a local policy, or both.</span></div>
+  <div class="role"><b>The Painter</b><span>the compositor (exp-01/02/03). Executes the motion 60×/s on the user's own device. Never makes decisions.</span></div>
+  <div class="role"><b>The Stage</b><span>the node map — the shared state all four loops meet at.</span></div>
+</div>
+<div class="card key">Separating these is what makes the system scale: <em>directors are expensive, choreographers
+and painters are free.</em> Every decision you move down the chain moves from tokens (money, latency,
+variance) to code (free, instant, deterministic).</div>
+
+<h2>Why a choreographer must exist (five forces)</h2>
+<table>
+<tr><th>Force</th><th>Without a choreographer</th><th>With one</th></tr>
+<tr><td><b>Taste variance</b></td><td>run 1–3 showed it: model verb choices range from lovely to lazy, per request</td><td>motion quality has a floor — the policy's floor</td></tr>
+<tr><td><b>Tokens = money + latency</b></td><td>every <code>"enter":{"kind":"flyin","from":"left","dur":700}</code> is ~15 tokens × every node × every scene</td><td>model emits semantic ops only; ~30–40% fewer output tokens per scene</td></tr>
+<tr><td><b>Consistency = brand</b></td><td>every session moves differently</td><td>the policy <i>is</i> a motion design system — versioned, reviewed, enforced</td></tr>
+<tr><td><b>Determinism = testability</b></td><td>can't unit-test a model's whim</td><td>a pure function: same patch + same policy → same motion. CI-friendly.</td></tr>
+<tr><td><b>Interruption handling</b></td><td>model can't react in 16ms when a new patch lands mid-transition</td><td>local policy retargets tweens instantly</td></tr>
+</table>
+
+<h2>Three architectures</h2>
+<table>
+<tr><th></th><th>A — model picks verbs<br><span class="dim">(exp-03 today)</span></th><th>B — local policy picks<br><span class="dim">(the choreographer proper)</span></th><th>C — hybrid<br><span class="dim">(where this is heading)</span></th></tr>
+<tr><td>model emits</td><td>ops + transition hints</td><td>semantic ops only</td><td>semantic ops + optional <code>mood</code> per scene + rare per-node overrides</td></tr>
+<tr><td>expressiveness</td><td>highest ceiling</td><td>policy ceiling</td><td>policy floor, model ceiling</td></tr>
+<tr><td>consistency</td><td>variable</td><td>perfect</td><td>governed</td></tr>
+<tr><td>tokens/scene</td><td>~700</td><td>~400</td><td>~450</td></tr>
+<tr><td>testable</td><td>no</td><td>fully</td><td>policy part fully</td></tr>
+<tr><td>enterprise fit</td><td>prototype</td><td>production</td><td>production+delight</td></tr>
+</table>
+
+<h2>The policy itself — motion from semantics</h2>
+<div class="card">A choreographer is ~40 lines of rules that read each patch's <i>meaning</i> and output
+motion parameters. This is the actual decision table used in the demo below:</div>
+<pre><b>function choreograph(op, node, scene, mood){</b>
+  <em>// WHERE does it enter from? Geometry is semantics.</em>
+  if(op==="add"){
+    if(node.x &lt; 0.22)        return {kind:"flyin", from:"left",  dur:D(700)};
+    if(node.x &gt; 0.78)        return {kind:"flyin", from:"right", dur:D(700)};
+    if(node.kind==="text")   return {kind:"rise",  dur:D(800)};   <em>// text settles like set type</em>
+    if(node.kind==="disc"&amp;&amp;node.glow) return {kind:"zoom", dur:D(900)}; <em>// focal points bloom</em>
+    return {kind:"dissolve", dur:D(800)};                          <em>// default: paint in</em>
+  }
+  if(op==="update")  return {tween:true, dur:D(1100), ease:"inout"}; <em>// same id ⇒ FLIP morph, never remove+add</em>
+  if(op==="remove"){
+    if(node.x &lt; 0.35) return {kind:"flyout", to:"left",  dur:D(600)};
+    if(node.x &gt; 0.65) return {kind:"flyout", to:"right", dur:D(600)};
+    return {kind:"dissolve", dur:D(550)};
+  }
+  if(op==="palette") return {tween:true, dur:D(1400)};              <em>// ambience never snaps</em>
+  <b>}</b>
+  <em>// mood scales everything: D(ms) = ms × (calm 1.3 | neutral 1.0 | energetic 0.55)</em>
+  <em>// stagger: each mount waits (calm 260 | energetic 110) ms after the previous — the painter's rhythm</em></pre>
+<div class="card key">Note what the rules key on: <em>position → direction, node kind → verb, id-match → morph,
+mood → tempo</em>. Nothing here needs a model. This is why it can run in 0ms on every patch — including
+patches that interrupt other patches.</div>
+
+<h2>See it: same semantic stream, four choreographies</h2>
+<div class="ctl">
+  <select id="policy">
+    <option value="calm">House policy — calm</option>
+    <option value="energetic">House policy — energetic</option>
+    <option value="model">Model-chosen verbs (exp-03 style)</option>
+    <option value="none">No choreographer (snap)</option>
+  </select>
+  <button id="replay">▶ Replay stream</button>
+</div>
+<canvas id="stage" width="940" height="380"></canvas>
+<div class="why" id="why">the exact same 9 semantic ops play in every mode — only the choreography changes</div>
+
+<h2>Is this scalable? The unit economics</h2>
+<table>
+<tr><th>per painted scene</th><th>video-diffusion path</th><th>painted-UI, model verbs (A)</th><th>painted-UI + choreographer (B/C)</th></tr>
+<tr><td>server GPU</td><td>1 dedicated stream while screen is on</td><td>none</td><td>none</td></tr>
+<tr><td>bytes to client</td><td>~15 MB/min, forever</td><td>~2.4 KB once</td><td>~1.5 KB once</td></tr>
+<tr><td>output tokens</td><td>—</td><td>~700</td><td>~400</td></tr>
+<tr><td>est. cost*</td><td>~$0.03–0.07 per user-<i>minute</i>, continuous</td><td>~$0.002–0.01 per <i>interaction</i></td><td>~40% less; $0 with on-device SLM</td></tr>
+<tr><td>cost between interactions</td><td>full rate</td><td>$0</td><td>$0</td></tr>
+<tr><td>cacheable</td><td>nothing</td><td>assets, layouts, prompts</td><td>+ whole choreography (it's code)</td></tr>
+</table>
+<div class="dim" style="font-size:13px">*order-of-magnitude estimates: GPU-hour rental vs typical output-token pricing; refine in wiki cost-model.
+The structural point survives any price shift: <b>one path is per-second-per-user, the other is per-interaction with $0 idle.</b></div>
+
+<h2>Scaling this in a large enterprise (vendor-neutral)</h2>
+<div class="card">The choreographer is not a competitor to declarative UI protocols and agent frameworks —
+it's the <em>feel layer</em> that sits on top of exactly that kind of stack:</div>
+<table>
+<tr><th>Layer</th><th>Enterprise reality</th><th>Where painted-UI fits</th></tr>
+<tr><td>Agent runtime</td><td>server-side agent frameworks (e.g., AWS Strands: model-driven loop, tools, multi-agent, observability — used in production at AWS itself)</td><td>unchanged. The agent is the Director; it just streams patches instead of prose.</td></tr>
+<tr><td>UI protocol</td><td>declarative, allow-listed formats (e.g., Google's A2UI: flat component list, ID references, built to stream, no arbitrary code execution)</td><td>near-perfect substrate. A2UI's ID-referenced incremental updates ≈ our patch ops. Add a <i>transition-hint vocabulary + client choreographer</i> and A2UI messages start to <em>feel painted</em>.</td></tr>
+<tr><td>Motion</td><td>usually: whatever CSS shipped</td><td><b>the choreographer = a motion design system as versioned code</b> — brand-reviewed once, enforced everywhere, A/B-testable, no model variance in front of customers.</td></tr>
+<tr><td>Governance / security</td><td>no arbitrary code from models; audit trails</td><td>declarative patches are loggable and replayable; the policy is reviewable code; constrained decoding can make invalid patches unemittable.</td></tr>
+<tr><td>Accessibility</td><td>non-negotiable</td><td>every node carries <code>semantic</code> — the same field that drives hit-testing can drive screen-reader mapping; <code>prefers-reduced-motion</code> is just another mood.</td></tr>
+<tr><td>Scale profile</td><td>millions of users, bursty</td><td>KB-sized payloads = ordinary web traffic; rendering cost is distributed to client devices; only real per-interaction cost is tokens — reducible via choreographer (B), caching, and on-device SLMs.</td></tr>
+</table>
+<div class="card key">The honest enterprise summary: <em>the parts that scale hard (GPU, rendering, motion)
+cost ~nothing in this architecture; the part that costs (tokens) is per-interaction, shrinkable, and
+already the cost every agent product accepts.</em> The risk isn't economics — it's craft: whether the
+policy's taste survives contact with a design-system committee.</div>
+
+<h2>Open questions (filed in the wiki)</h2>
+<div class="card">
+• Where's the expressiveness ceiling of policy-only choreography — when do we <i>miss</i> the model's verbs?<br>
+• Interruption semantics under rapid agent turns: retarget vs queue vs cancel (retarget wins so far — needs stress-testing).<br>
+• Can <code>mood</code> be inferred from content sentiment instead of declared?<br>
+• A2UI mapping in practice: exp-06 candidate — an A2UI→scene-graph adapter so the same choreographer animates standard protocol messages.
+</div>
+
+<script>
+// ---------- mini compositor + THE choreographer demo ----------
+const cv=document.getElementById("stage"),ctx=cv.getContext("2d"),whyEl=document.getElementById("why");
+const nodes=new Map();let palette={bg0:"#1a2438",accent:"#7fd4c1",ink:"#f2ecdf"};
+// the SEMANTIC stream: no transition hints except modelVerb (used only in "model" mode)
+const STREAM=[
+ {at:200, op:"palette",set:{bg0:"#1a2438",accent:"#7fd4c1"}},
+ {at:400, op:"add",node:{id:"bg",kind:"gradient",z:0}},
+ {at:800, op:"add",node:{id:"sun",kind:"disc",x:0.76,y:0.28,r:0.10,glow:1,z:1},modelVerb:{kind:"zoom",dur:900}},
+ {at:1300,op:"add",node:{id:"title",kind:"text",x:0.36,y:0.28,text:"Quarterly Story",z:2},modelVerb:{kind:"dissolve",dur:400}},
+ {at:1900,op:"add",node:{id:"c1",kind:"rect",x:0.15,y:0.66,w:0.22,h:0.3,fill:"#24304a",label:"Growth",z:1},modelVerb:{kind:"dissolve",dur:300}},
+ {at:2300,op:"add",node:{id:"c2",kind:"rect",x:0.5,y:0.66,w:0.22,h:0.3,fill:"#24304a",label:"Costs",z:1},modelVerb:{kind:"zoom",dur:1400}},
+ {at:2700,op:"add",node:{id:"c3",kind:"rect",x:0.85,y:0.66,w:0.22,h:0.3,fill:"#24304a",label:"Outlook",z:1},modelVerb:{kind:"rise",dur:900}},
+ {at:4300,op:"update",id:"c2",set:{x:0.5,y:0.55,w:0.55,h:0.5,label:"Costs — the real story"},modelVerb:{dur:500}},
+ {at:4400,op:"remove",id:"c1",modelVerb:{kind:"dissolve",dur:900}},
+ {at:4500,op:"remove",id:"c3",modelVerb:{kind:"dissolve",dur:200}},
+];
+const MOOD={calm:1.3,energetic:0.55,model:1,none:0};
+function choreograph(p,policy){
+  const n=p.node||{},D=ms=>Math.round(ms*(MOOD[policy]??1));
+  if(policy==="none")return {kind:"dissolve",dur:1};
+  if(policy==="model")return p.modelVerb||{kind:"dissolve",dur:600};
+  if(p.op==="add"){
+    if(n.kind==="gradient")return {kind:"dissolve",dur:D(900),why:"background: always a quiet dissolve"};
+    if((n.x||0.5)<0.22)return {kind:"flyin",from:"left",dur:D(700),why:`x=${n.x} < 0.22 → enters from LEFT edge`};
+    if((n.x||0.5)>0.78)return {kind:"flyin",from:"right",dur:D(700),why:`x=${n.x} > 0.78 → enters from RIGHT edge`};
+    if(n.kind==="text")return {kind:"rise",dur:D(800),why:"text → rises and settles like set type"};
+    if(n.kind==="disc"&&n.glow)return {kind:"zoom",dur:D(900),why:"glowing focal point → blooms in"};
+    return {kind:"dissolve",dur:D(800),why:"default: paint in"};
+  }
+  if(p.op==="update")return {dur:D(1100),why:"same id → FLIP morph, never remove+add"};
+  if(p.op==="remove"){
+    if((n.x||0.5)<0.35)return {kind:"flyout",to:"left",dur:D(600),why:"left-side node exits LEFT"};
+    if((n.x||0.5)>0.65)return {kind:"flyout",to:"right",dur:D(600),why:"right-side node exits RIGHT"};
+    return {kind:"dissolve",dur:D(550),why:"center node dissolves"};
+  }
+  if(p.op==="palette")return {dur:D(1400),why:"ambience never snaps"};
+  return {kind:"dissolve",dur:D(600)};
+}
+let timer=[],t0=0;
+function replay(){
+  timer.forEach(clearTimeout);timer=[];nodes.clear();
+  const policy=document.getElementById("policy").value;
+  const stagger=policy==="calm"?260:policy==="energetic"?110:0;let mounts=0;
+  for(const p of STREAM){
+    const extra=(p.op==="add")?(mounts++*stagger):0;
+    timer.push(setTimeout(()=>{
+      const ch=choreograph(p,policy);
+      if(ch.why)whyEl.textContent="choreographer: "+ch.why+` (dur ${ch.dur}ms)`;
+      else if(policy==="model")whyEl.textContent="model chose: "+JSON.stringify(p.modelVerb||{});
+      else if(policy==="none")whyEl.textContent="no choreography — instant state swap (this is what 'just render the JSON' looks like)";
+      apply(p,ch);
+    },p.at*(policy==="energetic"?0.7:1)+extra));
+  }
+}
+function apply(p,ch){
+  if(p.op==="palette"){Object.assign(palette,p.set);return;}
+  if(p.op==="add"){nodes.set(p.node.id,{p:{...p.node},e:ch,t0:performance.now(),tw:{}});return;}
+  const n=nodes.get(p.id);if(!n)return;
+  if(p.op==="update"){for(const[k,v]of Object.entries(p.set)){
+      if(typeof v==="number"){n.tw[k]={from:n.p[k],to:v,t0:performance.now(),dur:ch.dur||1000};}
+      else n.p[k]=v;}return;}
+  if(p.op==="remove"){n.exit=ch;n.xt0=performance.now();
+    if(ch.kind==="flyout")n.tw.x={from:n.p.x,to:ch.to==="left"?-0.3:1.3,t0:performance.now(),dur:ch.dur||600};}
+}
+function cur(n,k){const t=n.tw[k];if(!t)return n.p[k];
+  const u=Math.min(1,(performance.now()-t.t0)/t.dur),e=u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;
+  if(u>=1){n.p[k]=t.to;delete n.tw[k];return t.to;}return t.from+(t.to-t.from)*e;}
+function draw(){
+  const W=cv.width,H=cv.height,t=performance.now();
+  ctx.clearRect(0,0,W,H);
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,nodes.has("bg")?palette.bg0:"#0a0910");g.addColorStop(1,"#0a0910");
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  for(const[id,n]of nodes){
+    let a;const dur=n.e.dur||600;
+    if(n.exit){const u=(t-n.xt0)/(n.exit.dur||600);if(u>=1){nodes.delete(id);continue;}a=1-u;}
+    else a=Math.min(1,(t-n.t0)/Math.max(dur,1));
+    const ease=1-Math.pow(1-a,3);const P=n.p;ctx.globalAlpha=a;
+    let x=(cur(n,"x")??0.5)*W,y=(cur(n,"y")??0.5)*H;
+    if(!n.exit){
+      if(n.e.kind==="flyin")x+=(1-ease)*(n.e.from==="left"?-0.4:0.4)*W;
+      if(n.e.kind==="rise")y+=(1-ease)*22;
+    }
+    if(P.kind==="disc"){const r=(P.r||0.1)*H*(n.e.kind==="zoom"?0.5+0.5*ease:1)*(1+0.03*Math.sin(t/900));
+      ctx.shadowColor=palette.accent;ctx.shadowBlur=22;ctx.fillStyle=palette.accent;
+      ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.shadowBlur=0;}
+    else if(P.kind==="text"){ctx.fillStyle=palette.ink;ctx.font=Math.round(H*0.085)+"px Georgia";
+      ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(P.text||"",x,y);}
+    else if(P.kind==="rect"){const w=(cur(n,"w")||0.2)*W,h=(cur(n,"h")||0.2)*H;
+      ctx.fillStyle=P.fill||"#24304a";ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,10);ctx.fill();
+      ctx.fillStyle=palette.ink;ctx.font=Math.round(H*0.05)+"px Georgia";ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText(P.label||"",x,y+h/2-H*0.055);}
+    ctx.globalAlpha=1;}
+  requestAnimationFrame(draw);}
+document.getElementById("replay").onclick=replay;
+document.getElementById("policy").onchange=replay;
+requestAnimationFrame(draw);replay();
+</script>
+</div>
+</body>
+</html>

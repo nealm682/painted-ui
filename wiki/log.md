@@ -97,3 +97,24 @@ GBNF/Outlines docs, Game Loop chapter + Fix Your Timestep. Pages they
 unlock: concepts/a2ui-and-standards, concepts/on-device-models,
 comparisons/generative-ui-landscape. Suggested exp-05: WebLLM+GBNF local
 painter ("$0/user, works on a plane").
+
+## [2026-07-18] query→page | the choreographer + enterprise scalability
+
+Neal asked: is this scalable (specifically for a large enterprise using
+declarative UI protocols + server agent frameworks), and for a detailed
+choreographer explainer. Built `wiki/decks/the-choreographer.html`: theater
+metaphor (director/choreographer/painter/stage), five forces requiring the
+layer, three architectures (model-verbs ~700 tok/scene vs local-policy ~400
+vs hybrid), the actual 40-line policy with a live same-stream/four-
+choreographies demo, unit-economics table, and a vendor-neutral enterprise
+mapping (agent runtime unchanged; declarative protocols like A2UI as
+substrate; choreographer = motion design system as versioned code;
+declarative patches = auditable; a11y via the semantic field). New concept
+page: [[concepts/choreographer]]. Also checked terminology: "painted UI" is
+NOT established in the generative-UI literature (space uses "generative UI"
+/ GenUI; "paint" lives in browser-rendering vocab like First Contentful
+Paint) — the coinage is effectively unclaimed. Employer-specific details
+deliberately kept out of the wiki per guardrails; analysis stays
+vendor-neutral. Found candidate source: "Generative UI: LLMs are Effective
+UI Generators" (Leviathan & Valevski, arXiv 2604.09577) — added to hunting
+list. Index gained Decks section; host/worktree index drift repaired.

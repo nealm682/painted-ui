@@ -31,12 +31,22 @@ Content catalog. Read this first on every query. Updated on every ingest.
   scene graphs as the visible painting act.
 - [[concepts/cost-model]] — maintained $/user comparison; measured numbers
   from exp-01 (12,000× bandwidth) and exp-02 (~1.1 Kbit/s patch stream).
+- [[concepts/choreographer]] — the layer that turns semantic patches into
+  motion; model-verbs vs local-policy vs hybrid; the enterprise/scale story.
+  Deep-dive + live demo: `wiki/decks/the-choreographer.html`.
 
 ## Techniques
 
 - [[techniques/transition-choreography]] — replicate video-UI dissolves,
   zooms, flyouts, and morphs from a streamed patch protocol; 8 verbs, no
   pixels generated. Distilled from exp-02.
+
+## Decks & explainers (HTML, in `wiki/decks/`)
+
+- `why-four-loops.html` — why the architecture needs four decoupled loops;
+  lineage; prior-art map; SLM/on-device direction.
+- `the-choreographer.html` — the how-of-motion layer in detail, with a live
+  same-stream/four-choreographies demo and unit economics.
 
 ## Entities
 
@@ -56,13 +66,14 @@ Content catalog. Read this first on every query. Updated on every ingest.
   reproduced from an 8-verb patch stream at ~1.1 Kbit/s.
 - [[sources/experiment-03-live-llm-painter]] — source #4: own build. Live
   harness: a real Claude model paints scenes by request via streamed JSONL
-  patches; clicks loop back as conversation. Benchmarks pending.
+  patches; clicks loop back as conversation. First live paint confirmed.
 
 ## Comparisons
 
-*(none yet — filed from queries as they happen)*
+*(none yet — `comparisons/generative-ui-landscape` queued once prior-art
+sources are ingested)*
 
 ## Planned pages (mentioned, not yet created)
 
-- `concepts/a2ui-and-standards` — awaiting a source on agent-to-UI /
-  declarative UI protocols.
+- `concepts/a2ui-and-standards` — hunting list has the A2UI docs; ingest next.
+- `concepts/on-device-models` — awaiting WebLLM / constrained-decoding ingest.
