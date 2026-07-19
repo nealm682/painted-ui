@@ -34,6 +34,11 @@ Content catalog. Read this first on every query. Updated on every ingest.
 - [[concepts/choreographer]] — the layer that turns semantic patches into
   motion; model-verbs vs local-policy vs hybrid; the enterprise/scale story.
   Deep-dive + live demo: `wiki/decks/the-choreographer.html`.
+- [[concepts/swarm-painting]] — multiple agents, one canvas: why swarming is
+  the cheap path's unfair advantage; six swarm patterns; protocol implications.
+- [[concepts/experience-frontier]] — beyond 60fps: why frame rate is the
+  wrong lever; painterly shaders, speculative pre-paint, infinite canvas,
+  audio choreography, user-inside-the-painting.
 
 ## Techniques
 

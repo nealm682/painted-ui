@@ -118,3 +118,20 @@ deliberately kept out of the wiki per guardrails; analysis stays
 vendor-neutral. Found candidate source: "Generative UI: LLMs are Effective
 UI Generators" (Leviathan & Valevski, arXiv 2604.09577) — added to hunting
 list. Index gained Decks section; host/worktree index drift repaired.
+
+## [2026-07-19] query→pages | swarm painting + the experience frontier
+
+Neal asked what agent swarms unlock and whether 80fps/unforeseen
+modifications could change the experience. Key finding filed as
+[[concepts/swarm-painting]]: **swarming is the cheap path's unfair
+advantage** — N agents = N interleaved KB streams into one node map, vs N
+impossible GPU streams on the video path. Six patterns: sectional
+orchestra, studio pipeline (director/stylist/choreographer/critic),
+speculative pre-painting (perceived-zero latency), competitive drafts, the
+gardener (ambient tending), shared canvases. Second page,
+[[concepts/experience-frontier]]: frame rate is a red herring (rAF already
+gives 120fps on high-refresh displays; Flipbook is capped at 24) — the real
+levers are painterly WebGL shaders, speculative pre-paint, an infinite
+canvas with camera ops, audio choreography, and input-as-brush. Proposed
+experiment order: exp-04 assets → exp-05 SLM+grammar → exp-06 painterly
+verbs → exp-07 speculative+swarm.
