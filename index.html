@@ -4,6 +4,19 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Painted UI — A Semantic Choreography Runtime for Generative Interfaces</title>
+<meta name="description" content="What if an interface didn't load — what if it was painted? The painted-live feel of video-generated UIs, reproduced with kilobytes of streamed scene patches instead of a GPU per viewer. The model directs; your device paints.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Painted UI — A Semantic Choreography Runtime for Generative Interfaces">
+<meta property="og:description" content="What if an interface didn't load — what if it was painted? Kilobytes of streamed scene patches instead of a GPU per viewer. The model directs; your device paints. Live demos, measurements, and a paper.">
+<meta property="og:url" content="https://nealm682.github.io/painted-ui/">
+<meta property="og:image" content="https://nealm682.github.io/painted-ui/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nealm682.github.io/painted-ui/og-image.png">
+<meta name="twitter:title" content="Painted UI — A Semantic Choreography Runtime for Generative Interfaces">
+<meta name="twitter:description" content="An LLM streams a few KB of semantic brush strokes; your device paints them at 60fps. Zero server GPUs. Watch the interface sketch itself.">
+
 <style>
   :root{
     --bg:#080910;
@@ -122,6 +135,7 @@
         <a class="btn secondary" href="#enterprise">Why it matters</a>
       </div>
       <div class="hero-note">Not video generation. Not arbitrary model-written frontend code. A compact semantic protocol with deterministic client-side execution.</div>
+      <div style="margin-top:14px;font-size:13px;color:var(--muted)">by Neal Meinke</div>
     </div>
     <div class="stage-card">
       <div class="stage-head"><span>live semantic scene</span><div class="dots"><span></span><span></span><span></span></div></div>
@@ -241,7 +255,7 @@ choreograph(patch) → {
   </section>
 </main>
 
-<footer><div class="wrap">Painted UI · semantic choreography runtime for generative interfaces · executive concept demo</div></footer>
+<footer><div class="wrap">Painted UI · semantic choreography runtime for generative interfaces · Neal Meinke</div></footer>
 
 <script>
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
