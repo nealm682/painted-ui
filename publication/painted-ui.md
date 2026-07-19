@@ -1,6 +1,6 @@
 # Painted UI: The Illusion of a Model-Painted Interface at Near-Zero Marginal Cost
 
-**Neal M.** · July 2026 · [github.com/YOUR-HANDLE/painted-ui](#)
+**Neal M.** · July 2026 · [github.com/nealm682/painted-ui](https://github.com/nealm682/painted-ui)
 
 ---
 
