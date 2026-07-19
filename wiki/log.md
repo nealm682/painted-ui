@@ -271,3 +271,40 @@ sample (same verbs in miniature — the page demonstrates what it argues),
 the what-vs-how distinction, measured numbers, audit quote, and the
 cinematic-agent-runtime framing. First-person voice throughout. README
 reordered: exp-10 is now "start here."
+
+## [2026-07-19] ingest | audit follow-up: visual 6.5 → 8.0; identity upgrade
+
+Reviewer re-audited after exp-10 (raw:
+`audit-painted-ui-2026-07-exp10-followup.md`; source page updated).
+Threshold crossed in their words: "an LLM only needs to name artistic
+verbs — the compositor owns the implementation." strokeIn called the
+perceptual trick that makes it "handcrafted instead of assembled";
+sketch→paint→type→light→living "feels authored." Scores: concept 9.5,
+architecture 9.5, visual 8.0 (was 6.5), research value 9.5, commercial
+8.5–9. Identity adopted across [[thesis]] and pitch kicker: **a semantic
+motion language for AI-authored interfaces**. Their two remaining
+weaknesses designed into [[techniques/scene-grammar-v2]] as new sections:
+Layer D intent macros (compose/focus/weather/emphasize → verb expansion)
+and Themes (same protocol, swappable verb implementations — ink/
+watercolor/blueprint/storybook; the rendering-engine proof). Also fixed
+exp-10 typeSet overlap (verbs must own their full canvas state — third
+instance of the implicit-defaults bug class). Next builds on the table:
+exp-11 themes · exp-10b live model naming verbs · GitHub Pages for the
+pitch URL.
+
+## [2026-07-19] explainer | the-cast.html — roles education page
+
+Neal asked for education on compositor vs choreographer vs painter. Built
+`wiki/decks/the-cast.html`: leads with the disambiguation (compositor =
+the software; painter = the role it plays), five-role cast grid
+(director/script/choreographer/painter/stage) with the economic logic
+(decisions moved down the chain move from tokens to code), and six
+accordions: an annotated node object (the noun), a real patch stream (the
+script, with the each-line-useful-immediately property), the
+choreographer as a pure function with a worked decision table, the
+painter's frame loop + closed-form tween + what strokeIn expands 8 tokens
+into, the stage's write/read rule with a before/after morph example, and
+a live one-patch-at-a-time pipeline demo with narrated trace (script →
+choreographer → stage → painter) including an idle-proof breathing glow
+(the painter never stops). Ends with the keeper paragraph and companion
+links.

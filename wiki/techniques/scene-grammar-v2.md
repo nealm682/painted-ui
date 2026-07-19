@@ -92,6 +92,29 @@ rare change that improves cost and quality in the same move. Also
 compounds+containers shrink the constrained-decoding grammar for on-device
 SLMs (fewer, higher-level productions).
 
+## Layer D — intent macros (added after the exp-10 audit follow-up)
+
+The reviewer's point: verbs still name IDs (`strokeIn tower`). One layer
+up, the model emits *intent* — `compose lighthouse_scene · focus
+lighthouse · weather dusk · emphasize beacon` — and an expander (client-
+side, like the [[concepts/choreographer]] but for composition) unrolls
+each into verb sequences. Token cost falls again; the model's job
+approaches pure direction. Open question: is the expander a policy, a
+local SLM, or a compound-catalog entry with slots?
+
+## Themes — the same protocol, many hands (added after the follow-up)
+
+The verb library's implementations are swappable as **themes**: Japanese
+ink, watercolor, blueprint, architect sketch, oil, storybook, pixel art —
+identical patch stream, different strokeIn/materialize/typeSet renderers.
+This is the cleanest possible proof that painted UI is a *rendering
+engine* rather than a demo, and the commercial shape of the org catalog
+(a brand ships its theme). exp-11: one scene, a theme switcher, three
+themes in Canvas2D (ink = pure strokes; blueprint = grid + white lines +
+measurement marks; storybook = soft blobs + warm palette). The runtime
+stack the reviewer sketched — Painted Runtime → Scene Grammar → Verb
+Library → Renderer(Canvas|WebGL|native) — is the target architecture.
+
 ## Fidelity tradeoffs
 
 The catalog trades open-endedness for reliability — emergent layouts the

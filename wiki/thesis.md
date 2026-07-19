@@ -2,6 +2,12 @@
 
 **You don't need to generate pixels to sell the painted-UI illusion.**
 
+*Identity, as sharpened by the exp-10 audit follow-up
+([[sources/audit-2026-07]]): painted UI is **a semantic motion language
+for AI-authored interfaces** — the model doesn't generate graphics, it
+directs choreography; the compositor owns a growing, compact vocabulary
+of artistic verbs.*
+
 ## The argument
 
 1. Flipbook proved the *demand*: a UI that feels painted live by a model is

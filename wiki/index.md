@@ -59,6 +59,10 @@ Content catalog. Read this first on every query. Updated on every ingest.
   lineage; prior-art map; SLM/on-device direction.
 - `the-choreographer.html` — the how-of-motion layer in detail, with a live
   same-stream/four-choreographies demo and unit economics.
+- `the-cast.html` — the roles explained for newcomers: director / script /
+  choreographer / painter(compositor) / stage, with accordion examples of
+  real node objects, patch streams, policy decisions, the frame loop, and
+  a live one-patch-through-the-pipeline demo.
 
 ## Entities
 
