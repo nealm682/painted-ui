@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Why Four Loops — the architecture of painted UI</title>
+<style>
+  :root{--bg:#0c0b10;--panel:#14121c;--edge:#2c2840;--ink:#efeae0;--dim:#8a86a0;
+        --accent:#e8a34c;--green:#7fd4c1;--soft:#7a5fb8;--red:#e86a6a}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:18px/1.6 Georgia,serif;overflow:hidden}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;
+         padding:6vh 10vw;box-sizing:border-box}
+  .slide.on{display:flex}
+  h1{font-size:44px;margin:0 0 10px} h2{font-size:30px;margin:0 0 18px;color:var(--accent)}
+  .k{color:var(--accent)} .g{color:var(--green)} .d{color:var(--dim)}
+  .sub{color:var(--dim);font-size:20px}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:14px 18px;margin:8px 0}
+  .row{display:flex;gap:14px;flex-wrap:wrap} .row .card{flex:1;min-width:180px}
+  .big{font-size:24px}
+  code{background:#1b1826;border-radius:4px;padding:1px 6px;font-size:15px;color:var(--green)}
+  table{border-collapse:collapse;font-size:16px;margin-top:8px}
+  td,th{border:1px solid var(--edge);padding:7px 12px;text-align:left}
+  th{color:var(--accent);font-weight:normal}
+  .nav{position:fixed;bottom:16px;left:0;right:0;text-align:center;color:var(--dim);font:13px monospace}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--edge);margin:0 3px;cursor:pointer}
+  .dot.on{background:var(--accent)}
+  .clock{display:inline-block;border:1px solid var(--edge);border-radius:8px;padding:8px 14px;margin:4px 8px 4px 0;
+         font:15px monospace;color:var(--dim)} .clock b{color:var(--green);display:block;font-size:20px}
+  ul{margin:6px 0}li{margin:7px 0}
+  .cite{font-size:13px;color:var(--dim);font-family:monospace}
+  em{color:var(--green);font-style:normal}
+</style>
+</head>
+<body>
+
+<section class="slide on">
+  <h1>Why <span class="k">Four Loops</span>?</h1>
+  <div class="sub">The architecture behind the live painter (exp-03) — and why no single loop can fake a screen being painted by a model.</div>
+  <div class="card" style="margin-top:26px">The one-sentence version: <span class="big"><em>streaming mutates state, rendering samples state,</em></span> and four processes at four different speeds only ever meet in one place — the node map.</div>
+  <div class="d" style="margin-top:14px">→ / ← to navigate</div>
+</section>
+
+<section class="slide">
+  <h2>The problem: four things happen at four speeds</h2>
+  <div>
+    <span class="clock"><b>~5–30 s</b>a conversation turn (you ask, you click)</span>
+    <span class="clock"><b>~20–60 ×/s</b>network chunks arrive (SSE deltas)</span>
+    <span class="clock"><b>per chunk</b>JSON objects complete (unpredictably)</span>
+    <span class="clock"><b>60 ×/s</b>the screen must repaint, no matter what</span>
+  </div>
+  <div class="card">These clocks don't divide into each other. Chain them into one loop and the <b>slowest clock wins</b> — the screen freezes at network speed. That's a loading page, not a painting.</div>
+</section>
+
+<section class="slide">
+  <h2>What goes wrong with fewer loops</h2>
+  <table>
+    <tr><th>Architecture</th><th>What the user sees</th></tr>
+    <tr><td><b>1 loop</b> — wait for full reply, then draw</td><td>spinner… then a finished page. Zero illusion.</td></tr>
+    <tr><td><b>2 loops</b> — draw when data arrives</td><td>content pops in frozen steps; motion dies between chunks; a stalled network stalls the art.</td></tr>
+    <tr><td><b>3 loops</b> — stream + render, naive line parser</td><td>our run 1 &amp; 2 failures: chunks split mid-object, ops silently lost.</td></tr>
+    <tr><td><b>4 loops</b> — decoupled via shared state</td><td>every fragment mounts the instant it completes, animations run through network stalls, ambient motion never stops.</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>The four loops, one job each</h2>
+  <div class="row">
+    <div class="card"><b class="k">1 · Conversation</b><br><span class="d">the director's contract</span><br>One model call per interaction. Clicks are messages, so the model mutates its own scene instead of repainting.</div>
+    <div class="card"><b class="k">2 · Network read</b><br><span class="d">the courier</span><br><code>await reader.read()</code> — delivers arbitrary fragments. Makes no promises about boundaries.</div>
+    <div class="card"><b class="k">3 · Parser scan</b><br><span class="d">the assembler</span><br>Brace-depth scan over a buffer. Emits exactly one <code>applyPatch()</code> per completed object. Absorbs all boundary chaos.</div>
+    <div class="card"><b class="k">4 · Render</b><br><span class="d">the painter</span><br><code>requestAnimationFrame</code>, 60×/s. Reads the node map, asks tweens for current values. <b>Never waits for anything.</b></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The meeting point: one shared state</h2>
+  <div class="card big" style="text-align:center">loops 1–3 <em>write</em> the node map &nbsp;·&nbsp; loop 4 <em>reads</em> it<br>
+  <span class="d" style="font-size:16px">no queues, no timeline, no coordination — a node mounted mid-stream simply starts existing, and its enter animation is a function of time-since-arrival</span></div>
+  <div class="card">This decoupling <b>is</b> the illusion: structure lands at token speed while motion runs at frame speed. The overlap between "still arriving" and "already animating" is what reads as <em>being painted live</em>.</div>
+</section>
+
+<section class="slide">
+  <h2>Where this pattern comes from (honest lineage)</h2>
+  <ul>
+    <li><b>Game engines</b> — the canonical decoupled loop: logic at fixed timestep, rendering as fast as the hardware allows. Nystrom's <i>Game Programming Patterns</i> "Game Loop" chapter; Fiedler's "Fix Your Timestep." Unity/Unreal/Godot all work this way.</li>
+    <li><b>Streaming protocols</b> — SSE/chat streaming taught everyone that partial output should be shown immediately; producer/consumer buffering is decades old.</li>
+    <li><b>Incremental parsers</b> — tokenizers that maintain state across arbitrary chunk boundaries are standard compiler/network practice.</li>
+    <li><b>Immediate-mode rendering</b> — redraw everything every frame from current state (Canvas, Dear ImGui), instead of mutating a widget tree.</li>
+  </ul>
+  <div class="card">None of the four loops is novel. <b>The composition is the design</b>: using token pacing itself as the animation choreographer for LLM-authored scenes.</div>
+</section>
+
+<section class="slide">
+  <h2>Does it already exist? The prior-art map</h2>
+  <table>
+    <tr><th>System</th><th>What it does</th><th>What it doesn't do</th></tr>
+    <tr><td><b>Flipbook</b></td><td>full illusion via generated video</td><td>unit economics (GPU per user)</td></tr>
+    <tr><td><b>Vercel AI SDK</b> (streamUI)</td><td>streams React components from LLM tools</td><td>looks like a website; no scene graph, no choreography</td></tr>
+    <tr><td><b>Google A2UI</b></td><td>open declarative protocol; agent emits JSON UI from a component catalog; built to stream</td><td>native widgets by design — not painterly, no transition language</td></tr>
+    <tr><td><b>Thesys C1</b></td><td>commercial API: LLM out → streaming charts/forms/cards</td><td>component-library aesthetics; the illusion isn't the goal</td></tr>
+  </table>
+  <div class="card"><b>The open gap we're working in:</b> generative UI exists and streams; nobody in this list is using a <em>resolution-independent scene graph + transition choreography</em> to reproduce the <em>video-model feel</em>. That synthesis — and the four-ingredient decomposition it tests — is the wiki's original contribution.</div>
+</section>
+
+<section class="slide">
+  <h2>"But I don't have a GPU"</h2>
+  <div class="card big">You already ran it. That's the point.</div>
+  <ul>
+    <li>Canvas2D is rasterized by the browser using <b>whatever the machine has</b> — integrated graphics or plain CPU compositing handles our whole motion vocabulary at 60fps. "The user's GPU" was shorthand for <em>the user's own silicon, whatever it is</em>.</li>
+    <li>The economic claim never depended on the client having a good GPU — it depends on the <b>server not needing one at all</b>. Flipbook rents an H100-class stream per viewer; we ship 1–2 KB of structure and let a 10-year-old laptop do the rest.</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Small models on-device: yes — three roles</h2>
+  <ul>
+    <li><b>The choreographer.</b> A small local model picks transition verbs and layout while a big cloud model authors content. Tiny structured task, perfect for a 1–4B model.</li>
+    <li><b>The whole painter, offline.</b> WebLLM runs Llama/Phi/Gemma/Qwen-class models <em>in the browser</em> via WebGPU at up to ~80% native speed, OpenAI-compatible API, streaming + JSON mode included. Zero marginal cost, zero network latency, private.</li>
+    <li><b>The reliability fix — this one matters most.</b> Local inference allows <b>grammar-constrained decoding</b> (llama.cpp GBNF, Outlines): invalid tokens are masked at generation time, so patches are <em>guaranteed</em> valid against our protocol grammar. Runs 1–2 (narration, <code>.5</code> decimals) become <b>structurally impossible</b> — the model literally cannot emit them.</li>
+  </ul>
+  <div class="cite">SLM caveat: composition taste may drop before syntax does — that's an empirical question for exp-05.</div>
+</section>
+
+<section class="slide">
+  <h2>How to explain it to someone in 30 seconds</h2>
+  <div class="card big">"Products like Flipbook make UI feel <em>alive</em> by generating every pixel with a video model — magical, but you're renting a GPU per viewer.<br><br>
+  We get the same feeling by having the model paint with <em>instructions instead of pixels</em> — a few kilobytes of scene, streamed live, animated on your own device. The model is the director; your machine is the painter; the token stream is the brush moving across the canvas."</div>
+</section>
+
+<section class="slide">
+  <h2>What goes in the wiki next</h2>
+  <ul>
+    <li><b>Sources to ingest:</b> Google A2UI protocol docs · Vercel AI SDK 3.0 generative-UI post · Thesys C1 docs · WebLLM paper (arXiv 2412.15803) · llama.cpp GBNF grammar docs / Outlines · Nystrom's Game Loop chapter + Fiedler's Fix Your Timestep.</li>
+    <li><b>Pages they unlock:</b> <code>concepts/a2ui-and-standards</code> (already planned) · <code>concepts/on-device-models</code> · <code>comparisons/generative-ui-landscape</code> · lineage section in <code>techniques/transition-choreography</code>.</li>
+    <li><b>Experiments they suggest:</b> exp-04 cached image assets · exp-05 WebLLM + GBNF local painter — the "$0/user, works on a plane" demo.</li>
+  </ul>
+</section>
+
+<script>
+const slides=[...document.querySelectorAll(".slide")];let i=0;
+const nav=document.createElement("div");nav.className="nav";document.body.appendChild(nav);
+function show(n){i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle("on",k===i));
+  nav.innerHTML=slides.map((_,k)=>`<span class="dot${k===i?" on":""}" onclick="show(${k})"></span>`).join("")+
+  `<div style="margin-top:4px">${i+1} / ${slides.length} · ←/→ or click</div>`;}
+addEventListener("keydown",e=>{if(e.key==="ArrowRight"||e.key===" ")show(i+1);if(e.key==="ArrowLeft")show(i-1);});
+addEventListener("click",e=>{if(!e.target.classList.contains("dot"))show(i+(e.clientX>innerWidth/2?1:-1));});
+window.show=show;show(0);
+</script>
+</body>
+</html>

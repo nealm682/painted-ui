@@ -79,3 +79,21 @@ existence proof; [[thesis]] evidence updates from "benchmarks pending" to
 `how-it-works.html` in the exp-03 folder: interactive step-through of the
 four decoupled loops (conversation / network read / brace-depth parse /
 60fps render), with run-1/run-2 failure quirks reproduced in its demo stream.
+
+## [2026-07-18] query→deck | why four loops + prior-art research
+
+Neal asked: is this looping through a streaming event, where does the
+pattern come from, does it already exist, can SLMs on modest hardware play
+a role? Researched prior art (Vercel streamUI, Google A2UI, Thesys C1,
+WebLLM, llama.cpp GBNF / Outlines constrained decoding, game-loop lineage
+via Nystrom/Fiedler) and built `wiki/decks/why-four-loops.html` — an 11-slide
+HTML deck: the four mismatched clocks, what breaks with fewer loops, honest
+lineage, prior-art gap map, the no-GPU truth (Canvas2D runs on anything —
+the claim is the SERVER needs no GPU), and the SLM thesis: on-device models
++ grammar-constrained decoding make protocol violations structurally
+impossible (runs 1–2 could not have happened). Proposed ingest queue:
+A2UI docs, AI SDK 3.0 post, C1 docs, WebLLM paper (arXiv 2412.15803),
+GBNF/Outlines docs, Game Loop chapter + Fix Your Timestep. Pages they
+unlock: concepts/a2ui-and-standards, concepts/on-device-models,
+comparisons/generative-ui-landscape. Suggested exp-05: WebLLM+GBNF local
+painter ("$0/user, works on a plane").
