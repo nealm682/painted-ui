@@ -143,10 +143,38 @@ four-ingredient decomposition, architecture (patch protocol, four loops,
 choreographer), measured evidence from exp-01/02/03 including both live
 failures as protocol-design lessons, prior-art positioning (generative UI
 assembles; painted UI paints; the term is unclaimed and hereby proposed),
-unit economics, an expanded on-device SLM endgame section (per Neal's
-emphasis: $0 tokens, grammar-guaranteed validity, offline/private,
-cloud-director + local-choreographer split), limitations, references.
-Added root README.md (repo map, working examples table, key numbers,
-roadmap exp-04→07) and MIT LICENSE. Employer-mention scan across the full
-repo: clean. Next per Neal: explainer pages for gardener/swarm/frontier
-concepts, then exp-04/05/06/07.
+unit economics, an on-device SLM endgame section, limitations, references.
+Added root README.md and MIT LICENSE; employer-mention scan clean. Repo
+created and pushed to github.com/nealm682/painted-ui.
+
+## [2026-07-19] asset | Flipbook demo recording → GIF for README + entity page
+
+Neal recorded the public Flipbook demo (29 s, 1916×1022 →
+`raw/demos/FlipBook-Demo.mp4`). Converted the most illustrative segment —
+the ~13 s camera-dive from illustrated map into cathedral interior, the
+single clearest demonstration of what the cheap path must reproduce — to a
+palette-optimized 560px GIF (`raw/assets/flipbook-dive.gif`, 9.7 MB;
+full-length GIF rejected at 28 MB — video-diffusion output is GIF's worst
+case, every pixel changes every frame). Embedded in README ("What the
+reference point looks like", with credit to the Flipbook team and
+provenance note) and in [[entities/flipbook]]. Also this session:
+publication voice moved to first-person singular per public-repo rule; git
+workflow switched to native (agent edits, Neal commits/pushes); bundle
+retired and gitignored.
+
+## [2026-07-19] ingest | game-loop lineage (Nystrom + Fiedler) → source #5
+
+Neal asked whether the wiki referenced gameprogrammingpatterns.com/game-loop
+— it was cited (paper refs 8–9, four-loops deck) but never ingested, and
+the question exposed a structural gap: the four-loop architecture had no
+markdown concept page. Fixed both. Fetched and clipped both documents to
+`raw/articles/` (structured notes + short attributed quotes — public repo,
+so no wholesale copying), wrote [[sources/game-loop-lineage]], and created
+[[concepts/four-loops]] as the architecture's linkable home. Key
+distinctions filed: Fiedler's "renderer produces time, simulation consumes
+it" maps to "token stream produces structure, render loop samples state";
+painted UI adds two producer loops and shows the rate mismatch as
+choreography instead of hiding it as loading; and our tweens are
+closed-form (not integrators), which is why the compositor tolerates any
+frame rate without the instability that forces game engines to fixed
+steps. Cross-linked from index, choreographer, swarm-painting.

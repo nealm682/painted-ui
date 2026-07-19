@@ -9,8 +9,9 @@ for painted UI?
 path ([[concepts/video-diffusion-approach]]), N agents painting one screen
 means N GPU streams — economically impossible. On the patch path, N agents
 are just N interleaved KB-scale streams merged into one node map
-([[concepts/scene-graph-approach]]). The four-loop architecture doesn't
-change at all: more writers, same stage, same painter. Swarms are where the
+([[concepts/scene-graph-approach]]). The four-loop architecture
+([[concepts/four-loops]]) doesn't change at all: more writers, same stage,
+same painter. Swarms are where the
 two approaches diverge from "cheaper" to "categorically possible vs not."
 
 ## Six swarm patterns

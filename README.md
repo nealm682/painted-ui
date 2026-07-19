@@ -12,6 +12,19 @@ is the director; your device is the painter; the token stream is the brush.
 **📄 Read the paper: [`publication/painted-ui.md`](publication/painted-ui.md)**
 ([styled HTML](publication/painted-ui.html))
 
+## What the reference point looks like
+
+![Flipbook: diving from an illustrated map into the cathedral interior — every pixel generated as live video](raw/assets/flipbook-dive.gif)
+
+*A 13-second excerpt from Flipbook (Zain Shah, Eddie Jiao, Drew Carr) — the
+UI dives from an illustrated map into a cathedral interior, with every pixel
+generated as live video. Their product, their footage (screen-recorded from
+the public demo, credited as the reference point this project studies; full
+recording in `raw/demos/`). This continuous camera-dive through generated
+imagery is the feeling painted UI aims to reproduce with kilobytes of scene
+patches instead of a GPU video stream — see exp-03 below for the cheap
+path painting live.*
+
 ## Working examples (each is one self-contained HTML file — just open it)
 
 | File | What it shows |

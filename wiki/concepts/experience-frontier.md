@@ -3,7 +3,7 @@
 Filed from a query (2026-07-19): can we hit 80fps, or modify the experience
 in ways not yet considered?
 
-## Frame rate is the wrong lever (and we already win it)
+## Frame rate is the wrong lever (and it's already won)
 
 `requestAnimationFrame` locks to the display: 60Hz monitors get 60fps, a
 120/144Hz laptop gets 120/144 *automatically* — our Canvas redraws cost so
@@ -57,5 +57,5 @@ jump proves out.
 Where's the kitsch line — when do painterly shaders become a theme park?
 Does speculative pre-paint waste tokens at scale (mitigation: only
 pre-paint the top-1 predicted action)? Can Canvas2D fake 80% of lever 1
-with layered gradients + noise sprites before we pay the WebGL complexity
+with layered gradients + noise sprites before paying the WebGL complexity
 tax?

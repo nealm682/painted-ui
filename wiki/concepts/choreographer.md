@@ -5,7 +5,7 @@ architecture: the **director** (LLM/agent) decides what exists and what
 changes; the **choreographer** turns each semantic change into motion (verb,
 duration, easing, stagger); the **painter** (compositor,
 [[concepts/client-side-compositing]]) executes it at 60fps; the **stage** is
-the shared node map. Deep-dive with live demo:
+the shared node map of [[concepts/four-loops]]. Deep-dive with live demo:
 `wiki/decks/the-choreographer.html`.
 
 ## Why it exists

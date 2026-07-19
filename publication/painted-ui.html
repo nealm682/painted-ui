@@ -27,12 +27,12 @@ concurrent user, nothing cacheable, cost accruing every second a screen is
 on. This article argues that the magic and the rendering method are
 separable. The &ldquo;painted live&rdquo; feeling decomposes into exactly four
 behaviors — fluid layout, live motion, universal interactivity, and bespoke
-content — and none of them requires generating pixels with a model. We
+content — and none of them requires generating pixels with a model. I
 present an architecture that reproduces the illusion by having a language
 model stream a few kilobytes of <em>scene patches</em> that a client-side
 compositor animates at display frame rate, report measurements and failure
 lessons from three working prototypes, and position the approach against
-the emerging generative-UI ecosystem. We call the technique <strong>painted UI</strong>.</p>
+the emerging generative-UI ecosystem. I call the technique <strong>painted UI</strong>.</p>
 <h2>1. The reference point</h2>
 <p>Flipbook (Zain Shah, Eddie Jiao, Drew Carr) streams 1080p video at 24
 frames per second from a heavily optimized version of LTX Studio&rsquo;s video
@@ -125,8 +125,8 @@ protocol&rsquo;s own example nodes used JavaScript-style decimals (<code>.5</cod
 model imitated them faithfully, and strict JSON parsing rejected every
 coordinate-bearing node — <strong>models imitate examples over rules; the
 examples are the spec.</strong> With a hardened spec, a tolerant parser, and a
-self-correcting nudge, run 3 painted successfully. We offer these as early
-data points for a claim we expect to generalize: <em>protocol design is
+self-correcting nudge, run 3 painted successfully. I offer these as early
+data points for a claim I expect to generalize: <em>protocol design is
 behavior design.</em></p>
 <h2>5. Position in the generative-UI landscape</h2>
 <p>Generative UI is an active space: Vercel&rsquo;s AI SDK streams React components
@@ -136,12 +136,12 @@ incremental streaming without arbitrary code execution; Thesys C1 offers a
 commercial API returning streaming charts, forms, and cards. All of these
 make interfaces <em>assemble</em>. None of them targets the property this work
 takes as its objective: the feeling that the screen is being painted. To
-our knowledge, no prior system combines a resolution-independent scene
+my knowledge, no prior system combines a resolution-independent scene
 graph with a transition-choreography layer for the explicit purpose of
 reproducing the video-model aesthetic — and the term &ldquo;painted UI&rdquo; does not
 appear as a named technique in the literature, which uses &ldquo;generative UI&rdquo;
 for the assembly paradigm and reserves &ldquo;paint&rdquo; for browser-rendering
-metrics. We propose the term for exactly this synthesis.</p>
+metrics. I propose the term for exactly this synthesis.</p>
 <p>The approach is complementary to the existing stack, not competitive with
 it: an agent framework remains the director; a declarative protocol like
 A2UI is a natural substrate (its incremental ID-referenced updates are
@@ -156,7 +156,7 @@ interactions, kilobyte payloads, no server GPU, and rendering distributed
 to client silicon — integrated graphics comfortably sustain the entire
 motion vocabulary. Static assets amortize across users via semantic
 caching.</p>
-<p><strong>The on-device endgame.</strong> We believe small language models running on the
+<p><strong>The on-device endgame.</strong> I believe small language models running on the
 user&rsquo;s own device are not a nice-to-have here but the technique&rsquo;s natural
 conclusion. Emitting a constrained patch grammar is exactly the kind of
 narrow structured task where 1–4B-parameter models are credible, and
@@ -177,14 +177,14 @@ than quantitatively: N agents painting one screen is N interleaved
 kilobyte streams on the painted path, and N impossible GPU streams on the
 video path. Swarm patterns — a slow &ldquo;gardener&rdquo; agent tending ambience, a
 critic issuing correction patches, speculative agents pre-painting likely
-next states so interaction latency is perceived as zero — are, we believe,
+next states so interaction latency is perceived as zero — are, I believe,
 the technique&rsquo;s most promising unexplored territory.</p>
 <h2>7. Limitations</h2>
 <p>Fidelity has a ceiling: parameterized transitions cannot produce arbitrary
 painterly in-betweens (a face melting into a landscape remains video
 generation&rsquo;s edge; GPU-shader brushwork narrows but does not close this).
 Whether current models compose <em>beautifully</em> at production reliability is
-unproven — our live results are an existence proof, not a benchmark; formal
+unproven — my live results are an existence proof, not a benchmark; formal
 measurements (time-to-first-paint, parse rates, verb taste across models)
 are the next milestone. Cost figures above are order-of-magnitude
 estimates. And the thesis itself is falsifiable: if user testing shows the
@@ -200,7 +200,5 @@ in a browser; the live painter needs only an Anthropic API key.</p>
 <p>Prototypes, measurements, and drafting were done in collaboration with an
 AI research agent (Claude, Anthropic); direction, curation, and the
 question that started it — <em>&ldquo;what makes this feel magical, and what does it
-actually cost?&rdquo;</em> — are the author&rsquo;s.</p>
-<h2>References</h2>
-<p>1.</p>
+actually cost?&rdquo;</em> — are the aut</p>
 </div></body></html>

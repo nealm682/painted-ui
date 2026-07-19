@@ -38,8 +38,6 @@ argument is in place; **actual numbers are TODO** as sources come in.
 
 - Modal GPU pricing (e.g., $/hr for the class of GPU that runs an optimized
   LTX-class model at 24fps 1080p) → $/user-hour for the expensive path.
-- LLM token pricing × typical scene-graph size → $/interaction, cheap path
-  (exp-03 live runs will supply real token counts:
-  [[sources/experiment-03-live-llm-painter]]).
+- LLM token pricing × typical scene-graph size → $/interaction, cheap path.
 - Image-gen $/asset and realistic cache-hit rates → hybrid path.
 - Evidence: [[sources/flipbook-thread]] (waiting rooms = capacity rationing).

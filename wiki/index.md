@@ -11,6 +11,9 @@ Content catalog. Read this first on every query. Updated on every ingest.
 
 ## Concepts
 
+- [[concepts/four-loops]] — the architecture: conversation / network read /
+  parser scan / render, four speeds, one shared node map; mutate vs sample;
+  sourced lineage from the game-loop pattern.
 - [[concepts/the-illusion]] — **the core analytical page.** Decomposes the
   "painted live" feeling into four ingredients (fluid layout, live motion,
   universal interactivity, bespoke content) and shows each is reproducible
@@ -72,6 +75,9 @@ Content catalog. Read this first on every query. Updated on every ingest.
 - [[sources/experiment-03-live-llm-painter]] — source #4: own build. Live
   harness: a real Claude model paints scenes by request via streamed JSONL
   patches; clicks loop back as conversation. First live paint confirmed.
+- [[sources/game-loop-lineage]] — source #5: Nystrom's Game Loop chapter +
+  Fiedler's Fix Your Timestep. The canonical simulation/render decoupling
+  painted UI inherits — and the two loops + visible-mismatch it adds.
 
 ## Comparisons
 

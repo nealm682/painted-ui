@@ -68,8 +68,17 @@ sources, orphan pages, concepts mentioned but lacking a page, missing
 cross-links, gaps fillable via web search. Suggest new questions and sources.
 
 ## Git
-The wiki root is a git repo. Commit after every ingest/lint with a message
-matching the log entry (e.g. `ingest: flipbook launch thread`).
+The wiki root is a git repo, published at github.com/nealm682/painted-ui.
+Commit after every ingest/lint with a message matching the log entry
+(e.g. `ingest: flipbook launch thread`).
+
+**Workflow since 2026-07-19 (native `.git` restored by Neal):** the agent
+edits files; **Neal commits and pushes** (`git add -A && git commit && git
+push`) since authentication is his. The agent should end any session that
+changed files by telling Neal exactly what to commit and suggesting a
+message. `painted-ui.git.bundle` is retired — safe to delete and gitignore.
+Public-repo voice rule: first-person singular in all public-facing text
+(paper, README); no employer references anywhere.
 
 **Sandbox quirk:** the mounted folder allows file writes but not deletes or
 new files inside previously-copied directories, so a live `.git` cannot be

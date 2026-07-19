@@ -14,12 +14,12 @@ concurrent user, nothing cacheable, cost accruing every second a screen is
 on. This article argues that the magic and the rendering method are
 separable. The "painted live" feeling decomposes into exactly four
 behaviors — fluid layout, live motion, universal interactivity, and bespoke
-content — and none of them requires generating pixels with a model. We
+content — and none of them requires generating pixels with a model. I
 present an architecture that reproduces the illusion by having a language
 model stream a few kilobytes of *scene patches* that a client-side
 compositor animates at display frame rate, report measurements and failure
 lessons from three working prototypes, and position the approach against
-the emerging generative-UI ecosystem. We call the technique **painted UI**.
+the emerging generative-UI ecosystem. I call the technique **painted UI**.
 
 ## 1. The reference point
 
@@ -130,8 +130,8 @@ protocol's own example nodes used JavaScript-style decimals (`.5`), the
 model imitated them faithfully, and strict JSON parsing rejected every
 coordinate-bearing node — **models imitate examples over rules; the
 examples are the spec.** With a hardened spec, a tolerant parser, and a
-self-correcting nudge, run 3 painted successfully. We offer these as early
-data points for a claim we expect to generalize: *protocol design is
+self-correcting nudge, run 3 painted successfully. I offer these as early
+data points for a claim I expect to generalize: *protocol design is
 behavior design.*
 
 ## 5. Position in the generative-UI landscape
@@ -143,12 +143,12 @@ incremental streaming without arbitrary code execution; Thesys C1 offers a
 commercial API returning streaming charts, forms, and cards. All of these
 make interfaces *assemble*. None of them targets the property this work
 takes as its objective: the feeling that the screen is being painted. To
-our knowledge, no prior system combines a resolution-independent scene
+my knowledge, no prior system combines a resolution-independent scene
 graph with a transition-choreography layer for the explicit purpose of
 reproducing the video-model aesthetic — and the term "painted UI" does not
 appear as a named technique in the literature, which uses "generative UI"
 for the assembly paradigm and reserves "paint" for browser-rendering
-metrics. We propose the term for exactly this synthesis.
+metrics. I propose the term for exactly this synthesis.
 
 The approach is complementary to the existing stack, not competitive with
 it: an agent framework remains the director; a declarative protocol like
@@ -167,7 +167,7 @@ to client silicon — integrated graphics comfortably sustain the entire
 motion vocabulary. Static assets amortize across users via semantic
 caching.
 
-**The on-device endgame.** We believe small language models running on the
+**The on-device endgame.** I believe small language models running on the
 user's own device are not a nice-to-have here but the technique's natural
 conclusion. Emitting a constrained patch grammar is exactly the kind of
 narrow structured task where 1–4B-parameter models are credible, and
@@ -189,7 +189,7 @@ than quantitatively: N agents painting one screen is N interleaved
 kilobyte streams on the painted path, and N impossible GPU streams on the
 video path. Swarm patterns — a slow "gardener" agent tending ambience, a
 critic issuing correction patches, speculative agents pre-painting likely
-next states so interaction latency is perceived as zero — are, we believe,
+next states so interaction latency is perceived as zero — are, I believe,
 the technique's most promising unexplored territory.
 
 ## 7. Limitations
@@ -198,7 +198,7 @@ Fidelity has a ceiling: parameterized transitions cannot produce arbitrary
 painterly in-betweens (a face melting into a landscape remains video
 generation's edge; GPU-shader brushwork narrows but does not close this).
 Whether current models compose *beautifully* at production reliability is
-unproven — our live results are an existence proof, not a benchmark; formal
+unproven — my live results are an existence proof, not a benchmark; formal
 measurements (time-to-first-paint, parse rates, verb taste across models)
 are the next milestone. Cost figures above are order-of-magnitude
 estimates. And the thesis itself is falsifiable: if user testing shows the
@@ -222,4 +222,12 @@ actually cost?"* — are the author's.
 
 ## References
 
-1.
+1. Flipbook launch thread — Zain Shah (@zan2434), April 2026.
+2. A2UI: an open project for agent-driven interfaces — Google Developers Blog, 2025. https://developers.googleblog.com/introducing-a2ui-an-open-project-for-agent-driven-interfaces/
+3. Introducing AI SDK 3.0 with Generative UI support — Vercel, 2024. https://vercel.com/blog/ai-sdk-3-generative-ui
+4. C1 by Thesys documentation. https://docs.thesys.dev/guides/what-is-thesys-c1
+5. Leviathan, Y., Valevski, D. Generative UI: LLMs are Effective UI Generators. arXiv:2604.09577.
+6. Ruan, C. et al. WebLLM: A High-Performance In-Browser LLM Inference Engine. arXiv:2412.15803.
+7. llama.cpp GBNF grammars. https://github.com/ggml-org/llama.cpp/blob/master/grammars/README.md
+8. Nystrom, R. Game Programming Patterns — Game Loop. https://gameprogrammingpatterns.com/game-loop.html
+9. Fiedler, G. Fix Your Timestep. https://gafferongames.com/post/fix_your_timestep/

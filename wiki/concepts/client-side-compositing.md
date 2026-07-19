@@ -32,8 +32,7 @@ driven by a patch stream, and establishes a rule: **ambient motion must keep
 running through transitions** — an image that drifts while cross-dissolving
 reads as repainted; one that freezes reads as loading
 ([[sources/experiment-02-transition-stream]],
-[[techniques/transition-choreography]]). exp-03 drives the same engine from
-live model output ([[sources/experiment-03-live-llm-painter]]).
+[[techniques/transition-choreography]]).
 
 ## Open questions
 
