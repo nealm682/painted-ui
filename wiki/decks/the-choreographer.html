@@ -40,7 +40,7 @@ a demo and something a large company can actually ship.</div>
 <h2>The theater metaphor (the whole architecture in one breath)</h2>
 <div class="roles">
   <div class="role"><b>The Director</b><span>the LLM/agent. Decides <i>what</i> exists and <i>what changes</i>: "add three cards; focus the second; retitle the scene." Speaks in semantic patches.</span></div>
-  <div class="role"><b>The Choreographer</b><span>this page. Decides <i>how</i> each change moves: which verb (dissolve / flyin / morph…), how long, what easing, what stagger. Can be the model, a local policy, or both.</span></div>
+  <div class="role"><b>The Choreographer</b><span>A design concern, not a runtime agent. Decides <i>how</i> each change moves: verb, duration, easing, stagger. Implemented as a pure function (~40 lines) or delegated to the model. Three architectures: model-picks (A, current exp-03), local-policy-picks (B), hybrid (C, production target).</span></div>
   <div class="role"><b>The Painter</b><span>the compositor (exp-01/02/03). Executes the motion 60×/s on the user's own device. Never makes decisions.</span></div>
   <div class="role"><b>The Stage</b><span>the node map — the shared state all four loops meet at.</span></div>
 </div>

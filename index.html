@@ -151,7 +151,7 @@
       <p class="section-lede">The architecture works because intelligence, motion policy, state, and rendering are separated. Each operates at its own speed without blocking the others.</p>
       <div class="grid4">
         <article class="role" style="--glow:rgba(243,166,75,.15)"><span class="num">01 · LLM / agent</span><h3>Director</h3><p>Decides <strong>what exists</strong> and <strong>what changes</strong>. Emits semantic operations instead of pixels or animation timelines.</p></article>
-        <article class="role" style="--glow:rgba(171,156,255,.14)"><span class="num">02 · local policy</span><h3>Choreographer</h3><p>Decides <strong>how changes move</strong>: verb, duration, easing, direction, and stagger. Deterministic and brand-governed.</p></article>
+        <article class="role" style="--glow:rgba(171,156,255,.14)"><span class="num">02 · motion policy</span><h3>Choreographer</h3><p>Decides <strong>how changes move</strong>: verb, duration, easing, direction, and stagger. A pure function of each patch — not a separate agent. In production it becomes a versioned motion design system.</p></article>
         <article class="role" style="--glow:rgba(127,225,204,.14)"><span class="num">03 · node map</span><h3>Stage</h3><p>Holds persistent semantic objects. Stable IDs preserve identity, enabling morphing, continuity, and interruption handling.</p></article>
         <article class="role" style="--glow:rgba(239,143,135,.12)"><span class="num">04 · compositor</span><h3>Painter</h3><p>Reads current state and redraws continuously. It executes approved verbs at display speed and never waits for the network.</p></article>
       </div>

@@ -52,7 +52,7 @@ theatrical. Everything else falls into place once that's settled.</div>
 <div class="cast">
  <div class="role r1"><div class="who">the LLM / agent</div><b>Director</b><span>Decides WHAT exists and WHAT changes. Speaks only in semantic patches — never pixels, never geometry math. Expensive, slow (tokens), brilliant.</span></div>
  <div class="role r2"><div class="who">tokens over the wire</div><b>The Script</b><span>The patch stream — the director's instructions arriving a few characters at a time. Kilobytes, not megabytes.</span></div>
- <div class="role r3"><div class="who">local policy code</div><b>Choreographer</b><span>Decides HOW each change moves: verb, duration, easing, direction, stagger. Instant, deterministic, versioned. Zero tokens.</span></div>
+ <div class="role r3"><div class="who">motion policy layer</div><b>Choreographer</b><span>Decides HOW each change moves: verb, duration, easing, direction, stagger. A pure function, not a runtime agent. Can live in patch data (model decides, costs tokens — current exp-03) or as a local policy function (free, deterministic, versioned — the production target).</span></div>
  <div class="role r4"><div class="who">the compositor (code)</div><b>Painter</b><span>Executes motion 60×/sec from current state. Owns the verb implementations (strokeIn, materialize…). Never decides anything.</span></div>
  <div class="role r5"><div class="who">the node map (state)</div><b>Stage</b><span>One shared data structure. Directors and choreographers WRITE it; the painter READS it. They never talk directly.</span></div>
 </div>

@@ -44,7 +44,7 @@ path painting live.*
 
 - Scene description: **1.25 KB once** vs ~15 MB/min/user for a 2 Mbps video stream (~12,000×).
 - Animated 18 s sequence: **~1.1 kbit/s** vs ~2,000 kbit/s video.
-- Server GPUs required: **0**. Cost between interactions: **$0**.
+- Server GPUs required: **0**. Cost between interactions: **$0** (demo mode; live LLM mode uses the Anthropic API at standard token cost).
 
 ## The knowledge base
 

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/tmp/calc.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(cd /c/Users/nealm/Claude/Projects/painted-ui/raw/experiments && ls -lh */)"
+    ]
+  }
+}
