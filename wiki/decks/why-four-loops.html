@@ -86,7 +86,7 @@
     <li><b>Incremental parsers</b> — tokenizers that maintain state across arbitrary chunk boundaries are standard compiler/network practice.</li>
     <li><b>Immediate-mode rendering</b> — redraw everything every frame from current state (Canvas, Dear ImGui), instead of mutating a widget tree.</li>
   </ul>
-  <div class="card">None of the four loops is novel. <b>The composition is the design</b>: using token pacing itself as the animation choreographer for LLM-authored scenes.</div>
+  <div class="card">None of the four loops is novel. <b>The composition is the design</b>: wiring token-speed streaming to a frame-rate compositor — with a motion policy layer between them — to reproduce the painted-live feel without video generation.</div>
 </section>
 
 <section class="slide">
@@ -105,7 +105,7 @@
   <h2>"But I don't have a GPU"</h2>
   <div class="card big">You already ran it. That's the point.</div>
   <ul>
-    <li>Canvas2D is rasterized by the browser using <b>whatever the machine has</b> — integrated graphics or plain CPU compositing handles our whole motion vocabulary at 60fps. "The user's GPU" was shorthand for <em>the user's own silicon, whatever it is</em>.</li>
+    <li>Canvas2D is rasterized by the browser using <b>whatever the machine has</b> — integrated graphics or plain CPU compositing targets our whole motion vocabulary at 60fps (unverified on low-end hardware; formal traces are a TODO). "The user's GPU" was shorthand for <em>the user's own silicon, whatever it is</em>.</li>
     <li>The economic claim never depended on the client having a good GPU — it depends on the <b>server not needing one at all</b>. Flipbook rents an H100-class stream per viewer; we ship 1–2 KB of structure and let a 10-year-old laptop do the rest.</li>
   </ul>
 </section>
