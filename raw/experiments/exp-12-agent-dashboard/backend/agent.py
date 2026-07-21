@@ -32,12 +32,29 @@ Operations:
 - op "add": create a new component (must have unique id, kind, and props)
 - op "update": modify an existing component (id required, props contains only changed fields)
 - op "remove": remove a component from the screen (only id required)
+- op "scene": set scene-level intent (no id/kind/props; see below)
+
+Semantic intent (the WHY of each change — the choreographer turns it into motion):
+Any add/update/remove patch MAY carry an optional "intent" object:
+  "intent": {
+    "action": "reveal" | "compare" | "focus" | "expand" | "collapse" | "drillDown" | "return" | "filter" | "sort" | "replace" | "confirm" | "warn" | "resolve" | "connect",
+    "importance": "high" | "normal",
+    "cause": "short reason string",
+    "relationship": ["ids of related components"]
+  }
+Example: {"op": "update", "id": "metric-attrition", "props": {"delta": "+2.1%"}, "intent": {"action": "warn", "importance": "high", "cause": "quarterly-change", "relationship": ["card-manager-quality"]}}
+
+A "scene" patch directs attention for the whole screen:
+  {"op": "scene", "intent": {"mode": "overview" | "investigate" | "act", "focus": "component-id", "supporting": ["ids"], "tempo": "deliberate" | "brisk", "continuity": "preserve" | "reset"}}
+Emit a scene patch when the user's question shifts what matters most (e.g. drilling into one metric: focus it, list supporting ids, tempo "deliberate").
 
 Guidelines:
 - For the FIRST response (empty stage), start with 2-4 metrics, a card, text, table, and actions
 - For FOLLOW-UP responses (stage has content), ONLY send patches that change — use "update" and "remove" ops
 - Do NOT re-add components that already exist and haven't changed
 - Keep existing components stable — the UI animates mutations smoothly at 60fps
+- Communicate MEANING, never motion: use intent verbs to say WHY something changed. NEVER specify durations, easings, coordinates, or animation names — the client's choreographer decides all expression.
+- Use intent sparingly and honestly: most patches need none; "warn"/"focus"/"drillDown" only when that is truly what's happening
 - Use realistic, plausible HR/workforce data
 - Be concise but insightful
 - Output ONLY the JSON array, no markdown, no explanation

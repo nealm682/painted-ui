@@ -358,3 +358,25 @@ neutral domain per the no-employer guardrail (candidate: harbor-
 operations console, on-brand with the lighthouse). Product-track roadmap
 adopted: relayout+shared morphs → attention → hierarchy → intent verbs →
 interruption → grammars. Flagship narrative demo = exp-13.
+
+## [2026-07-20] upgrade | exp-12 agent dashboard: semantic envelope in the Strands prompt
+
+Discovered Neal built `raw/experiments/exp-12-agent-dashboard/` — a real
+Strands agent backend (Opus via Anthropic) emitting component patches to
+a React frontend with painted choreography: the enterprise architecture
+from the pitch, running. (Explains the deck-upgrade batch's A2UI/CSS
+language; exp-12 numbering now belongs to this app — the interruption
+demo moves to exp-14 or inside this app.) Applied source #7's contract
+upgrade to `backend/agent.py` SYSTEM_PROMPT: optional `intent` envelope
+on patches (reveal/compare/focus/drillDown/filter/warn/resolve/connect +
+importance/cause/relationship), new `scene` op for attention
+orchestration (mode/focus/supporting/tempo/continuity), and the doctrine
+line — communicate MEANING, never motion; the client choreographer
+decides all expression. Root `.gitignore` extended (node_modules, dist,
+__pycache__, .venv, .env) — mandatory before any push. Open flags: (1)
+backend is request/response — the token-pacing reveal needs server-side
+patch streaming (SSE + brace-depth parser) in server.py; (2) fence-strip
+parsing is the exp-03 run-1 fragility; (3) domain is HR/workforce —
+re-skin or keep untracked before public push per the no-employer
+guardrail. exp-13 = evolve this app's frontend to honor intent verbs
+(relayout+shared morphs, focus/recede, hierarchy).
