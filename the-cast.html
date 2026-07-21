@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Cast — who does what in Painted UI</title>
+<style>
+ :root{--bg:#0b0a10;--panel:#14121c;--edge:#2c2840;--ink:#efe9dc;--dim:#8a86a0;
+       --accent:#e8a34c;--green:#7fd4c1;--soft:#9a8fd0;--red:#e08a7a}
+ html{background:var(--bg)}
+ body{margin:0;color:var(--ink);font:16px/1.65 Georgia,serif}
+ .wrap{max-width:900px;margin:0 auto;padding:40px 20px 100px}
+ h1{font-size:30px;margin:0 0 6px} h2{font-size:20px;color:var(--accent);margin:38px 0 10px}
+ .sub{color:var(--dim);margin-bottom:8px}
+ .cast{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:16px 0}
+ .role{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px 14px;position:relative}
+ .role b{display:block;font-size:15px} .role span{font-size:12.5px;color:var(--dim);display:block;margin-top:4px}
+ .role .who{font:10.5px monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+ .r1 b,.r1 .who{color:var(--accent)} .r2 b,.r2 .who{color:var(--soft)} .r3 b,.r3 .who{color:var(--green)}
+ .r4 b,.r4 .who{color:var(--red)} .r5 b,.r5 .who{color:#d9c86a}
+ details{background:var(--panel);border:1px solid var(--edge);border-radius:12px;margin:10px 0;overflow:hidden}
+ summary{padding:13px 18px;cursor:pointer;font-size:16px;list-style:none;display:flex;gap:10px;align-items:center}
+ summary::before{content:"▸";color:var(--accent);transition:transform .2s}
+ details[open] summary::before{transform:rotate(90deg)}
+ summary:hover{background:#1a1726}
+ .body{padding:2px 18px 16px;border-top:1px solid var(--edge)}
+ pre{background:#0f0d16;border:1px solid var(--edge);border-radius:8px;padding:12px;overflow-x:auto;
+     font:12.5px/1.6 monospace;color:#b9b4cc}
+ pre em{color:var(--green);font-style:normal}   /* values / highlights */
+ pre b{color:var(--accent);font-weight:normal}  /* keys of interest */
+ pre i{color:var(--dim);font-style:normal}      /* comments */
+ code{background:#1b1826;border-radius:4px;padding:1px 6px;font-size:13px;color:var(--green)}
+ table{border-collapse:collapse;font-size:13.5px;margin:8px 0;width:100%}
+ td,th{border:1px solid var(--edge);padding:7px 10px;text-align:left;vertical-align:top}
+ th{color:var(--accent);font-weight:normal}
+ .key{background:var(--panel);border-left:3px solid var(--accent);border-radius:8px;padding:11px 16px;margin:14px 0}
+ canvas{width:100%;height:220px;display:block;background:#08070d;border-radius:10px;border:1px solid var(--edge)}
+ button{background:var(--accent);border:0;border-radius:8px;padding:8px 16px;font:14px Georgia;cursor:pointer;margin:8px 6px 4px 0}
+ .trace{font:12px/1.7 monospace;color:var(--dim);min-height:120px;white-space:pre-wrap}
+ .trace b{color:var(--green)}
+ .dim{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>The Cast <span class="dim" style="font-size:17px">— who does what in Painted UI</span></h1>
+<div class="sub">Semantic rendering separates judgment from execution. Painted UI explains that separation as five roles in one show. One naming note: the frame-rate loop is the <b>Painter</b> when it draws canvas pixels (all current experiments) and the <b>Animator</b> when it drives a component tree (DOM / A2UI-style / native — future adapters). Same role, same tween math, same 60fps contract — different output target.</div>
+
+<div class="cast">
+ <div class="role r1"><div class="who">model / agent (cloud or local)</div><b>Director</b><span>Decides WHAT exists and WHAT changes. Emits allow-listed semantic patches — never pixels, never animation frames. May be a cloud LLM, an on-device SLM, or any other source of structured intent.</span></div>
+ <div class="role r2"><div class="who">the patch stream</div><b>The Script</b><span>The transport form of intent: small, incremental, replayable semantic patches. Source-agnostic — works whether patches arrive over a network or from a local model. Kilobytes, not megabytes.</span></div>
+ <div class="role r3"><div class="who">motion policy layer</div><b>Choreographer</b><span>Compiles semantic change into governed behavior: motion, timing, emphasis, and accessibility policy. Usually deterministic local code — not a runtime agent.</span></div>
+ <div class="role r4"><div class="who">the frame-rate loop</div><b>Animator</b><span>Samples the Stage at display rate and applies current values to the rendering target. It performs; it does not interpret.</span></div>
+ <div class="role r5"><div class="who">the node map (state)</div><b>Stage</b><span>The shared state boundary. Stable identity, current values, and active transitions live here. Directors and choreographers write; the Animator reads.</span></div>
+</div>
+
+<div class="key">Every decision moved from the model into local policy moves from <b>tokens, latency, and variance</b> into code that is <b>local, instant, testable, and reusable.</b> The Director is the only role with per-interaction cost. Every other role runs at near-zero marginal runtime cost on the user's own device.</div>
+
+<h2>Open the boxes — real objects, real streams</h2>
+
+<details open>
+<summary>1 · A scene node — the atom of the stage</summary>
+<div class="body">
+<p>The stage (node map) holds nodes. A node is a small semantic object — note what it
+<i>doesn't</i> contain: no pixels, no animation timeline, no event handlers.</p>
+<pre>{
+  <b>"id"</b>: <em>"card2"</em>,            <i>// stable identity — this is what makes morphing possible:</i>
+                             <i>// the same id later = "same thing, changed" → animate the difference</i>
+  <b>"kind"</b>: <em>"card"</em>,           <i>// which rendering routine draws it</i>
+  <b>"x"</b>: <em>0.50</em>, <b>"y"</b>: <em>0.60</em>,     <i>// position as fractions of the viewport (resolution-independent)</i>
+  <b>"w"</b>: <em>0.22</em>, <b>"h"</b>: <em>0.32</em>,
+  <b>"img"</b>: <em>12</em>,                <i>// which cached asset fills it (a seed / cache key)</i>
+  <b>"label"</b>: <em>"Lighthouse"</em>,
+  <b>"z"</b>: <em>2</em>,                   <i>// paint order</i>
+  <b>"semantic"</b>: <em>"card: lighthouse day-trip"</em>,  <i>// meaning — powers hit-testing, click messages</i>
+                             <i>// back to the director, and (future) the accessibility mirror</i>
+  <b>"interactive"</b>: <em>true</em>
+}</pre>
+<p class="dim">The node is a <i>noun</i>. Nothing here says how it appears or moves — that's the
+choreographer's business. Separating the noun from the motion is the core trick.</p>
+</div>
+</details>
+
+<details>
+<summary>2 · The script — what the director actually streams</summary>
+<div class="body">
+<p>One JSON object per line, arriving token by token. This is a real-shaped stream for a small
+scene (about 1 KB total — a 2 Mbps video stream sends this much every 4 milliseconds):</p>
+<pre>{<b>"op"</b>:<em>"palette"</em>,"set":{"bg0":"#1a2438","accent":"#7fd4c1"}}   <i>// set the mood first</i>
+{<b>"op"</b>:<em>"add"</em>,"node":{"id":"bg","kind":"gradient","z":0}}        <i>// back to front, like a painter</i>
+{<b>"op"</b>:<em>"add"</em>,"node":{"id":"sun","kind":"disc","x":0.78,"y":0.22,"r":0.08,"glow":true,"z":1}}
+{<b>"op"</b>:<em>"add"</em>,"node":{"id":"title","kind":"text","x":0.5,"y":0.16,"text":"Weekend on the Coast","z":3}}
+{<b>"op"</b>:<em>"add"</em>,"node":{"id":"c1","kind":"card","x":0.22,"y":0.6,"w":0.22,"h":0.32,"img":5,"label":"Tidepools","z":2}}
+{<b>"op"</b>:<em>"note"</em>,"text":"laying in the stops…"}                   <i>// optional narration (never a substitute!)</i>
+{<b>"op"</b>:<em>"update"</em>,"id":"c1","set":{"x":0.5,"w":0.6,"h":0.5}}     <i>// same id + new numbers = MORPH</i>
+{<b>"op"</b>:<em>"remove"</em>,"id":"sun"}                                    <i>// choreographer decides how it exits</i>
+{<b>"op"</b>:<em>"done"</em>}</pre>
+<p>Four verbs of change — <code>add</code>, <code>update</code>, <code>remove</code>,
+<code>palette</code> — cover everything exp-01 through exp-09 do. exp-10 adds <i>artistic</i> verbs
+(<code>strokeIn</code>, <code>materialize</code>…) where the model names a behavior the Animator
+already knows how to perform.</p>
+<p class="dim">Key property: each line is useful the instant it closes. The interface assembles
+<i>while the director is still talking</i> — that overlap is the painted-live feeling.</p>
+</div>
+</details>
+
+<details>
+<summary>3 · The choreographer — one patch in, one motion decision out</summary>
+<div class="body">
+<p>The choreographer is a pure function: <code>(patch, scene, mood) → motion plan</code>. It runs in
+microseconds, costs zero tokens, and is versionable like any design system. Here's an actual decision
+table (from the choreographer deep-dive) and a worked example:</p>
+<pre><b>function</b> choreograph(patch, node, mood){
+  <b>if</b> (patch.op === "add") {
+    <b>if</b> (node.x &lt; 0.22)  <b>return</b> {kind:<em>"flyin"</em>,  from:<em>"left"</em>,  dur:D(700)};  <i>// geometry → direction</i>
+    <b>if</b> (node.x &gt; 0.78)  <b>return</b> {kind:<em>"flyin"</em>,  from:<em>"right"</em>, dur:D(700)};
+    <b>if</b> (node.kind === "text")           <b>return</b> {kind:<em>"rise"</em>, dur:D(800)};  <i>// kind → verb</i>
+    <b>if</b> (node.kind === "disc" &amp;&amp; node.glow) <b>return</b> {kind:<em>"zoom"</em>, dur:D(900)};
+    <b>return</b> {kind:<em>"dissolve"</em>, dur:D(800)};
+  }
+  <b>if</b> (patch.op === "update") <b>return</b> {tween:true, dur:D(1100), ease:<em>"inout"</em>}; <i>// same id ⇒ morph</i>
+  <b>if</b> (patch.op === "remove") <b>return</b> exitTowardNearestEdge(node);
+}
+<i>// D(ms) scales by mood: calm ×1.3 · neutral ×1.0 · energetic ×0.55</i></pre>
+<table>
+<tr><th>Patch arrives</th><th>Choreographer's decision</th><th>Why</th></tr>
+<tr><td><code>add card at x:0.22</code></td><td>flyin from LEFT, 700 ms</td><td>position near left edge → enter from that edge</td></tr>
+<tr><td><code>add text "title"</code></td><td>rise + settle, 800 ms</td><td>text should land like set type, not fly</td></tr>
+<tr><td><code>update c1 {w:0.6}</code></td><td>tween w over 1100 ms</td><td>same id = same thing changing → morph, never blink</td></tr>
+<tr><td><code>remove sun</code></td><td>dissolve (center-ish node)</td><td>exits mirror entries; ambience never snaps</td></tr>
+</table>
+<p class="dim">Three possible homes for this decision: the model picks verbs itself (expressive,
+inconsistent, costs tokens), this local policy picks (consistent, free, testable), or hybrid —
+policy default, model override. Production wants B/C: the policy IS the brand's motion design system.</p>
+</div>
+</details>
+
+<details>
+<summary>4 · The animator — sixty questions per second, zero decisions</summary>
+<div class="body">
+<p>The animator is a loop that runs at your display's refresh rate and does exactly this, every
+frame, forever — whether or not anything is streaming:</p>
+<pre><b>function</b> frame(){
+  <b>for</b> (node <b>of</b> stage)             <i>// read the shared state — never waits for the network</i>
+    draw(node, <em>valuesRightNow(node)</em>);  <i>// ask each tween: "where are you at this instant?"</i>
+  requestAnimationFrame(frame);   <i>// and again in ~16ms</i>
+}</pre>
+<p><code>valuesRightNow</code> is the whole magic. A tween isn't a scheduled animation — it's a
+<i>function of elapsed time</i>:</p>
+<pre>x(t) = from + (to − from) × ease((t − t₀) / duration)   <i>// closed-form: any frame rate, no error,</i>
+                                                        <i>// no physics instability, no scheduler</i></pre>
+<p>The animator also owns the <b>verb library</b> — the motion implementations the director can name
+for one token each. With A2UI, verbs become CSS transform sequences on standard components. In the original canvas experiments, verbs like <code>strokeIn</code> drew directly — here's what that looked like:</p>
+<pre><i>// the director said only: {"verb":"strokeIn","id":"tower"}   ← ~8 tokens</i>
+<i>// the painter expands that into:</i>
+path   = lighthouseOutline(anchors, viewport)   <i>// ~40 points, parametric, any resolution</i>
+length = totalLength(path)
+<b>each frame:</b> draw the first <em>ease(t−t₀)</em> × length of the path, tip-first,
+            and let the brush cursor ride the current tip           <i>// ← "drawn into existence"</i></pre>
+<p class="dim">Written once (~40 lines), reusable forever, swappable per <b>theme</b>. With A2UI components the verb library shifts from canvas drawing to CSS transform choreography — but the protocol and the tween math are identical.</p>
+</div>
+</details>
+
+<details>
+<summary>5 · The stage — the only place the cast ever meets</summary>
+<div class="body">
+<p>The stage is one <code>Map</code> of id → node. The rule that makes four independent loops need no
+scheduler, no locks, and no coordination:</p>
+<pre>Director + Choreographer  →  <b>WRITE</b> the stage   (when patches arrive — bursty, unpredictable)
+Animator                  →  <b>READ</b> the stage    (60×/sec, metronomic, never blocked)</pre>
+<p>Before and after one <code>update</code> patch:</p>
+<pre><i>// BEFORE                                    // AFTER {"op":"update","id":"c1","set":{"w":0.6}}</i>
+stage = {                                    stage = {
+  c1: {kind:"card", w:<em>0.22</em>, …}                 c1: {kind:"card", w:<em>0.22→0.6 over 1100ms</em>, …}
+}                                            }
+<i>// the node isn't replaced — it grows a tween. The animator just keeps asking</i>
+<i>// "what's w right now?" and gets 0.22, 0.31, 0.44 … 0.60 across ~66 frames.</i></pre>
+<p class="dim">A node mounted mid-stream simply starts existing and animates in while later tokens
+are still arriving. Streaming mutates; rendering samples. The overlap is the show.</p>
+</div>
+</details>
+
+<details>
+<summary>6 · Watch one patch travel the whole pipeline (live)</summary>
+<div class="body">
+<p>Press the button: a patch enters as text, the choreographer decides, the stage mutates, and the
+Animator applies it — with the trace narrated below.</p>
+<canvas id="mini"></canvas>
+<button onclick="sendPatch()">Send the next patch</button>
+<button onclick="resetDemo()" style="background:var(--panel);color:var(--dim);border:1px solid var(--edge)">reset</button>
+<div class="trace" id="trace">pipeline idle — the Animator is still running at 60fps (watch the glow breathe)</div>
+</div>
+</details>
+
+<!-- RESPONSIBILITY TEST -->
+<h2>The responsibility test</h2>
+<table>
+<tr><th>Role</th><th>Knows</th><th>Decides</th><th>Must never</th><th>Cost</th></tr>
+<tr><td><b>Director</b></td><td>Content, user intent</td><td>What exists, what changes</td><td>Render frames, choose motion</td><td>Tokens per interaction</td></tr>
+<tr><td><b>Script</b></td><td>Nothing — pure transport</td><td>Nothing</td><td>Transform or filter content</td><td>Network bytes only</td></tr>
+<tr><td><b>Choreographer</b></td><td>Patch semantics, scene mood</td><td>How a change behaves</td><td>Call the model, own state</td><td>Near-zero (local code)</td></tr>
+<tr><td><b>Stage</b></td><td>Current nodes + tweens</td><td>Nothing — stores what it's told</td><td>Filter, interpret, or render</td><td>Memory only</td></tr>
+<tr><td><b>Animator</b></td><td>Current state values</td><td>Nothing — samples and applies</td><td>Wait for network, choose meaning</td><td>Local compute only</td></tr>
+</table>
+
+<h2>The one-paragraph summary to keep</h2>
+<div class="key">The Director interprets. The Script transports. The Choreographer compiles. The Stage remembers. The Animator performs. <i>The model renders intent; the client renders experience.</i></div>
+
+<p class="dim" style="margin-top:20px">Companions: <code>how-it-works.html</code> (the four loops,
+step-through) · <code>the-choreographer.html</code> (policy deep-dive + demo) ·
+<code>why-four-loops.html</code> (the argument as slides) · wiki: concepts/four-loops,
+concepts/choreographer, techniques/scene-grammar-v2.</p>
+
+</div>
+<script>
+// ---- mini pipeline demo: one patch at a time, trace narrated ----
+const cv=document.getElementById("mini"),ctx=cv.getContext("2d"),tr=document.getElementById("trace");
+let W2=0,H2=0;function sz(){const r=cv.getBoundingClientRect();W2=cv.width=r.width*2;H2=cv.height=440;}
+addEventListener("resize",sz);sz();
+const nowt=()=>performance.now(),lerp2=(a,b,t)=>a+(b-a)*t,eO2=u=>1-Math.pow(1-u,3);
+let stage=new Map(),step=0;
+const PATCHES=[
+ {p:{op:"add",node:{id:"sun",kind:"disc",x:0.82,y:0.3,r:0.14,glow:true}},
+  why:'node.kind="disc" + glow → choreographer says: zoom, 900ms'},
+ {p:{op:"add",node:{id:"card",kind:"card",x:0.18,y:0.55,w:0.26,h:0.5,label:"Tidepools"}},
+  why:'node.x=0.18 < 0.22 → choreographer says: flyin from LEFT, 700ms'},
+ {p:{op:"add",node:{id:"title",kind:"text",x:0.5,y:0.2,text:"One Patch at a Time"}},
+  why:'node.kind="text" → choreographer says: rise + settle, 800ms'},
+ {p:{op:"update",id:"card",set:{x:0.5,w:0.6}},
+  why:'same id "card" already on stage → MORPH: tween x and w over 1100ms'},
+ {p:{op:"remove",id:"sun"},
+  why:'node sits right of center → exit toward RIGHT edge, 600ms'},
+];
+function choreo(item){return item.why;}
+function sendPatch(){
+ if(step>=PATCHES.length){tr.textContent="script finished — press reset to run it again";return;}
+ const {p,why}=PATCHES[step++];
+ const t=nowt();
+ if(p.op==="add"){const n={...p.node,t0:t,tw:{}};
+  if(n.x<0.22){n.tw.x={from:-0.2,to:n.x,t0:t,dur:700};}
+  if(n.kind==="text"){n.tw.y={from:n.y+0.09,to:n.y,t0:t,dur:800};}
+  stage.set(n.id,n);}
+ if(p.op==="update"){const n=stage.get(p.id);if(n)for(const[k,v]of Object.entries(p.set))
+  n.tw[k]={from:n[k],to:v,t0:t,dur:1100};}
+ if(p.op==="remove"){const n=stage.get(p.id);if(n){n.exit={t0:t,dur:600};
+  n.tw.x={from:n.x,to:1.3,t0:t,dur:600};}}
+ tr.innerHTML=
+  "<b>1 · script</b>     "+JSON.stringify(p).slice(0,84)+"\n"+
+  "<b>2 · choreographer</b> "+why+"\n"+
+  "<b>3 · stage</b>      node map now has "+stage.size+" node(s); change stored as a tween\n"+
+  "<b>4 · painter</b>    sampling the tween each frame — watch it move →";}
+function resetDemo(){stage.clear();step=0;
+ tr.textContent="pipeline idle — the painter is still running at 60fps (watch the glow breathe)";}
+function cur2(n,k){const t=n.tw[k];if(!t)return n[k];
+ const u=Math.min(1,(nowt()-t.t0)/t.dur),e=eO2(u);
+ if(u>=1){n[k]=t.to;delete n.tw[k];return t.to;}return lerp2(t.from,t.to,e);}
+function loop(){const t=nowt();
+ ctx.clearRect(0,0,W2,H2);
+ const g=ctx.createLinearGradient(0,0,0,H2);g.addColorStop(0,"#191430");g.addColorStop(1,"#08070d");
+ ctx.fillStyle=g;ctx.fillRect(0,0,W2,H2);
+ // idle proof-of-life: breathing corner glow (the painter never stops)
+ ctx.fillStyle="#e8a34c";ctx.globalAlpha=0.25+0.15*Math.sin(t/900);
+ ctx.beginPath();ctx.arc(26,H2-26,8+2*Math.sin(t/900),0,7);ctx.fill();ctx.globalAlpha=1;
+ for(const[id,n]of stage){
+  let a=1;
+  if(n.exit){const u=(t-n.exit.t0)/n.exit.dur;if(u>=1){stage.delete(id);continue;}a=1-u;}
+  else a=Math.min(1,(t-n.t0)/600);
+  const x=cur2(n,"x")*W2,y=cur2(n,"y")*H2;ctx.globalAlpha=a;
+  if(n.kind==="disc"){const r=(n.r||0.1)*H2*(0.5+0.5*Math.min(1,(t-n.t0)/900))*(1+0.03*Math.sin(t/800));
+   ctx.shadowColor="#e8a34c";ctx.shadowBlur=30;ctx.fillStyle="#e8a34c";
+   ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.shadowBlur=0;}
+  else if(n.kind==="card"){const w=cur2(n,"w")*W2,h=(n.h||0.4)*H2;
+   ctx.fillStyle="#22304a";ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,14);ctx.fill();
+   ctx.fillStyle="#efe9dc";ctx.font=(H2*0.055)+"px Georgia";ctx.textAlign="center";ctx.textBaseline="middle";
+   ctx.fillText(n.label||"",x,y+h/2-H2*0.07);}
+  else if(n.kind==="text"){ctx.fillStyle="#efe9dc";ctx.font=(H2*0.085)+"px Georgia";
+   ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(n.text,x,y);}
+  ctx.globalAlpha=1;}
+ requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+window.sendPatch=sendPatch;window.resetDemo=resetDemo;
+</script>
+</body>
+</html>

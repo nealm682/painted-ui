@@ -380,3 +380,23 @@ parsing is the exp-03 run-1 fragility; (3) domain is HR/workforce —
 re-skin or keep untracked before public push per the no-employer
 guardrail. exp-13 = evolve this app's frontend to honor intent verbs
 (relayout+shared morphs, focus/recede, hierarchy).
+
+## [2026-07-21] website | new index + five explainer pages installed and updated
+
+Neal supplied a regenerated website set (index + the-cast /
+the-choreographer / the-painter / why-four-loops /
+how-it-works-together). Audited: all pass syntax, no sensitive terms, OG
+tags intact, and — notably — the regenerated pages PRESERVED both honesty
+corrections from the upgrade review. Installed all six at repo root
+(companion pages enable relative links on GitHub Pages). A mount
+hardlink quirk blanked index.html twice during install; recovered via
+Neal's re-download and the host-side write channel — lesson recorded:
+never bash-copy over an existing file on this mount; Write-tool
+overwrites only. Updates applied to the index per "keep it up to date":
+new Library section + nav entry (the site previously had ZERO outbound
+links — now routes to all five explainers, the exp-10 live demo, the
+pitch, and the repo), footer gains GitHub/Paper/MIT links, and one
+accuracy fix (Animator card claimed "CSS transforms to A2UI components"
+as present fact → target-agnostic: canvas in today's demos, component
+trees via adapters). Byline on site is now "Neal Meinke" (Neal's own
+choice in his file) — LICENSE placeholder can be updated to match.
