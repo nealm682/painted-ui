@@ -318,3 +318,43 @@ resources), script syntax verified, installed at repo root as
 `index.html` — chosen deliberately so that enabling GitHub Pages makes it
 the homepage at nealm682.github.io/painted-ui/ with zero further setup.
 README front matter reordered: overview → paper → pitch.
+
+## [2026-07-20] review | deck-upgrade batch: ~90% kept, 2 corrections
+
+Neal applied externally-suggested upgrades to the three main decks and
+asked for review (all/some/none). Kept: independent-clocks framing,
+source-agnostic Director, "deterministic semantic compiler" definition,
+policy domains beyond motion, compileBehavior contract, diplomatic
+prior-art table, estimate annotations. Corrected: (1) present-tense
+"applies CSS transforms to A2UI components" claims — all demos render to
+canvas; rephrased as target-dependent (canvas today, component trees via
+future adapters) per the honest-evidence standard; (2) Painter→Animator
+wholesale rename — reconciled as one role with two stage names (Painter
+for canvas, Animator for component trees) to protect the coined tagline;
+A2UI generalized to "DOM / A2UI-style / native" per vendor-neutrality.
+Review filed as [[sources/upgrades]] with a rule for future batches:
+sharpened language welcome; unbuilt capabilities in present tense and
+mid-corpus renames of coined terms get revised before merging.
+
+## [2026-07-20] ingest | ChatGPT motion recommendations → source #7
+
+Neal supplied ChatGPT's motion-architecture recommendations (raw:
+`chatgpt-motion-recommendations.md`). Core thesis adopted: "the next
+breakthrough is making the UI appear to understand WHY it is moving" —
+choreography system, not animation library. New to the wiki and merged
+into [[techniques/scene-grammar-v2]]: mature intent-verb set (compare/
+drillDown/filter/resolve…) as compositions over ~12 primitives (exp-10's
+strokeIn slots into the `draw` family); attention orchestration
+(focalIds/supporting/background + attentionMode); hierarchy choreography
+(sibling displacement, shared containers); semantic envelope on patches;
+velocity-continuous interruption → named **exp-12 "Interrupt the
+Choreographer"** (the demo video generation cannot do interactively);
+restraint doctrine (stillness is a feature). Three amendments filed in
+[[sources/chatgpt-motion-recommendations]]: grammars AND themes (behavior
+vs appearance — orthogonal, keep both); effects aren't step-7 for the
+research track (strokeIn moved the audit 6.5→8 — expressiveness is
+evidence); and the flagship "Workforce Advisor" demo re-skinned to a
+neutral domain per the no-employer guardrail (candidate: harbor-
+operations console, on-brand with the lighthouse). Product-track roadmap
+adopted: relayout+shared morphs → attention → hierarchy → intent verbs →
+interruption → grammars. Flagship narrative demo = exp-13.

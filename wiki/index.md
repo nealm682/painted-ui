@@ -90,6 +90,14 @@ Content catalog. Read this first on every query. Updated on every ingest.
   differentiator (streams *how* a persistent scene evolves, not *what*
   components exist); specifies the validating experiment → built as exp-08
   (blind three-way perception study, ready to run).
+- [[sources/chatgpt-motion-recommendations]] — source #7: the motion
+  roadmap. Intent verbs over composable primitives, attention
+  orchestration, hierarchy choreography, velocity-continuous interruption
+  ("Interrupt the Choreographer" = exp-12), grammars+themes distinction,
+  restraint doctrine. Adopted with three amendments.
+- [[sources/upgrades]] — review record of the July deck-upgrade batch:
+  ~90% kept, two corrections (present-tense claims; Painter/Animator
+  reconciliation), plus the merge rule for future upgrade batches.
 
 ## Comparisons
 

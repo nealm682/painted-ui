@@ -45,7 +45,7 @@
 <div class="wrap">
 
 <h1>The Cast <span class="dim" style="font-size:17px">— who does what in Painted UI</span></h1>
-<div class="sub">Semantic rendering separates judgment from execution. Painted UI explains that separation as five roles in one show. In the original experiments, the frame-rate loop drew on canvas and was called the "painter." With A2UI components, it becomes the <b>Animator</b> — same tween math, same 60fps loop, different output target.</div>
+<div class="sub">Semantic rendering separates judgment from execution. Painted UI explains that separation as five roles in one show. One naming note: the frame-rate loop is the <b>Painter</b> when it draws canvas pixels (all current experiments) and the <b>Animator</b> when it drives a component tree (DOM / A2UI-style / native — future adapters). Same role, same tween math, same 60fps contract — different output target.</div>
 
 <div class="cast">
  <div class="role r1"><div class="who">model / agent (cloud or local)</div><b>Director</b><span>Decides WHAT exists and WHAT changes. Emits allow-listed semantic patches — never pixels, never animation frames. May be a cloud LLM, an on-device SLM, or any other source of structured intent.</span></div>

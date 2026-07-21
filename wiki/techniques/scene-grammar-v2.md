@@ -92,15 +92,36 @@ rare change that improves cost and quality in the same move. Also
 compounds+containers shrink the constrained-decoding grammar for on-device
 SLMs (fewer, higher-level productions).
 
-## Layer D — intent macros (added after the exp-10 audit follow-up)
+## Layer D — intent verbs (expanded via source #7)
 
 The reviewer's point: verbs still name IDs (`strokeIn tower`). One layer
-up, the model emits *intent* — `compose lighthouse_scene · focus
-lighthouse · weather dusk · emphasize beacon` — and an expander (client-
-side, like the [[concepts/choreographer]] but for composition) unrolls
-each into verb sequences. Token cost falls again; the model's job
-approaches pure direction. Open question: is the expander a policy, a
-local SLM, or a compound-catalog entry with slots?
+up, the model emits *intent* — and [[sources/chatgpt-motion-recommendations]]
+supplies the mature verb set: `reveal · compare · focus · expand ·
+collapse · drillDown · return · filter · sort · replace · confirm · warn
+· resolve · connect · group`. Each maps to an understandable visual
+consequence (filter → excluded items leave toward the nearest boundary,
+survivors close ranks; drillDown → details emerge from *inside* the
+selected object; resolve → tension relaxes). The architecture underneath:
+**~12 composable primitives** (fade/reveal/scale/slide/draw ·
+morph/relayout/crossfade/sharedElement · emphasize/recede/pulse ·
+expand/collapse/group/disperse) — intent verbs are *compositions* of
+primitives, so the vocabulary scales without 40 bespoke animations.
+exp-10's strokeIn/materialize slot in as members of the `draw` family.
+Patches gain an optional **semantic envelope** —
+`intent:{action,importance,cause,relationship}` — and scenes gain
+**attention orchestration**: `{focalIds, supportingIds, backgroundIds,
+attentionMode}`, which the choreographer translates into scale/contrast/
+opacity/blur/depth/position. Hierarchy choreography (parent-first
+entrances, sibling displacement, coordinated exits) extends Layer C
+containers from layout grouping to motion grouping.
+
+**Grammars AND themes (not "instead of"):** motion *grammars*
+(analytical / editorial / organic / urgent) govern behavior — tempo,
+easing family, stagger pattern, attention strength, interruption
+behavior. *Themes* (ink / watercolor / blueprint / storybook) govern
+appearance — how strokes and fills render. Orthogonal, both swappable:
+a financial console is analytical+blueprint; a story app is
+editorial+storybook.
 
 ## Themes — the same protocol, many hands (added after the follow-up)
 

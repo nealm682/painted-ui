@@ -40,7 +40,7 @@
 <div class="roles">
   <div class="role"><b>The Director</b><span>the LLM/agent. Decides <i>what</i> exists and <i>what changes</i>: "add three cards; focus the second; retitle the scene." Speaks in semantic patches.</span></div>
   <div class="role"><b>The Choreographer</b><span>A design concern, not a runtime agent. Decides <i>how</i> each change moves: verb, duration, easing, stagger. Implemented as a pure function (~40 lines) or delegated to the model. Three architectures: model-picks (A, current exp-03), local-policy-picks (B), hybrid (C, production target).</span></div>
-  <div class="role"><b>The Animator</b><span>the frame-rate loop. Applies tween values to A2UI components as CSS transforms, 60×/s on the user's own device. Never makes decisions.</span></div>
+  <div class="role"><b>The Painter / Animator</b><span>the frame-rate loop — one role, named by its render target: the <i>Painter</i> when drawing canvas pixels (all current demos), the <i>Animator</i> when driving a component tree (DOM / A2UI-style / native) via adapters. Same tween math, 60×/s on the user's own device. Never makes decisions.</span></div>
   <div class="role"><b>The Stage</b><span>the node map — the shared state all four loops meet at.</span></div>
 </div>
 <div class="card key">Separating these is what makes the system scale: every routine decision moved from the model into policy moves from <em>tokens, latency, and variance</em> into code that is <em>local, instant, testable, and reusable.</em></div>

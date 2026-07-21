@@ -68,7 +68,7 @@
     <div class="card"><b class="k">1 · Conversation</b><br><span class="d">the director's contract</span><br>One model call per interaction. Clicks are messages, so the model mutates its own scene instead of repainting.</div>
     <div class="card"><b class="k">2 · Network read</b><br><span class="d">the courier</span><br><code>await reader.read()</code> — delivers arbitrary fragments. Makes no promises about boundaries.</div>
     <div class="card"><b class="k">3 · Parser scan</b><br><span class="d">the assembler</span><br>Brace-depth scan over a buffer. Emits exactly one <code>applyPatch()</code> per completed object. Absorbs all boundary chaos.</div>
-    <div class="card"><b class="k">4 · Render</b><br><span class="d">the animator</span><br><code>requestAnimationFrame</code>, 60×/s. Reads the node map, applies tween values as CSS transforms to A2UI components. <b>Never waits for anything.</b></div>
+    <div class="card"><b class="k">4 · Render</b><br><span class="d">the painter / animator</span><br><code>requestAnimationFrame</code>, 60×/s. Reads the node map and applies tween values to the render target — canvas pixels today (the demos), component trees (DOM / A2UI-style / native) as adapters land. <b>Never waits for anything.</b></div>
   </div>
 </section>
 
