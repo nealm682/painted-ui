@@ -485,10 +485,10 @@ u=1.0 → x = <em>0.18</em>  → tween deleted</pre>
   <div class="role-cards">
 
     <div class="role-card" style="--rc:var(--dir)">
-      <div class="rc-who">Loop 1 · LLM / Agent</div>
+      <div class="rc-who">Loop 1 · Model / Agent (cloud or local)</div>
       <div class="rc-name">Director</div>
       <div class="rc-tagline">"I decide what exists and what changes."</div>
-      <p style="font-size:14px;color:var(--dim)">Sends only semantic operations — never pixels, never geometry math, never animation timelines. Its output is a small JSON stream, typically 1–2 KB for a full scene.</p>
+      <p style="font-size:14px;color:var(--dim)">Sends only semantic operations — never pixels, never geometry math, never animation timelines. Its output is a small JSON stream, typically 1–2 KB for a full scene. The Director may be a cloud LLM, an on-device SLM, or any source of structured intent.</p>
       <div class="io-row">
         <div class="io-box"><div class="io-label">Receives</div><div class="io-val">user prompt<br>click events</div></div>
         <div class="io-box"><div class="io-label">Emits</div><div class="io-val">JSONL stream<br>op + node data</div></div>
