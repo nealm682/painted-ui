@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Animator — understanding the render loop</title>
+<style>
+  :root{
+    --bg:#0c0b10;--panel:#14121c;--edge:#2c2840;--ink:#efeae0;--dim:#8a86a0;
+    --accent:#e8a34c;--green:#7fd4c1;--soft:#9a8fd0;--red:#e08a7a;
+  }
+  *{box-sizing:border-box}
+  html{background:var(--bg)}
+  body{margin:0;color:var(--ink);font:17px/1.7 Georgia,serif}
+  .wrap{max-width:900px;margin:0 auto;padding:48px 24px 100px}
+
+  /* typography */
+  h1{font-size:42px;margin:0 0 8px;letter-spacing:-.02em}
+  h2{font-size:22px;color:var(--accent);margin:52px 0 12px;letter-spacing:-.01em}
+  h3{font-size:17px;color:var(--green);margin:0 0 8px}
+  .sub{color:var(--dim);font-size:19px;margin-bottom:0}
+  .dim{color:var(--dim)}
+
+  /* cards */
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:16px 20px;margin:12px 0}
+  .card.key{border-left:3px solid var(--accent)}
+  .card.green{border-left:3px solid var(--green)}
+
+  /* big callout */
+  .callout{font-size:22px;line-height:1.4;color:var(--ink)}
+  .callout em{color:var(--accent);font-style:normal}
+  .callout .g{color:var(--green)}
+
+  /* three steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0}
+  .step{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:18px;text-align:center}
+  .step .num{font:13px monospace;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+  .step .icon{font-size:32px;margin-bottom:10px}
+  .step h3{font-size:15px;color:var(--accent);margin:0 0 6px}
+  .step p{font-size:14px;color:var(--dim);margin:0}
+
+  /* live demo */
+  .demo-wrap{background:var(--panel);border:1px solid var(--edge);border-radius:16px;overflow:hidden;margin:20px 0}
+  .demo-head{padding:12px 18px;border-bottom:1px solid var(--edge);display:flex;justify-content:space-between;align-items:center;font:13px monospace;color:var(--dim)}
+  .demo-head .live{color:var(--green);display:flex;align-items:center;gap:7px}
+  .pulse{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+  canvas{display:block;width:100%;background:#08070d}
+  .demo-foot{padding:12px 18px;border-top:1px solid var(--edge);display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .readout{font:12px/1.8 monospace}
+  .readout .label{color:var(--dim)}
+  .readout .val{color:var(--green)}
+  .readout .key{color:var(--accent)}
+  .frame-counter{font:28px monospace;color:var(--accent);text-align:right;align-self:center}
+  .frame-counter .fc-label{font:11px monospace;color:var(--dim);display:block;text-align:right;margin-top:2px}
+
+  /* controls */
+  .controls{display:flex;gap:10px;flex-wrap:wrap;padding:0 18px 14px}
+  button{background:var(--accent);color:#17110b;border:0;border-radius:8px;padding:8px 16px;font:14px Georgia;cursor:pointer;font-weight:bold}
+  button.ghost{background:var(--panel);color:var(--ink);border:1px solid var(--edge)}
+  button:hover{opacity:.85}
+
+  /* tween visual */
+  .tween-track{margin:16px 0;background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:20px}
+  .tween-bar-wrap{margin:10px 0;display:flex;align-items:center;gap:12px;font:13px monospace}
+  .tween-bar-wrap .bar-label{color:var(--dim);width:60px;flex-shrink:0}
+  .tween-bar-bg{flex:1;height:10px;background:#1e1c2a;border-radius:99px;overflow:hidden;position:relative}
+  .tween-bar-fill{height:100%;border-radius:99px;background:var(--green);transition:width .016s linear}
+  .tween-bar-wrap .bar-val{color:var(--green);width:48px;text-align:right;flex-shrink:0}
+
+  /* accordions */
+  details{background:var(--panel);border:1px solid var(--edge);border-radius:12px;margin:10px 0;overflow:hidden}
+  summary{padding:14px 18px;cursor:pointer;font-size:16px;list-style:none;display:flex;justify-content:space-between;align-items:center;user-select:none}
+  summary::after{content:"▸";color:var(--accent);transition:transform .2s;font-size:14px}
+  details[open] summary::after{transform:rotate(90deg)}
+  summary:hover{background:#1a1726}
+  .acc-body{padding:4px 20px 18px;border-top:1px solid var(--edge)}
+  pre{background:#0f0d16;border:1px solid var(--edge);border-radius:8px;padding:14px;overflow-x:auto;
+      font:12.5px/1.65 monospace;color:#b9b4cc;margin:10px 0}
+  pre em{color:var(--green);font-style:normal}
+  pre b{color:var(--accent);font-weight:normal}
+  pre i{color:var(--dim);font-style:normal}
+  code{background:#1b1826;border-radius:4px;padding:1px 6px;font-size:13px;color:var(--green)}
+
+  /* cast row */
+  .cast{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}
+  .cast-role{flex:1;min-width:160px;background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:12px 14px;opacity:.45}
+  .cast-role.active{opacity:1;border-color:var(--accent)}
+  .cast-role .who{font:11px monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+  .cast-role b{display:block;color:var(--accent);font-size:15px;margin-bottom:3px}
+  .cast-role span{font-size:13px;color:var(--dim)}
+  .cast-role.active b{color:var(--green)}
+  .cast-role.active .who{color:var(--accent)}
+
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}
+  td,th{border:1px solid var(--edge);padding:8px 12px;text-align:left;vertical-align:top}
+  th{color:var(--accent);font-weight:normal;font-size:13px}
+
+  @media(max-width:600px){
+    .steps{grid-template-columns:1fr}
+    .demo-foot{grid-template-columns:1fr}
+    .frame-counter{text-align:left}
+    h1{font-size:30px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HERO -->
+<div style="margin-bottom:6px;font:12px monospace;color:var(--dim);letter-spacing:.1em;text-transform:uppercase">Painted UI · the cast · role 4</div>
+<h1>The <span style="color:var(--accent)">Animator</span></h1>
+<p class="sub">It runs sixty times a second. It doesn't know — or care — what the network is doing.</p>
+
+<div class="card" style="margin-top:24px;border-left:3px solid var(--green)">
+  <span style="color:var(--green);font:12px monospace">NOTE</span> &mdash; In the original experiments (exp-01 through exp-11), this role was called the <b>Painter</b> and drew on Canvas2D. With A2UI integration, it becomes the <b>Animator</b> — same tween math, same 60fps loop, but driving CSS transforms on accessible HTML components instead of canvas pixels. The demo below still uses canvas to illustrate the concepts.
+</div>
+
+<div class="card key" style="margin-top:12px">
+  <div class="callout">The Animator is a loop. Every ~16 ms it wakes up, reads what's on stage, <em>samples every tween,</em> and applies the current values to each component. It never waits. It never decides. <span class="g">It just animates.</span></div>
+</div>
+
+
+<!-- THE ANALOGY -->
+<h2>First: the plain-English version</h2>
+
+<p>Imagine a security camera that takes a photo sixty times per second. It doesn't wait for something interesting to happen before snapping — it snaps constantly. If nothing changed since the last photo, the photos look identical. If a node is halfway through morphing, the photo captures it mid-morph.</p>
+
+<p>That's the Animator. Every frame it asks: <em>"What does the stage look like right now?"</em> — and applies those values. The stage might have changed since last frame (a new patch arrived, a tween advanced) or it might be identical. The Animator doesn't know. It just animates.</p>
+
+<div class="card green">
+  <b style="color:var(--green)">The key insight:</b> smooth animation isn't the Animator "scheduling" a move.
+  It's the Animator repeatedly sampling a <em>math function</em> that says where something is <em>at any given moment in time</em>.
+  Each frame is just a snapshot at a slightly later timestamp.
+</div>
+
+
+<!-- THREE STEPS -->
+<h2>Three things happen every frame</h2>
+<div class="steps">
+  <div class="step">
+    <div class="num">step 1</div>
+    <div class="icon" style="color:var(--accent)">&#9678;</div>
+    <h3>Read the stage</h3>
+    <p>Loop over every node in the node map. Get its current position, size, kind, and any active tweens.</p>
+  </div>
+  <div class="step">
+    <div class="num">step 2</div>
+    <div class="icon" style="color:var(--green)">&#9650;</div>
+    <h3>Ask the tween</h3>
+    <p>"Where are you <em>right now</em>?" The tween does the math — elapsed time, easing curve — and returns a number.</p>
+  </div>
+  <div class="step">
+    <div class="num">step 3</div>
+    <div class="icon" style="color:var(--soft)">&#9632;</div>
+    <h3>Draw, then repeat</h3>
+    <p>Clear the canvas, paint every node at its current values, then schedule the next frame in ~16 ms.</p>
+  </div>
+</div>
+
+
+<!-- LIVE DEMO -->
+<h2>See it: the loop, live</h2>
+<p>The frame counter below ticks up every time the Animator wakes up. Watch it run constantly — even when nothing is animating, the loop keeps going. The readout shows the exact values the Animator is using <em>this frame</em>.</p>
+
+<div class="demo-wrap">
+  <div class="demo-head">
+    <span>painter canvas</span>
+    <span class="live"><span class="pulse"></span> loop running</span>
+  </div>
+  <canvas id="mainCanvas" height="300"></canvas>
+  <div class="demo-foot">
+    <div class="readout" id="readout">
+      <span class="label">waiting for nodes…</span>
+    </div>
+    <div>
+      <div class="frame-counter" id="frameCounter">0</div>
+      <div class="frame-counter fc-label">frames painted</div>
+    </div>
+  </div>
+  <div class="controls">
+    <button id="btnAdd">Add a node</button>
+    <button id="btnMorph" class="ghost">Morph it</button>
+    <button id="btnRemove" class="ghost">Remove it</button>
+    <button id="btnReset" class="ghost">Reset</button>
+  </div>
+</div>
+
+
+<!-- TWEEN EXPLAINER -->
+<h2>What is a tween, exactly?</h2>
+
+<p>A tween is not a timer or a scheduled event. It's a record with three numbers: <code>from</code>, <code>to</code>, and <code>t0</code> (the timestamp when it started). That's it.</p>
+
+<p>Every frame, the Animator asks: <em>"Given that this tween started at t0 and lasts 1100 ms, and it's now time t — what fraction of the way through are we?"</em> It plugs that fraction into an easing curve and gets back a number between <code>from</code> and <code>to</code>.</p>
+
+<div class="tween-track" id="tweenTrack">
+  <h3>Live tween values — watch them update each frame</h3>
+  <div class="dim" style="font-size:14px;margin-bottom:12px">Add a node above, then morph it. The bars show the Animator sampling the tween on every frame.</div>
+  <div class="tween-bar-wrap">
+    <span class="bar-label">x</span>
+    <div class="tween-bar-bg"><div class="tween-bar-fill" id="barX" style="width:0%"></div></div>
+    <span class="bar-val" id="valX">—</span>
+  </div>
+  <div class="tween-bar-wrap">
+    <span class="bar-label">y</span>
+    <div class="tween-bar-bg"><div class="tween-bar-fill" id="barY" style="width:0%"></div></div>
+    <span class="bar-val" id="valY">—</span>
+  </div>
+  <div class="tween-bar-wrap">
+    <span class="bar-label">w</span>
+    <div class="tween-bar-bg"><div class="tween-bar-fill" id="barW" style="width:0%"></div></div>
+    <span class="bar-val" id="valW">—</span>
+  </div>
+  <div class="tween-bar-wrap">
+    <span class="bar-label">alpha</span>
+    <div class="tween-bar-bg"><div class="tween-bar-fill" id="barA" style="width:0%;background:var(--soft)"></div></div>
+    <span class="bar-val" id="valA">—</span>
+  </div>
+</div>
+
+<div class="card" style="margin-top:0">
+  <b style="color:var(--accent)">The math in one line:</b><br>
+  <code style="font-size:14px">value(t) = from + (to − from) × ease( (t − t₀) / duration )</code><br>
+  <span class="dim" style="font-size:14px">This is a pure function. Call it at any time t and get the right value. No scheduler, no state machine, no events — just arithmetic.</span>
+</div>
+
+
+<!-- DEVELOPER ACCORDIONS -->
+<h2>Under the hood</h2>
+
+<details>
+  <summary>The actual render loop — 8 lines of real code</summary>
+  <div class="acc-body">
+    <p>This is the Animator (originally called the Painter in canvas experiments). It runs inside <code>requestAnimationFrame</code>, which the browser calls ~60 times per second, synchronized to your screen's refresh rate.</p>
+<pre><b>function</b> frame() {
+  ctx.<em>clearRect</em>(0, 0, W, H);          <i>// wipe the canvas</i>
+
+  <b>for</b> (const node <b>of</b> stage.values()) {  <i>// loop over every node on stage</i>
+    const x = <em>cur</em>(node, "x");           <i>// ask the tween: "where is x right now?"</i>
+    const y = <em>cur</em>(node, "y");
+    const a = <em>alpha</em>(node);              <i>// enter / exit fade</i>
+    <em>drawNode</em>(node, x, y, a);            <i>// paint it</i>
+  }
+
+  requestAnimationFrame(frame);         <i>// schedule the next frame (~16 ms from now)</i>
+}</pre>
+    <p>That's it. No conditions on whether data is arriving. No waiting. No checking the network. The loop wakes up, draws what it sees, and immediately schedules the next wake-up.</p>
+  </div>
+</details>
+
+<details>
+  <summary>What <code>cur(node, "x")</code> does — the tween sampler</summary>
+  <div class="acc-body">
+    <p>When a patch arrives (e.g. <code>update card1 {x: 0.7}</code>), the stage doesn't just set <code>node.x = 0.7</code>. Instead it stores a tween object:</p>
+<pre>node.tweens.x = {
+  from: <em>0.2</em>,    <i>// where x was</i>
+  to:   <em>0.7</em>,    <i>// where x should go</i>
+  t0:   <em>now()</em>,  <i>// when this tween started</i>
+  dur:  <em>1100</em>    <i>// milliseconds to complete</i>
+}</pre>
+    <p>Then <code>cur(node, "x")</code> — called every frame — does this:</p>
+<pre><b>function</b> cur(node, key) {
+  const tw = node.tweens[key];
+  <b>if</b> (!tw) <b>return</b> node[key];           <i>// no tween → return the raw value</i>
+
+  const elapsed = now() - tw.t0;
+  const u = <em>clamp</em>(elapsed / tw.dur);    <i>// 0.0 → 1.0 progress</i>
+  const e = <em>easeInOut</em>(u);              <i>// apply the easing curve</i>
+
+  <b>if</b> (u >= 1) {
+    node[key] = tw.to;               <i>// tween finished — clean it up</i>
+    <b>delete</b> node.tweens[key];
+    <b>return</b> tw.to;
+  }
+
+  <b>return</b> tw.from + (tw.to - tw.from) * e; <i>// interpolated value right now</i>
+}</pre>
+    <p>The Animator calls this for every property of every node, every frame. Because it's just arithmetic — no timers, no events — it works at any frame rate and handles interruptions perfectly: if a new patch arrives mid-tween, you just replace <code>tw.from</code> with the current value and <code>tw.t0</code> with now.</p>
+  </div>
+</details>
+
+<details>
+  <summary>What is <code>requestAnimationFrame</code>?</summary>
+  <div class="acc-body">
+    <p><code>requestAnimationFrame(fn)</code> is a browser API that says: <em>"Call <code>fn</code> before the next screen repaint."</em> The browser syncs this to your display refresh rate — typically 60 Hz, sometimes 120 Hz.</p>
+    <table>
+      <tr><th>Compared to…</th><th>Difference</th></tr>
+      <tr><td><code>setInterval(fn, 16)</code></td><td>rAF is synced to the actual screen; setInterval drifts and can fire when the tab is hidden (wastes battery). rAF pauses automatically when the tab is hidden.</td></tr>
+      <tr><td>A <code>while(true)</code> loop</td><td>rAF yields to the browser between frames, letting it handle input, layout, and other tasks. A while loop would freeze the page.</td></tr>
+      <tr><td>CSS animations</td><td>rAF gives you full control over what gets drawn. CSS animations are declarative; rAF is imperative — you can compute anything per frame.</td></tr>
+    </table>
+    <p>The pattern <code>function frame(){ … requestAnimationFrame(frame); }</code> is a self-scheduling loop: each call to <code>frame</code> schedules the next one. It runs forever until you stop calling <code>requestAnimationFrame</code>.</p>
+  </div>
+</details>
+
+<details>
+  <summary>Why redraw everything from scratch each frame?</summary>
+  <div class="acc-body">
+    <p>This is called <b>immediate-mode rendering</b> (as opposed to <em>retained-mode</em>, where you keep a widget tree and update it). Canvas2D is immediate-mode: each frame you clear and repaint.</p>
+    <p><b>Why is this actually fine?</b></p>
+    <ul>
+      <li>A modern device can clear and repaint a 900×500 canvas in well under 1 ms. Our scenes have ~5–20 nodes — this is trivial work.</li>
+      <li>There's no "diff" to compute. You don't need to figure out what changed — you just draw what's true right now.</li>
+      <li>Tweens and enter/exit animations fall out naturally: on every frame the values are slightly different, so the drawing is slightly different. No animation system needed beyond the tween sampler.</li>
+      <li>This is how games work (every frame, clear and redraw the whole scene). Dear ImGui, a widely used developer UI toolkit, works the same way.</li>
+    </ul>
+    <p>The tradeoff: this approach doesn't scale to thousands of DOM-like elements. For Painted UI's use case (5–30 semantic objects per scene), it's the simplest possible thing that works.</p>
+  </div>
+</details>
+
+<details>
+  <summary>What the Animator does NOT do</summary>
+  <div class="acc-body">
+    <table>
+      <tr><th>Not the Animator's job</th><th>Whose job it is</th></tr>
+      <tr><td>Deciding what nodes exist</td><td>The Director (LLM)</td></tr>
+      <tr><td>Deciding which verb to use (flyin, dissolve, morph…)</td><td>The Choreographer (motion policy)</td></tr>
+      <tr><td>Storing nodes between frames</td><td>The Stage (node map)</td></tr>
+      <tr><td>Handling network responses</td><td>The parser loop (loop 3)</td></tr>
+      <tr><td>Knowing when a tween started or what caused it</td><td>The Stage — it stores the tween; the Animator just samples it</td></tr>
+    </table>
+    <p>The Animator is the dumbest member of the cast on purpose. The dumber it is, the faster it runs, the harder it is to break, and the easier it is to A/B test with different visual styles.</p>
+  </div>
+</details>
+
+
+<!-- WHERE IT FITS -->
+<h2>Where the Animator fits in the cast</h2>
+<div class="cast">
+  <div class="cast-role">
+    <div class="who">LLM / agent</div>
+    <b>Director</b>
+    <span>Decides what exists and what changes. Streams patches.</span>
+  </div>
+  <div class="cast-role">
+    <div class="who">motion policy</div>
+    <b>Choreographer</b>
+    <span>Decides how each change moves. Pure function — verb, duration, easing.</span>
+  </div>
+  <div class="cast-role">
+    <div class="who">node map</div>
+    <b>Stage</b>
+    <span>Holds every node + its tweens. The one place all loops meet.</span>
+  </div>
+  <div class="cast-role active">
+    <div class="who">render loop · you are here</div>
+    <b>Animator</b>
+    <span>Reads the stage 60×/sec. Animates. Never waits. Never decides.</span>
+  </div>
+</div>
+
+<div class="card key" style="margin-top:8px">
+  <b style="color:var(--accent)">The one-sentence summary:</b> The Animator is a loop that runs at screen speed, samples the stage at each frame, and applies those values to A2UI components — smooth animation emerges from repeatedly asking a math function where things are right now.
+</div>
+
+<p class="dim" style="margin-top:32px;font-size:14px">Companions: <code>the-cast.html</code> · <code>the-choreographer.html</code> · <code>why-four-loops.html</code> · wiki: concepts/four-loops</p>
+
+</div><!-- /wrap -->
+
+<script>
+// ---- LIVE DEMO ----
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+const readoutEl = document.getElementById('readout');
+const frameCounterEl = document.getElementById('frameCounter');
+
+let W = 0, H = 0;
+function resize() {
+  const r = canvas.getBoundingClientRect();
+  W = canvas.width = r.width * Math.min(devicePixelRatio, 2);
+  H = canvas.height = 300 * Math.min(devicePixelRatio, 2);
+}
+addEventListener('resize', resize); resize();
+
+const DPR = Math.min(devicePixelRatio, 2);
+
+// --- state ---
+const stage = new Map();
+let frameCount = 0;
+let nodeAdded = false;
+
+// --- tween helpers ---
+const easeInOut = u => u < .5 ? 4*u*u*u : 1 - Math.pow(-2*u+2,3)/2;
+const clamp01 = u => Math.max(0, Math.min(1, u));
+
+function cur(n, key) {
+  const tw = n.tweens[key];
+  if (!tw) return n[key];
+  const u = clamp01((performance.now() - tw.t0) / tw.dur);
+  const e = easeInOut(u);
+  if (u >= 1) { n[key] = tw.to; delete n.tweens[key]; return tw.to; }
+  return tw.from + (tw.to - tw.from) * e;
+}
+
+function setTween(n, key, to, dur) {
+  n.tweens[key] = { from: cur(n, key), to, t0: performance.now(), dur };
+}
+
+function alpha(n) {
+  if (n.entering) {
+    const u = clamp01((performance.now() - n.enterT) / 700);
+    if (u >= 1) n.entering = false;
+    return easeInOut(u);
+  }
+  if (n.exiting) {
+    const u = clamp01((performance.now() - n.exitT) / 500);
+    if (u >= 1) { stage.delete(n.id); return 0; }
+    return 1 - easeInOut(u);
+  }
+  return 1;
+}
+
+// --- draw ---
+function roundRect(x,y,w,h,r) {
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+function drawNode(n) {
+  const x = cur(n,'x') * W;
+  const y = cur(n,'y') * H;
+  const w = cur(n,'w') * W;
+  const h = cur(n,'h') * H;
+  const a = alpha(n);
+  if (a <= 0) return;
+
+  ctx.globalAlpha = a;
+
+  // glow
+  ctx.shadowColor = n.color;
+  ctx.shadowBlur = 18 * DPR;
+  ctx.fillStyle = n.color + '28';
+  roundRect(x - w/2, y - h/2, w, h, 14 * DPR);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = n.color + 'aa';
+  ctx.lineWidth = 1.5 * DPR;
+  roundRect(x - w/2, y - h/2, w, h, 14 * DPR);
+  ctx.stroke();
+
+  ctx.fillStyle = '#efeae0';
+  ctx.font = `${14 * DPR}px Georgia`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(n.label, x, y);
+
+  ctx.globalAlpha = 1;
+}
+
+// --- readout + tween bars ---
+function updateReadout(n) {
+  if (!n) {
+    readoutEl.innerHTML = '<span class="label">no nodes on stage</span>';
+    ['X','Y','W','A'].forEach(k => {
+      document.getElementById('bar'+k).style.width = '0%';
+      document.getElementById('val'+k).textContent = '—';
+    });
+    return;
+  }
+  const x = cur(n,'x'), y = cur(n,'y'), w = cur(n,'w'), a = alpha(n);
+  const hasTween = Object.keys(n.tweens).length > 0 || n.entering || n.exiting;
+
+  readoutEl.innerHTML =
+    `<span class="label">node · </span><span class="key">${n.id}</span>\n` +
+    `<span class="label">x: </span><span class="val">${x.toFixed(3)}</span>  ` +
+    `<span class="label">y: </span><span class="val">${y.toFixed(3)}</span>\n` +
+    `<span class="label">w: </span><span class="val">${w.toFixed(3)}</span>  ` +
+    `<span class="label">h: </span><span class="val">${cur(n,'h').toFixed(3)}</span>\n` +
+    `<span class="label">alpha: </span><span class="val">${a.toFixed(3)}</span>  ` +
+    `<span class="label">tweening: </span><span class="val">${hasTween ? 'yes' : 'no'}</span>`;
+
+  document.getElementById('barX').style.width = (x * 100) + '%';
+  document.getElementById('valX').textContent = x.toFixed(2);
+  document.getElementById('barY').style.width = (y * 100) + '%';
+  document.getElementById('valY').textContent = y.toFixed(2);
+  document.getElementById('barW').style.width = (w * 100) + '%';
+  document.getElementById('valW').textContent = w.toFixed(2);
+  document.getElementById('barA').style.width = (a * 100) + '%';
+  document.getElementById('valA').textContent = a.toFixed(2);
+}
+
+// --- main loop ---
+function frame() {
+  ctx.clearRect(0, 0, W, H);
+
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,.04)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 60*DPR) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 60*DPR) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // idle pulse
+  if (stage.size === 0) {
+    const t = performance.now() / 1000;
+    ctx.fillStyle = '#e8a34c';
+    ctx.globalAlpha = 0.12 + 0.08 * Math.sin(t * 2);
+    ctx.beginPath();
+    ctx.arc(W/2, H/2, (30 + 8 * Math.sin(t * 2)) * DPR, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#8a86a0';
+    ctx.font = `${13*DPR}px Georgia`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('loop running — stage is empty', W/2, H/2 + 48*DPR);
+  }
+
+  let firstNode = null;
+  for (const [id, n] of stage) {
+    drawNode(n);
+    if (!firstNode) firstNode = n;
+  }
+
+  updateReadout(firstNode);
+  frameCount++;
+  frameCounterEl.textContent = frameCount.toLocaleString();
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// --- controls ---
+document.getElementById('btnAdd').onclick = () => {
+  if (stage.has('card1')) return;
+  const n = {
+    id: 'card1', label: 'Semantic Node',
+    x: 0.5, y: 0.55, w: 0.32, h: 0.38,
+    color: '#7fd4c1',
+    tweens: {},
+    entering: true, enterT: performance.now()
+  };
+  // enter from left
+  n.tweens.x = { from: 0.05, to: 0.5, t0: performance.now(), dur: 800 };
+  stage.set('card1', n);
+  nodeAdded = true;
+};
+
+document.getElementById('btnMorph').onclick = () => {
+  const n = stage.get('card1');
+  if (!n) return;
+  const goRight = cur(n,'x') < 0.55;
+  setTween(n, 'x', goRight ? 0.68 : 0.32, 1100);
+  setTween(n, 'y', goRight ? 0.42 : 0.62, 1100);
+  setTween(n, 'w', goRight ? 0.45 : 0.28, 1100);
+  setTween(n, 'h', goRight ? 0.52 : 0.32, 1100);
+  n.color = goRight ? '#e8a34c' : '#7fd4c1';
+  n.label = goRight ? 'Morphed Node' : 'Semantic Node';
+};
+
+document.getElementById('btnRemove').onclick = () => {
+  const n = stage.get('card1');
+  if (!n || n.exiting) return;
+  n.exiting = true; n.exitT = performance.now();
+  setTween(n, 'x', 1.1, 500);
+  nodeAdded = false;
+};
+
+document.getElementById('btnReset').onclick = () => {
+  stage.clear();
+  nodeAdded = false;
+};
+</script>
+</body>
+</html>

@@ -45,16 +45,14 @@
 <div class="wrap">
 
 <h1>The Cast <span class="dim" style="font-size:17px">— who does what in Painted UI</span></h1>
-<div class="sub">Five roles, one show. The confusion to clear up first: <b>the "compositor" is a piece of
-software; the "painter" is the role it plays.</b> Same component, two names — one technical, one
-theatrical. Everything else falls into place once that's settled.</div>
+<div class="sub">Five roles, one show. In the original experiments, the frame-rate loop drew on canvas and was called the "painter." With A2UI components, it drives CSS transforms on accessible HTML elements — so its role is now the <b>Animator</b>. Same tween math, same 60fps loop, different output target.</div>
 
 <div class="cast">
  <div class="role r1"><div class="who">the LLM / agent</div><b>Director</b><span>Decides WHAT exists and WHAT changes. Speaks only in semantic patches — never pixels, never geometry math. Expensive, slow (tokens), brilliant.</span></div>
  <div class="role r2"><div class="who">tokens over the wire</div><b>The Script</b><span>The patch stream — the director's instructions arriving a few characters at a time. Kilobytes, not megabytes.</span></div>
  <div class="role r3"><div class="who">motion policy layer</div><b>Choreographer</b><span>Decides HOW each change moves: verb, duration, easing, direction, stagger. A pure function, not a runtime agent. Can live in patch data (model decides, costs tokens — current exp-03) or as a local policy function (free, deterministic, versioned — the production target).</span></div>
- <div class="role r4"><div class="who">the compositor (code)</div><b>Painter</b><span>Executes motion 60×/sec from current state. Owns the verb implementations (strokeIn, materialize…). Never decides anything.</span></div>
- <div class="role r5"><div class="who">the node map (state)</div><b>Stage</b><span>One shared data structure. Directors and choreographers WRITE it; the painter READS it. They never talk directly.</span></div>
+ <div class="role r4"><div class="who">the frame-rate loop</div><b>Animator</b><span>Samples tween state and applies CSS transforms to A2UI components at display rate. Owns the motion verb library. Never decides anything.</span></div>
+ <div class="role r5"><div class="who">the node map (state)</div><b>Stage</b><span>One shared data structure. Directors and choreographers WRITE it; the animator READS it. They never talk directly.</span></div>
 </div>
 
 <div class="key">The economic logic of the whole cast: <b>every decision moved down the chain moves from
@@ -141,9 +139,9 @@ policy default, model override. Production wants B/C: the policy IS the brand's 
 </details>
 
 <details>
-<summary>4 · The painter (compositor) — sixty questions per second, zero decisions</summary>
+<summary>4 · The animator — sixty questions per second, zero decisions</summary>
 <div class="body">
-<p>The compositor is a loop that runs at your display's refresh rate and does exactly this, every
+<p>The animator is a loop that runs at your display's refresh rate and does exactly this, every
 frame, forever — whether or not anything is streaming:</p>
 <pre><b>function</b> frame(){
   <b>for</b> (node <b>of</b> stage)             <i>// read the shared state — never waits for the network</i>
@@ -154,17 +152,15 @@ frame, forever — whether or not anything is streaming:</p>
 <i>function of elapsed time</i>:</p>
 <pre>x(t) = from + (to − from) × ease((t − t₀) / duration)   <i>// closed-form: any frame rate, no error,</i>
                                                         <i>// no physics instability, no scheduler</i></pre>
-<p>The painter also owns the <b>verb library</b> — the artistic implementations the director can name
-for one token each. What <code>strokeIn</code> actually does when asked to draw a lighthouse:</p>
+<p>The animator also owns the <b>verb library</b> — the motion implementations the director can name
+for one token each. With A2UI, verbs become CSS transform sequences on standard components. In the original canvas experiments, verbs like <code>strokeIn</code> drew directly — here's what that looked like:</p>
 <pre><i>// the director said only: {"verb":"strokeIn","id":"tower"}   ← ~8 tokens</i>
 <i>// the painter expands that into:</i>
 path   = lighthouseOutline(anchors, viewport)   <i>// ~40 points, parametric, any resolution</i>
 length = totalLength(path)
 <b>each frame:</b> draw the first <em>ease(t−t₀)</em> × length of the path, tip-first,
             and let the brush cursor ride the current tip           <i>// ← "drawn into existence"</i></pre>
-<p class="dim">Written once (~40 lines), reusable forever, swappable per <b>theme</b> (the same
-strokeIn could render as Japanese ink, blueprint drafting lines, or crayon — same protocol, different
-hand). That's why the audit called this "a language of artistic behaviors."</p>
+<p class="dim">Written once (~40 lines), reusable forever, swappable per <b>theme</b>. With A2UI components the verb library shifts from canvas drawing to CSS transform choreography — but the protocol and the tween math are identical.</p>
 </div>
 </details>
 
@@ -174,13 +170,13 @@ hand). That's why the audit called this "a language of artistic behaviors."</p>
 <p>The stage is one <code>Map</code> of id → node. The rule that makes four independent loops need no
 scheduler, no locks, and no coordination:</p>
 <pre>Director + Choreographer  →  <b>WRITE</b> the stage   (when patches arrive — bursty, unpredictable)
-Painter                   →  <b>READ</b> the stage    (60×/sec, metronomic, never blocked)</pre>
+Animator                  →  <b>READ</b> the stage    (60×/sec, metronomic, never blocked)</pre>
 <p>Before and after one <code>update</code> patch:</p>
 <pre><i>// BEFORE                                    // AFTER {"op":"update","id":"c1","set":{"w":0.6}}</i>
 stage = {                                    stage = {
   c1: {kind:"card", w:<em>0.22</em>, …}                 c1: {kind:"card", w:<em>0.22→0.6 over 1100ms</em>, …}
 }                                            }
-<i>// the node isn't replaced — it grows a tween. The painter just keeps asking</i>
+<i>// the node isn't replaced — it grows a tween. The animator just keeps asking</i>
 <i>// "what's w right now?" and gets 0.22, 0.31, 0.44 … 0.60 across ~66 frames.</i></pre>
 <p class="dim">A node mounted mid-stream simply starts existing and animates in while later tokens
 are still arriving. Streaming mutates; rendering samples. The overlap is the show.</p>
@@ -202,10 +198,9 @@ painter animates — with the trace narrated below.</p>
 <h2>The one-paragraph summary to keep</h2>
 <div class="key">The <b>director</b> (LLM) streams semantic patches — nouns and changes, never pixels.
 The <b>choreographer</b> (local policy) turns each change into a motion plan in microseconds.
-The <b>stage</b> (node map) absorbs the change as a tween. The <b>painter</b> (compositor) — the only
-one drawing — reads the stage sixty times a second and executes the verb library's artistry on the
+The <b>stage</b> (node map) absorbs the change as a tween. The <b>animator</b> (frame-rate loop) reads the stage sixty times a second and applies CSS transforms to A2UI components on the
 user's own silicon. Tokens buy meaning; code performs it; nothing waits for anything.
-<i>The model directs; your device paints.</i></div>
+<i>The model directs; your device animates.</i></div>
 
 <p class="dim" style="margin-top:20px">Companions: <code>how-it-works.html</code> (the four loops,
 step-through) · <code>the-choreographer.html</code> (policy deep-dive + demo) ·

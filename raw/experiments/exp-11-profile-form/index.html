@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Painted UI — Profile Change Form (exp-11)</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0c0b10;color:#efeae0;font:16px/1.5 Georgia,serif;
+       display:flex;flex-direction:column;align-items:center;min-height:100vh;
+       padding:40px 20px}
+  h1{font-size:18px;color:#8a86a0;font-family:monospace;letter-spacing:1px;
+     margin-bottom:6px}
+  .sub{font-size:12px;color:#5a5670;font-family:monospace;margin-bottom:20px}
+
+  #wrap{position:relative;width:720px}
+  canvas{display:block;border-radius:16px;
+         box-shadow:0 0 60px rgba(171,156,255,.08),0 2px 40px rgba(0,0,0,.6)}
+  #overlay{position:absolute;inset:0;pointer-events:none;border-radius:16px;overflow:hidden}
+  #overlay input,#overlay select{
+    position:absolute;pointer-events:auto;
+    background:#0f0d18;border:none;outline:none;
+    color:#efeae0;font:15px Georgia,serif;
+    padding:0 12px;border-radius:6px;
+    transition:none}
+  #overlay input::placeholder{color:#4a4660}
+
+  #log-wrap{width:720px;margin-top:16px}
+  #log-toggle{font:11px monospace;color:#5a5670;cursor:pointer;padding:4px 0;
+              user-select:none}
+  #log-toggle:hover{color:#8a86a0}
+  #log{display:none;background:#0a0910;border:1px solid #1e1a2e;border-radius:8px;
+       padding:10px;max-height:160px;overflow-y:auto;margin-top:6px}
+  #log.open{display:block}
+  .log-line{font:11px monospace;color:#5a5670;padding:2px 0;border-bottom:1px solid #12101a}
+  .log-line:first-child{color:#ab9cff}
+</style>
+</head>
+<body>
+
+<h1>EXP-11 · PROFILE CHANGE FORM</h1>
+<div class="sub">Canvas compositor at 60fps · HTML inputs as overlay · Painted UI</div>
+
+<div id="wrap">
+  <canvas id="cv"></canvas>
+  <div id="overlay"></div>
+</div>
+
+<div id="log-wrap">
+  <div id="log-toggle" onclick="toggleLog()">▶ patch stream</div>
+  <div id="log"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS & THEME
+// ─────────────────────────────────────────────────────────────────────────────
+const W = 720, H = 860;
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+const PAD = 40;
+
+const T = {
+  bg:     '#0c0b10',
+  panel:  '#14121c',
+  panel2: '#0f0d18',
+  edge:   '#2c2840',
+  ink:    '#efeae0',
+  dim:    '#8a86a0',
+  dim2:   '#5a5670',
+  accent: '#e8a34c',
+  green:  '#7fd4c1',
+  soft:   '#ab9cff',
+  red:    '#e86a6a',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CANVAS SETUP
+// ─────────────────────────────────────────────────────────────────────────────
+const cv = document.getElementById('cv');
+const overlay = document.getElementById('overlay');
+cv.width  = W * DPR;
+cv.height = H * DPR;
+cv.style.width  = W + 'px';
+cv.style.height = H + 'px';
+const ctx = cv.getContext('2d');
+ctx.scale(DPR, DPR);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TWEEN MATH
+// ─────────────────────────────────────────────────────────────────────────────
+function easeInOut(t) {
+  return t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+}
+
+function cur(node, key) {
+  const tw = node._tw && node._tw[key];
+  if (!tw) return node[key] !== undefined ? node[key] : 0;
+  const t = Math.min(1, (performance.now() - tw.t0) / tw.dur);
+  return tw.from + (tw.to - tw.from) * easeInOut(t);
+}
+
+function alpha(node) {
+  const now = performance.now();
+  if (node._exit) {
+    const t = Math.min(1, (now - node._exit.t0) / node._exit.dur);
+    return 1 - t;
+  }
+  if (node._enter) {
+    return Math.min(1, (now - node._enter.t0) / node._enter.dur);
+  }
+  return 1;
+}
+
+function tween(node, key, to, dur, delay) {
+  if (!node._tw) node._tw = {};
+  const t0 = performance.now() + (delay || 0);
+  node._tw[key] = { from: cur(node, key), to, t0, dur };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NODE MAP & INPUT OVERLAY
+// ─────────────────────────────────────────────────────────────────────────────
+const nodes = new Map();
+let renderOrder = [];
+const inputEls = new Map();
+
+function getOrMakeInput(node) {
+  if (inputEls.has(node.id)) return inputEls.get(node.id);
+
+  const el = document.createElement('input');
+  el.type = node.inputType || 'text';
+  el.placeholder = node.placeholder || '';
+  el.value = node.value || '';
+  el.style.cssText = 'position:absolute;height:44px;background:#0f0d18;' +
+    'border-radius:6px;color:#efeae0;font:15px Georgia,serif;' +
+    'caret-color:#e8a34c;outline:none;pointer-events:auto;padding:0 12px';
+  el.addEventListener('focus', () => { node._focused = true; });
+  el.addEventListener('blur',  () => { node._focused = false; });
+  el.addEventListener('input', () => { node.value = el.value; });
+
+  overlay.appendChild(el);
+  inputEls.set(node.id, el);
+  return el;
+}
+
+function syncInput(node) {
+  const el = inputEls.get(node.id);
+  if (!el) return;
+  const x = cur(node, 'x');
+  const y = cur(node, 'y');
+  const w = cur(node, 'w');
+  const a = alpha(node);
+
+  el.style.left    = x + 'px';
+  el.style.top     = (y + 22) + 'px';
+  el.style.width   = w + 'px';
+  el.style.height  = '44px';
+  el.style.opacity = a;
+  el.style.display = a < 0.02 ? 'none' : '';
+  el.style.pointerEvents = a < 0.1 ? 'none' : 'auto';
+  // Match focus ring on canvas to this input
+  el.style.boxShadow = node._focused ? 'inset 0 0 0 1.5px #e8a34c' : 'inset 0 0 0 1px #2c2840';
+}
+
+function removeInput(id) {
+  const el = inputEls.get(id);
+  if (el) { el.remove(); inputEls.delete(id); }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DRAW HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function rrect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y,   x+w, y+r);
+  ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x,   y+h, x,   y+h-r);
+  ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x,   y,   x+r, y);
+  ctx.closePath();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NODE DRAWERS
+// ─────────────────────────────────────────────────────────────────────────────
+function drawProfileCard(n, x, y, w, h) {
+  rrect(x, y, w, h, 12);
+  ctx.fillStyle = T.panel; ctx.fill();
+  ctx.strokeStyle = T.edge; ctx.lineWidth = 1; ctx.stroke();
+  // Accent stripe
+  ctx.fillStyle = T.accent;
+  ctx.fillRect(x, y + 12, 3, h - 24);
+
+  const compact = n.compact;
+  const AV = compact ? 30 : 46;
+  const avX = x + PAD + AV/2 + 4;
+  const avY = y + h/2;
+
+  ctx.save();
+  ctx.beginPath(); ctx.arc(avX, avY, AV/2, 0, Math.PI*2);
+  ctx.fillStyle = T.soft; ctx.globalAlpha *= 0.85; ctx.fill();
+  ctx.restore();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${compact ? 13 : 17}px monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('SC', avX, avY);
+
+  const tx = avX + AV/2 + 14;
+  ctx.textAlign = 'left';
+
+  if (compact) {
+    ctx.fillStyle = T.ink;
+    ctx.font = 'bold 15px Georgia,serif'; ctx.textBaseline = 'middle';
+    ctx.fillText(n.name || 'Sarah Chen', tx, avY - 8);
+    ctx.fillStyle = T.dim;
+    ctx.font = '12px monospace';
+    ctx.fillText((n.title || 'Senior Product Designer') + '  ·  ' + (n.ref || 'ADP-2024-4891'), tx, avY + 10);
+  } else {
+    ctx.fillStyle = T.ink;
+    ctx.font = 'bold 18px Georgia,serif'; ctx.textBaseline = 'middle';
+    ctx.fillText(n.name || 'Sarah Chen', tx, avY - 16);
+    ctx.fillStyle = T.dim;
+    ctx.font = '13px monospace';
+    ctx.fillText(n.title || 'Senior Product Designer', tx, avY + 2);
+    ctx.fillText((n.dept || 'Product Design') + '  ·  ' + (n.ref || 'ADP-2024-4891'), tx, avY + 20);
+  }
+}
+
+function drawSectionHeader(n, x, y, w, h) {
+  ctx.fillStyle = T.ink;
+  ctx.font = 'bold 22px Georgia,serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(n.title || '', x, y);
+  if (n.sub) {
+    ctx.fillStyle = T.dim;
+    ctx.font = '14px Georgia,serif';
+    ctx.fillText(n.sub, x, y + 32);
+  }
+}
+
+function drawOptionCard(n, x, y, w, h) {
+  const hov = n._hovered;
+  rrect(x, y, w, h, 10);
+  ctx.fillStyle = hov ? '#1a162a' : T.panel;
+  ctx.fill();
+  ctx.strokeStyle = hov ? (n.color || T.accent) : T.edge;
+  ctx.lineWidth = hov ? 1.5 : 1;
+  ctx.stroke();
+
+  // Icon glow circle
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x + 32, y + h/2, 18, 0, Math.PI*2);
+  ctx.fillStyle = n.color || T.accent;
+  ctx.globalAlpha *= 0.15; ctx.fill();
+  ctx.restore();
+
+  ctx.font = '16px monospace';
+  ctx.fillStyle = n.color || T.accent;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(n.icon || '?', x + 32, y + h/2);
+
+  ctx.textAlign = 'left';
+  ctx.fillStyle = T.ink;
+  ctx.font = 'bold 15px Georgia,serif'; ctx.textBaseline = 'top';
+  ctx.fillText(n.label || '', x + 58, y + h/2 - 13);
+  ctx.fillStyle = T.dim;
+  ctx.font = '12px monospace';
+  ctx.fillText(n.desc || '', x + 58, y + h/2 + 5);
+
+  if (hov) {
+    ctx.fillStyle = n.color || T.accent;
+    ctx.font = '15px monospace';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('→', x + w - 16, y + h/2);
+  }
+}
+
+function drawField(n, x, y, w, h) {
+  // Label only — the HTML input covers the box area
+  ctx.fillStyle = T.dim;
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText((n.label || '').toUpperCase(), x, y + 4);
+  // Draw placeholder in box if no HTML input value yet (input handles this itself)
+}
+
+function drawActionBtn(n, x, y, w, h) {
+  const hov = n._hovered;
+  const prim = n.variant === 'primary';
+  rrect(x, y, w, h, 10);
+  if (prim) {
+    ctx.fillStyle = hov ? '#f0b464' : T.accent; ctx.fill();
+  } else {
+    ctx.fillStyle = hov ? '#1a162a' : 'transparent'; ctx.fill();
+    ctx.strokeStyle = T.edge; ctx.lineWidth = 1; ctx.stroke();
+  }
+  ctx.fillStyle = prim ? '#0c0b10' : (hov ? T.ink : T.dim);
+  ctx.font = 'bold 14px Georgia,serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(n.label || '', x + w/2, y + h/2);
+}
+
+function drawConfirmation(n, x, y, w, h) {
+  const progress = cur(n, 'progress');
+  const cx = x + w/2, cy = y + 90;
+  const R = 52;
+
+  // Glow
+  if (progress > 0.1) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R + 10, 0, Math.PI*2);
+    ctx.fillStyle = T.green;
+    ctx.globalAlpha *= 0.07 * progress; ctx.fill();
+    ctx.restore();
+  }
+
+  // Circle arc
+  const circP = Math.min(1, progress / 0.65);
+  ctx.save();
+  ctx.strokeStyle = T.green; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, -Math.PI/2, -Math.PI/2 + Math.PI*2*circP);
+  ctx.stroke();
+  ctx.restore();
+
+  // Checkmark
+  if (progress > 0.65) {
+    const cp = Math.min(1, (progress - 0.65) / 0.35);
+    const p1x = cx - 22, p1y = cy + 2;
+    const pmx = cx - 6,  pmy = cy + 18;
+    const p2x = cx + 24, p2y = cy - 18;
+    ctx.save();
+    ctx.strokeStyle = T.green; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(p1x, p1y);
+    if (cp < 0.5) {
+      const t = cp * 2;
+      ctx.lineTo(p1x + (pmx-p1x)*t, p1y + (pmy-p1y)*t);
+    } else {
+      const t = (cp-0.5)*2;
+      ctx.lineTo(pmx, pmy);
+      ctx.lineTo(pmx + (p2x-pmx)*t, pmy + (p2y-pmy)*t);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+
+  // Text
+  if (progress > 0.8) {
+    const tp = (progress - 0.8) / 0.2;
+    ctx.save(); ctx.globalAlpha *= tp;
+    ctx.fillStyle = T.ink;
+    ctx.font = 'bold 20px Georgia,serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('Change Request Submitted', cx, cy + R + 22);
+    ctx.fillStyle = T.dim;
+    ctx.font = '13px monospace';
+    ctx.fillText('Ticket #ADP-2024-' + (n.ticketNum || '8842'), cx, cy + R + 52);
+    ctx.fillText('HR will review within 2 business days', cx, cy + R + 72);
+    ctx.restore();
+  }
+}
+
+function drawGrid() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(44,40,64,0.22)';
+  ctx.lineWidth = 0.5;
+  for (let gx = 0; gx <= W; gx += 40) {
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+  }
+  for (let gy = 0; gy <= H; gy += 40) {
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawNode(n) {
+  const a = alpha(n);
+  if (a <= 0.005) return;
+  const x = cur(n,'x'), y = cur(n,'y'), w = cur(n,'w'), h = n.h || 60;
+  ctx.save(); ctx.globalAlpha = a;
+  switch (n.kind) {
+    case 'profile-card':   drawProfileCard(n, x, y, w, h);   break;
+    case 'section-header': drawSectionHeader(n, x, y, w, h); break;
+    case 'option-card':    drawOptionCard(n, x, y, w, h);    break;
+    case 'field':          drawField(n, x, y, w, h);         break;
+    case 'action-btn':     drawActionBtn(n, x, y, w, h);     break;
+    case 'confirmation':   drawConfirmation(n, x, y, w, h);  break;
+  }
+  ctx.restore();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAINTER LOOP  (loop 4 — reads state, never waits)
+// ─────────────────────────────────────────────────────────────────────────────
+let frameCount = 0;
+function paint() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = T.bg; ctx.fillRect(0, 0, W, H);
+  drawGrid();
+
+  for (const id of renderOrder) {
+    const n = nodes.get(id);
+    if (n) drawNode(n);
+  }
+
+  // Sync HTML input overlays every frame
+  for (const [, n] of nodes) {
+    if (n.kind === 'field') syncInput(n);
+  }
+
+  // Pointer cursor when hovering clickable node
+  let wantPointer = false;
+  for (const [, n] of nodes) {
+    if (n._hovered && (n.kind === 'option-card' || n.kind === 'action-btn')) {
+      wantPointer = true; break;
+    }
+  }
+  cv.style.cursor = wantPointer ? 'pointer' : 'default';
+
+  // Purge fully-exited nodes
+  for (let i = renderOrder.length - 1; i >= 0; i--) {
+    const id = renderOrder[i];
+    const n  = nodes.get(id);
+    if (n && n._exit && performance.now() - n._exit.t0 > n._exit.dur + 50) {
+      nodes.delete(id);
+      renderOrder.splice(i, 1);
+      removeInput(id);
+    }
+  }
+
+  // Frame counter — proof the loop is running
+  frameCount++;
+  ctx.save();
+  ctx.fillStyle = '#2c2840';
+  ctx.fillRect(W - 90, 8, 82, 20);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '12px monospace';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText('f ' + frameCount, W - 10, 12);
+  ctx.restore();
+
+  requestAnimationFrame(paint);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHOREOGRAPHER  (pure function)
+// ─────────────────────────────────────────────────────────────────────────────
+function choreograph(patch, existing) {
+  return { enterDur: existing ? 0 : 360, tweenDur: 300 };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STAGE / PATCH APPLICATION  (writes to node map)
+// ─────────────────────────────────────────────────────────────────────────────
+function applyPatch(patch) {
+  logPatch(patch);
+
+  if (patch.op === 'add') {
+    const existing = nodes.get(patch.id);
+    const motion   = choreograph(patch, existing);
+    const p        = patch.props;
+
+    if (existing) {
+      Object.assign(existing, p);
+      return;
+    }
+
+    const n = { id: patch.id, kind: patch.kind, ...p };
+    const targetX = p.x !== undefined ? p.x : PAD;
+    const stagger = p.stagger || 0;
+
+    n.x = targetX;
+    if (motion.enterDur > 0) {
+      n._enter = { t0: performance.now() + stagger, dur: motion.enterDur };
+    } else {
+      n._enter = { t0: performance.now() - 9999, dur: 1 };
+    }
+
+    nodes.set(n.id, n);
+    if (!renderOrder.includes(n.id)) renderOrder.push(n.id);
+    if (n.kind === 'field') getOrMakeInput(n);
+
+  } else if (patch.op === 'update') {
+    const n = nodes.get(patch.id);
+    if (!n) return;
+    for (const [k, v] of Object.entries(patch.props || {})) {
+      if (['x','y','w','progress'].includes(k)) {
+        tween(n, k, v, 300);
+      } else {
+        n[k] = v;
+        const el = inputEls.get(patch.id);
+        if (el && k === 'value') el.value = v;
+      }
+    }
+
+  } else if (patch.op === 'remove') {
+    const n = nodes.get(patch.id);
+    if (!n) return;
+    n._exit = { t0: performance.now(), dur: 280 };
+
+  } else if (patch.op === 'note' || patch.op === 'done') {
+    // log only
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HIT TESTING
+// ─────────────────────────────────────────────────────────────────────────────
+const wrap = document.getElementById('wrap');
+
+wrap.addEventListener('mousemove', e => {
+  const r = cv.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  for (const [, n] of nodes) {
+    if (n.kind === 'option-card' || n.kind === 'action-btn') {
+      const x=cur(n,'x'), y=cur(n,'y'), w=n.w||200, h=n.h||60;
+      n._hovered = mx>=x && mx<=x+w && my>=y && my<=y+h;
+    }
+  }
+});
+wrap.addEventListener('mouseleave', () => {
+  for (const [, n] of nodes) n._hovered = false;
+});
+wrap.addEventListener('click', e => {
+  const r = cv.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  for (const [, n] of nodes) {
+    const x=cur(n,'x'), y=cur(n,'y'), w=n.w||200, h=n.h||60;
+    if (mx>=x && mx<=x+w && my>=y && my<=y+h) {
+      if (n.kind==='option-card') { selectOption(n.optionKey); return; }
+      if (n.kind==='action-btn') {
+        if (n.action==='submit') { submitForm(); return; }
+        if (n.action==='back')   { goBack();    return; }
+      }
+    }
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FORM DEFINITIONS
+// ─────────────────────────────────────────────────────────────────────────────
+const OPTIONS = [
+  { key:'email',     label:'Email Address',    desc:'Update work or personal email',  icon:'@', color:T.accent },
+  { key:'name',      label:'Legal Name',        desc:'Marriage or court order',         icon:'N', color:T.green  },
+  { key:'address',   label:'Home Address',      desc:'Relocation or correction',        icon:'H', color:T.soft   },
+  { key:'phone',     label:'Phone Number',      desc:'Mobile or direct line',           icon:'P', color:T.green  },
+  { key:'emergency', label:'Emergency Contact', desc:'Name, relationship, phone',       icon:'!', color:T.red    },
+];
+
+const FORMS = {
+  email: {
+    title:'Update Email Address',
+    sub:'HR will send a verification link to both addresses',
+    fields:[
+      { id:'f_email_cur',  label:'Current Email',    placeholder:'sarah.chen@company.com', value:'sarah.chen@company.com' },
+      { id:'f_email_new',  label:'New Email Address', placeholder:'new@company.com' },
+      { id:'f_email_conf', label:'Confirm New Email', placeholder:'new@company.com' },
+    ],
+  },
+  name: {
+    title:'Legal Name Change',
+    sub:'Attach marriage certificate or court order to the ticket',
+    fields:[
+      { id:'f_name_first', label:'New First Name', placeholder:'First', value:'Sarah' },
+      { id:'f_name_last',  label:'New Last Name',  placeholder:'Last',  value:'Chen'  },
+      { id:'f_name_doc',   label:'Supporting Document', placeholder:'e.g. Marriage Certificate' },
+    ],
+  },
+  address: {
+    title:'Home Address Update',
+    sub:'Used for W-2, benefits mail, and emergency contact routing',
+    fields:[
+      { id:'f_addr_str',  label:'Street Address', placeholder:'123 Main St' },
+      { id:'f_addr_city', label:'City',           placeholder:'San Francisco' },
+      { id:'f_addr_st',   label:'State',          placeholder:'CA' },
+      { id:'f_addr_zip',  label:'ZIP Code',       placeholder:'94105' },
+    ],
+  },
+  phone: {
+    title:'Phone Number Update',
+    sub:'Used for 2FA, payroll notifications, and emergency contact',
+    fields:[
+      { id:'f_ph_type', label:'Phone Type', placeholder:'Mobile / Direct / Home' },
+      { id:'f_ph_num',  label:'Phone Number', placeholder:'+1 (555) 000-0000' },
+    ],
+  },
+  emergency: {
+    title:'Emergency Contact',
+    sub:'Primary person to notify in a workplace emergency',
+    fields:[
+      { id:'f_em_name', label:'Contact Full Name', placeholder:'Full name' },
+      { id:'f_em_rel',  label:'Relationship',      placeholder:'Spouse / Parent / Sibling' },
+      { id:'f_em_ph',   label:'Phone Number',      placeholder:'+1 (555) 000-0000' },
+    ],
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCENES
+// ─────────────────────────────────────────────────────────────────────────────
+function clearScene() {
+  for (const [id] of [...nodes]) {
+    applyPatch({ op:'remove', id, props:{} });
+  }
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function showOptions() {
+  clearScene();
+  await delay(300);
+
+  applyPatch({ op:'add', id:'profile', kind:'profile-card', props:{
+    x:PAD, y:24, w:W-PAD*2, h:110, compact:false,
+  }});
+
+  await delay(80);
+
+  applyPatch({ op:'add', id:'hdr', kind:'section-header', props:{
+    x:PAD, y:158, w:W-PAD*2, h:56,
+    title:'Profile Change Request',
+    sub:'Select the information you would like to update',
+    stagger:60,
+  }});
+
+  await delay(60);
+
+  const OW = (W - PAD*2 - 12) / 2;
+  const OH = 84;
+  const startY = 232;
+  for (let i = 0; i < OPTIONS.length; i++) {
+    const opt = OPTIONS[i];
+    const full = i === 4;
+    const col = i % 2, row = Math.floor(i / 2);
+    applyPatch({ op:'add', id:`opt_${opt.key}`, kind:'option-card', props:{
+      x: full ? PAD : PAD + col*(OW+12),
+      y: startY + row*(OH+10),
+      w: full ? W-PAD*2 : OW,
+      h: OH,
+      label:opt.label, desc:opt.desc, icon:opt.icon, color:opt.color,
+      optionKey:opt.key,
+      stagger: i * 50,
+    }});
+  }
+}
+
+async function selectOption(key) {
+  const formDef = FORMS[key];
+  if (!formDef) return;
+  clearScene();
+  await delay(300);
+
+  applyPatch({ op:'add', id:'profile', kind:'profile-card', props:{
+    x:PAD, y:24, w:W-PAD*2, h:64, compact:true,
+  }});
+
+  await delay(60);
+
+  applyPatch({ op:'add', id:'form_hdr', kind:'section-header', props:{
+    x:PAD, y:112, w:W-PAD*2, h:56,
+    title:formDef.title, sub:formDef.sub, stagger:50,
+  }});
+
+  await delay(80);
+
+  const FH = 76;
+  let fy = 182;
+  for (let fi = 0; fi < formDef.fields.length; fi++) {
+    const f = formDef.fields[fi];
+    applyPatch({ op:'add', id:f.id, kind:'field', props:{
+      x:PAD, y:fy, w:W-PAD*2, h:FH,
+      label:f.label, placeholder:f.placeholder,
+      value:f.value || '', inputType:f.inputType || 'text',
+      stagger: fi * 55,
+    }});
+    fy += FH + 10;
+  }
+
+  const btnY = fy + 16;
+  await delay(formDef.fields.length * 55 + 80);
+
+  applyPatch({ op:'add', id:'btn_submit', kind:'action-btn', props:{
+    x:PAD, y:btnY, w:200, h:50,
+    label:'Submit Request', variant:'primary', action:'submit',
+  }});
+  applyPatch({ op:'add', id:'btn_back', kind:'action-btn', props:{
+    x:PAD+212, y:btnY, w:120, h:50,
+    label:'← Back', variant:'ghost', action:'back', stagger:60,
+  }});
+}
+
+async function submitForm() {
+  clearScene();
+  await delay(320);
+
+  const ticketNum = Math.floor(8000 + Math.random()*2000);
+  applyPatch({ op:'add', id:'confirm', kind:'confirmation', props:{
+    x:PAD, y:120, w:W-PAD*2, h:500, progress:0, ticketNum,
+    enterFrom:'none',
+  }});
+
+  await delay(120);
+  const n = nodes.get('confirm');
+  if (n) tween(n, 'progress', 1, 1400);
+
+  await delay(1700);
+  applyPatch({ op:'add', id:'btn_new', kind:'action-btn', props:{
+    x:W/2 - 110, y:640, w:220, h:50,
+    label:'Make Another Change', variant:'primary', action:'back',
+  }});
+}
+
+function goBack() { showOptions(); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH LOG
+// ─────────────────────────────────────────────────────────────────────────────
+const logEl = document.getElementById('log');
+let logOpen = false;
+function toggleLog() {
+  logOpen = !logOpen;
+  logEl.classList.toggle('open', logOpen);
+  document.getElementById('log-toggle').textContent = (logOpen?'▼':'▶') + ' patch stream';
+}
+function logPatch(p) {
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  const s = { op:p.op, id:p.id };
+  if (p.kind) s.kind = p.kind;
+  if (p.props && Object.keys(p.props).length) s.props = Object.keys(p.props).join(',');
+  line.textContent = JSON.stringify(s);
+  logEl.insertBefore(line, logEl.firstChild);
+  while (logEl.children.length > 40) logEl.removeChild(logEl.lastChild);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────────────────────────────
+paint();
+showOptions();
+</script>
+</body>
+</html>

@@ -67,7 +67,7 @@
     <div class="card"><b class="k">1 · Conversation</b><br><span class="d">the director's contract</span><br>One model call per interaction. Clicks are messages, so the model mutates its own scene instead of repainting.</div>
     <div class="card"><b class="k">2 · Network read</b><br><span class="d">the courier</span><br><code>await reader.read()</code> — delivers arbitrary fragments. Makes no promises about boundaries.</div>
     <div class="card"><b class="k">3 · Parser scan</b><br><span class="d">the assembler</span><br>Brace-depth scan over a buffer. Emits exactly one <code>applyPatch()</code> per completed object. Absorbs all boundary chaos.</div>
-    <div class="card"><b class="k">4 · Render</b><br><span class="d">the painter</span><br><code>requestAnimationFrame</code>, 60×/s. Reads the node map, asks tweens for current values. <b>Never waits for anything.</b></div>
+    <div class="card"><b class="k">4 · Render</b><br><span class="d">the animator</span><br><code>requestAnimationFrame</code>, 60×/s. Reads the node map, applies tween values as CSS transforms to A2UI components. <b>Never waits for anything.</b></div>
   </div>
 </section>
 
@@ -98,7 +98,7 @@
     <tr><td><b>Google A2UI</b></td><td>open declarative protocol; agent emits JSON UI from a component catalog; built to stream</td><td>native widgets by design — not painterly, no transition language</td></tr>
     <tr><td><b>Thesys C1</b></td><td>commercial API: LLM out → streaming charts/forms/cards</td><td>component-library aesthetics; the illusion isn't the goal</td></tr>
   </table>
-  <div class="card"><b>The open gap we're working in:</b> generative UI exists and streams; nobody in this list is using a <em>resolution-independent scene graph + transition choreography</em> to reproduce the <em>video-model feel</em>. That synthesis — and the four-ingredient decomposition it tests — is the wiki's original contribution.</div>
+  <div class="card"><b>The open gap we're working in:</b> generative UI exists and streams; nobody in this list is adding <em>transition choreography on top of a standard component protocol</em> to reproduce the <em>video-model feel</em>. That synthesis — and the four-role decomposition it tests — is the wiki's original contribution.</div>
 </section>
 
 <section class="slide">
@@ -123,7 +123,7 @@
 <section class="slide">
   <h2>How to explain it to someone in 30 seconds</h2>
   <div class="card big">"Products like Flipbook make UI feel <em>alive</em> by generating every pixel with a video model — magical, but you're renting a GPU per viewer.<br><br>
-  We get the same feeling by having the model paint with <em>instructions instead of pixels</em> — a few kilobytes of scene, streamed live, animated on your own device. The model is the director; your machine is the painter; the token stream is the brush moving across the canvas."</div>
+  We get the same feeling by having the model choreograph with <em>instructions instead of pixels</em> — a few kilobytes of semantic patches, streamed live, animated on your own device. The model is the director; your machine is the animator; the token stream is the choreography score."</div>
 </section>
 
 <section class="slide">

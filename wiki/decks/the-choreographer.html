@@ -41,11 +41,11 @@ a demo and something a large company can actually ship.</div>
 <div class="roles">
   <div class="role"><b>The Director</b><span>the LLM/agent. Decides <i>what</i> exists and <i>what changes</i>: "add three cards; focus the second; retitle the scene." Speaks in semantic patches.</span></div>
   <div class="role"><b>The Choreographer</b><span>A design concern, not a runtime agent. Decides <i>how</i> each change moves: verb, duration, easing, stagger. Implemented as a pure function (~40 lines) or delegated to the model. Three architectures: model-picks (A, current exp-03), local-policy-picks (B), hybrid (C, production target).</span></div>
-  <div class="role"><b>The Painter</b><span>the compositor (exp-01/02/03). Executes the motion 60×/s on the user's own device. Never makes decisions.</span></div>
+  <div class="role"><b>The Animator</b><span>the frame-rate loop. Applies tween values to A2UI components as CSS transforms, 60×/s on the user's own device. Never makes decisions.</span></div>
   <div class="role"><b>The Stage</b><span>the node map — the shared state all four loops meet at.</span></div>
 </div>
 <div class="card key">Separating these is what makes the system scale: <em>directors are expensive, choreographers
-and painters are free.</em> Every decision you move down the chain moves from tokens (money, latency,
+and animators are free.</em> Every decision you move down the chain moves from tokens (money, latency,
 variance) to code (free, instant, deterministic).</div>
 
 <h2>Why a choreographer must exist (five forces)</h2>
@@ -90,7 +90,7 @@ motion parameters. This is the actual decision table used in the demo below:</di
   if(op==="palette") return {tween:true, dur:D(1400)};              <em>// ambience never snaps</em>
   <b>}</b>
   <em>// mood scales everything: D(ms) = ms × (calm 1.3 | neutral 1.0 | energetic 0.55)</em>
-  <em>// stagger: each mount waits (calm 260 | energetic 110) ms after the previous — the painter's rhythm</em></pre>
+  <em>// stagger: each mount waits (calm 260 | energetic 110) ms after the previous — the animator's rhythm</em></pre>
 <div class="card key">Note what the rules key on: <em>position → direction, node kind → verb, id-match → morph,
 mood → tempo</em>. Nothing here needs a model. This is why it can run in 0ms on every patch — including
 patches that interrupt other patches.</div>

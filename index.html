@@ -4,10 +4,10 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Painted UI — A Semantic Choreography Runtime for Generative Interfaces</title>
-<meta name="description" content="What if an interface didn't load — what if it was painted? The painted-live feel of video-generated UIs, reproduced with kilobytes of streamed scene patches instead of a GPU per viewer. The model directs; your device paints.">
+<meta name="description" content="What if an interface didn't load — what if it was choreographed into existence? The painted-live feel of video-generated UIs, reproduced with kilobytes of streamed semantic patches instead of a GPU per viewer. The model directs; your device animates.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Painted UI — A Semantic Choreography Runtime for Generative Interfaces">
-<meta property="og:description" content="What if an interface didn't load — what if it was painted? Kilobytes of streamed scene patches instead of a GPU per viewer. The model directs; your device paints. Live demos, measurements, and a paper.">
+<meta property="og:description" content="What if an interface didn't load — what if it was choreographed into existence? Kilobytes of streamed semantic patches instead of a GPU per viewer. The model directs; your device animates. Live demos, measurements, and a paper.">
 <meta property="og:url" content="https://nealm682.github.io/painted-ui/">
 <meta property="og:image" content="https://nealm682.github.io/painted-ui/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -15,7 +15,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://nealm682.github.io/painted-ui/og-image.png">
 <meta name="twitter:title" content="Painted UI — A Semantic Choreography Runtime for Generative Interfaces">
-<meta name="twitter:description" content="An LLM streams a few KB of semantic brush strokes; your device paints them at 60fps. Zero server GPUs. Watch the interface sketch itself.">
+<meta name="twitter:description" content="An LLM streams a few KB of semantic patches; your device animates them at 60fps. Zero server GPUs. Watch the interface choreograph itself.">
 
 <style>
   :root{
@@ -128,8 +128,8 @@
   <section class="hero wrap">
     <div>
       <div class="eyebrow"><span class="pulse"></span> Research prototype · generative interface runtime</div>
-      <h1>The model <em>directs.</em><br>Your device paints.</h1>
-      <p class="lede">Painted UI is a semantic choreography runtime for AI-authored interfaces. The model streams meaning. A local motion policy turns that meaning into governed behavior. A real-time compositor renders the evolving scene.</p>
+      <h1>The model <em>directs.</em><br>Your device animates.</h1>
+      <p class="lede">Painted UI is a semantic choreography runtime for AI-authored interfaces. The model streams meaning. A local motion policy turns that meaning into governed transitions. A frame-rate animator brings standard components to life.</p>
       <div class="actions">
         <a class="btn primary" href="#proof">See the pipeline animate →</a>
         <a class="btn secondary" href="#enterprise">Why it matters</a>
@@ -140,7 +140,7 @@
     <div class="stage-card">
       <div class="stage-head"><span>live semantic scene</span><div class="dots"><span></span><span></span><span></span></div></div>
       <canvas id="heroCanvas"></canvas>
-      <div class="legend"><span class="chip">streaming patches</span><span class="chip">persistent identity</span><span class="chip">local choreography</span><span class="chip">60 fps compositor</span></div>
+      <div class="legend"><span class="chip">streaming patches</span><span class="chip">persistent identity</span><span class="chip">local choreography</span><span class="chip">60 fps animator</span></div>
     </div>
   </section>
 
@@ -153,7 +153,7 @@
         <article class="role" style="--glow:rgba(243,166,75,.15)"><span class="num">01 · LLM / agent</span><h3>Director</h3><p>Decides <strong>what exists</strong> and <strong>what changes</strong>. Emits semantic operations instead of pixels or animation timelines.</p></article>
         <article class="role" style="--glow:rgba(171,156,255,.14)"><span class="num">02 · motion policy</span><h3>Choreographer</h3><p>Decides <strong>how changes move</strong>: verb, duration, easing, direction, and stagger. A pure function of each patch — not a separate agent. In production it becomes a versioned motion design system.</p></article>
         <article class="role" style="--glow:rgba(127,225,204,.14)"><span class="num">03 · node map</span><h3>Stage</h3><p>Holds persistent semantic objects. Stable IDs preserve identity, enabling morphing, continuity, and interruption handling.</p></article>
-        <article class="role" style="--glow:rgba(239,143,135,.12)"><span class="num">04 · compositor</span><h3>Painter</h3><p>Reads current state and redraws continuously. It executes approved verbs at display speed and never waits for the network.</p></article>
+        <article class="role" style="--glow:rgba(239,143,135,.12)"><span class="num">04 · frame-rate loop</span><h3>Animator</h3><p>Samples tween state and applies CSS transforms to A2UI components at display rate. Executes approved motion verbs and never waits for the network.</p></article>
       </div>
       <div class="flow">
         <div class="flowbox"><b>“Focus the cost card”</b><span>semantic intent</span></div><div class="arrow"></div>
@@ -255,7 +255,7 @@ choreograph(patch) → {
   </section>
 </main>
 
-<footer><div class="wrap">Painted UI · semantic choreography runtime for generative interfaces · Neal Meinke</div></footer>
+<footer><div class="wrap">Painted UI · semantic choreography layer for generative interfaces · Neal Meinke</div></footer>
 
 <script>
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
