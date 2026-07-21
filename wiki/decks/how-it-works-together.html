@@ -158,10 +158,22 @@ th{color:var(--accent);font-weight:normal;font-size:13px}
 <!-- HERO -->
 <div class="hero">
 <div class="wrap">
-  <div class="kicker">Painted UI · technical deep-dive</div>
+  <div class="kicker">Painted UI · an experiment in semantic rendering</div>
   <h1>How the <span>Four Roles</span><br>Work Together</h1>
-  <p class="sub">An LLM streams instructions. Four independent roles — each running at its own speed — receive those instructions, transform them, and render a living scene. Here is the exact sequence of events.</p>
-  <div class="tagline">The core rule: <em>Loops 1–3 write shared state. Loop 4 reads it.</em> They never wait for each other. That decoupling is the whole trick.</div>
+  <p class="sub">Painted UI streams semantic changes instead of pixels. Local policy turns those changes into governed motion, and a frame-rate executor performs them immediately on the user's device.</p>
+  <div class="tagline">The model renders intent. <em>The client renders experience.</em><br><span class="dim" style="font-size:14px;display:block;margin-top:6px">Intent → Policy → Experience</span></div>
+</div>
+</div>
+
+<!-- SEMANTIC RENDERING THESIS -->
+<div style="padding:44px 0 36px;border-bottom:1px solid var(--edge);color:var(--ink)">
+<div class="wrap">
+  <h2 style="margin-top:0">The universal pattern</h2>
+  <p class="dim">Semantic rendering is an architectural approach: the model expresses <em>what</em> should exist and <em>what changed</em>, not how to draw it. A local policy layer decides motion behavior. A frame-rate executor performs it.</p>
+  <div style="background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:20px 24px;margin-top:18px;font:13px/1.8 monospace;color:var(--dim)">
+    <span style="color:var(--dir)">Model intent</span> → <span style="color:var(--net)">Semantic protocol</span> → <span style="color:var(--cho)">Local policy compiler</span> → <span style="color:var(--stg)">Shared state</span> → <span style="color:var(--pnt)">Client experience</span>
+  </div>
+  <p style="font-size:14px;color:var(--dim);margin-top:14px">The theater metaphor below — Director, Script, Choreographer, Stage, Animator — is how Painted UI implements this pattern.</p>
 </div>
 </div>
 
@@ -241,7 +253,7 @@ th{color:var(--accent);font-weight:normal;font-size:13px}
     </div>
 
   </div>
-  <p class="pipeline-caption">The Choreographer is not a loop — it's a function called by the Parser once per complete patch. All other roles run continuously and independently.</p>
+  <p class="pipeline-caption">The Director <em>interprets</em> meaning. The Choreographer <em>compiles</em> behavior. The Stage <em>mutates</em> state. The Animator <em>performs</em> the experience.</p>
 </div>
 </div>
 
@@ -669,17 +681,94 @@ value = from + (to - from) * e    <i>// interpolated result</i></pre>
 </div>
 </div>
 
+<!-- ARCHITECTURAL INVARIANTS -->
+<div style="padding:52px 0 44px;border-bottom:1px solid var(--edge);color:var(--ink)">
+<div class="wrap">
+  <h2 style="margin-top:0">Design constraints of this architecture</h2>
+  <p class="dim">These are the invariants that keep the roles cleanly separated. Violating any one collapses the separation of concerns the architecture depends on.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px">
+    <div style="background:var(--panel);border:1px solid var(--dir);border-radius:10px;padding:14px 16px">
+      <div style="font:11px monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:4px">1</div>
+      <div style="font-size:15px">The Director never renders frames.</div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--pnt);border-radius:10px;padding:14px 16px">
+      <div style="font:11px monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:4px">2</div>
+      <div style="font-size:15px">The Animator never makes semantic decisions.</div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--cho);border-radius:10px;padding:14px 16px">
+      <div style="font:11px monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:4px">3</div>
+      <div style="font-size:15px">Rendering never waits for generation.</div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--stg);border-radius:10px;padding:14px 16px">
+      <div style="font:11px monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:4px">4</div>
+      <div style="font-size:15px">The rendering target is replaceable.</div>
+    </div>
+  </div>
+
+  <details style="margin-top:14px">
+    <summary>Six more constraints</summary>
+    <div class="acc-body">
+      <ol style="padding-left:20px;color:var(--dim);font-size:14px;line-height:2">
+        <li>Only allow-listed semantic instructions cross the model boundary.</li>
+        <li>Stable identity represents continuity — a node's id is its persistent self.</li>
+        <li>Policy is versioned separately from content.</li>
+        <li>The same patch stream is loggable and replayable.</li>
+        <li>Accessibility is derived from the same semantics, not bolted on afterward.</li>
+        <li>Reduced motion changes policy, not meaning.</li>
+      </ol>
+    </div>
+  </details>
+</div>
+</div>
+
+<!-- FAILURE MODES -->
+<div style="padding:52px 0 44px;border-bottom:1px solid var(--edge);color:var(--ink)">
+<div class="wrap">
+  <h2 style="margin-top:0">What breaks when responsibilities collapse?</h2>
+  <p class="dim">Each invariant exists because its absence produces a predictable failure.</p>
+  <table style="margin-top:18px">
+    <tr>
+      <th>Collapsed responsibility</th>
+      <th>Result</th>
+    </tr>
+    <tr>
+      <td>Model emits pixels or frame instructions</td>
+      <td>High bandwidth, high latency, poor accessibility</td>
+    </tr>
+    <tr>
+      <td>Model chooses every routine transition</td>
+      <td>Token waste, visual variance, weak brand governance</td>
+    </tr>
+    <tr>
+      <td>Network arrival controls rendering</td>
+      <td>Motion stalls when the stream stalls</td>
+    </tr>
+    <tr>
+      <td>Nodes lack stable identity</td>
+      <td>Updates become remove-and-add; continuity disappears</td>
+    </tr>
+    <tr>
+      <td>Renderer owns business meaning</td>
+      <td>Rendering target becomes hard to replace</td>
+    </tr>
+  </table>
+</div>
+</div>
+
 <!-- KEY INSIGHT -->
 <div class="insight-section">
 <div class="wrap">
   <div class="insight-card">
     <div class="big">
-      <em>Streaming mutates state.</em><br>
-      <span class="g">Rendering samples state.</span><br>
-      The overlap between "still arriving" and "already animating"<br>is what creates the painted-live feeling.
+      <em>The model renders intent.</em><br>
+      <span class="g">The client renders experience.</span>
+    </div>
+    <div class="big" style="font-size:18px;margin-top:12px;margin-bottom:8px">
+      Streaming mutates state. Rendering samples state.
     </div>
     <div class="small">
-      The LLM is still generating tokens. The Parser just fired applyPatch() for the second node. The Animator rendered 23 frames since the first node arrived. None of them waited for the others. That is the architecture.
+      The LLM is still generating tokens. The Parser just fired applyPatch() for the second node. The Animator rendered 23 frames since the first node arrived. None of them waited for the others. That separation — intent on the wire, experience on the device — is the architecture.
     </div>
   </div>
   <p class="dim" style="text-align:center;margin-top:20px;font-size:14px">Companions: <code>the-painter.html</code> · <code>the-choreographer.html</code> · <code>the-cast.html</code> · <code>why-four-loops.html</code></p>

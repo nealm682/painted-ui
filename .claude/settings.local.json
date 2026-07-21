@@ -3,7 +3,33 @@
     "allow": [
       "Bash(/tmp/calc.txt:*)",
       "Read(//tmp/**)",
-      "Bash(cd /c/Users/nealm/Claude/Projects/painted-ui/raw/experiments && ls -lh */)"
+      "Bash(cd /c/Users/nealm/Claude/Projects/painted-ui/raw/experiments && ls -lh */)",
+      "Bash(python --version 2>&1; node --version 2>&1; npm --version 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\nealm\\\\Claude\\\\Projects\\\\painted-ui\\\\raw\\\\experiments\\\\exp-12-agent-dashboard\\\\frontend\" && npm init -y 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\nealm\\\\Claude\\\\Projects\\\\painted-ui\\\\raw\\\\experiments\\\\exp-12-agent-dashboard\\\\frontend\" && npm install react react-dom vite @vitejs/plugin-react 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\nealm\\\\Claude\\\\Projects\\\\painted-ui\\\\raw\\\\experiments\\\\exp-12-agent-dashboard\\\\frontend\" && npm install tailwindcss @tailwindcss/vite 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\nealm\\\\Claude\\\\Projects\\\\painted-ui\\\\raw\\\\experiments\\\\exp-12-agent-dashboard\\\\frontend\" && npx tailwindcss --version 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\nealm\\\\Claude\\\\Projects\\\\painted-ui\\\\raw\\\\experiments\\\\exp-12-agent-dashboard\\\\frontend\" && node -e \"console.log\\(require\\('tailwindcss/package.json'\\).version\\)\" 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\nealm\\\\Claude\\\\Projects\\\\painted-ui\\\\raw\\\\experiments\\\\exp-12-agent-dashboard\\\\frontend\" && npm install typescript @types/react @types/react-dom @types/node 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\nealm\\\\Claude\\\\Projects\\\\painted-ui\\\\raw\\\\experiments\\\\exp-12-agent-dashboard\\\\frontend\" && npx shadcn@latest init -d -y 2>&1)",
+      "Bash(cd \"C:/Users/nealm/Claude/Projects/painted-ui/raw/experiments/exp-12-agent-dashboard/frontend\" && npx shadcn@latest add card table badge input button -y 2>&1)",
+      "Bash(cd \"C:/Users/nealm/Claude/Projects/painted-ui/raw/experiments/exp-12-agent-dashboard/frontend\" && npx shadcn@latest add select -y 2>&1)",
+      "Bash(cd \"C:/Users/nealm/Claude/Projects/painted-ui/raw/experiments/exp-12-agent-dashboard/frontend\" && npm run dev 2>&1)",
+      "Bash(python --version 2>&1 && pip --version 2>&1)",
+      "Bash(cd \"C:/Users/nealm/Claude/Projects/painted-ui/raw/experiments/exp-12-agent-dashboard/backend\" && python -m uvicorn server:app --reload --port 8000 2>&1)",
+      "Bash(cd \"C:/Users/nealm/Claude/Projects/painted-ui/raw/experiments/exp-12-agent-dashboard/backend\" && python -c \"from strands.models.anthropic import AnthropicModel; help\\(AnthropicModel.__init__\\)\" 2>&1 | head -40)",
+      "Bash(cd \"C:/Users/nealm/Claude/Projects/painted-ui/raw/experiments/exp-12-agent-dashboard/backend\" && python -c \"\nfrom strands.models.anthropic import AnthropicModel\nimport typing\nhints = typing.get_type_hints\\(AnthropicModel.__init__, include_extras=True\\)\nprint\\(hints\\)\n\" 2>&1)",
+      "Bash(cd \"C:/Users/nealm/Claude/Projects/painted-ui/raw/experiments/exp-12-agent-dashboard/backend\" && python -c \"\nfrom strands.models.anthropic import AnthropicModel\nprint\\(AnthropicModel.AnthropicConfig.__annotations__\\)\n\" 2>&1)",
+      "Bash(python -c \"\nimport inspect\nfrom strands.models.anthropic import AnthropicModel\nsrc = inspect.getsource\\(AnthropicModel.format_request\\)\nprint\\(src[:3000]\\)\n\" 2>&1)",
+      "Bash(taskkill //F //PID 9636 2>&1; sleep 1; cd \"C:/Users/nealm/Claude/Projects/painted-ui/raw/experiments/exp-12-agent-dashboard/backend\" && python -m uvicorn server:app --reload --port 8000 2>&1)",
+      "Bash(python -c \"\nimport requests, sys\nresp = requests.post\\('http://localhost:8000/api/query', json={\n    'prompt': 'Show me headcount',\n    'api_key': 'sk-ant-test',\n    'mood': 'neutral'\n}, stream=True\\)\nprint\\('Status:', resp.status_code\\)\nfor line in resp.iter_lines\\(decode_unicode=True\\):\n    print\\(line\\)\n    sys.stdout.flush\\(\\)\n\" 2>&1)",
+      "Bash(python -c \"\nfrom strands.models.anthropic import AnthropicModel\nmodel = AnthropicModel\\(\n    client_args={'api_key': 'test'},\n    model_id='claude-sonnet-4-20250514',\n    max_tokens=4096,\n\\)\nprint\\('Config:', model.config\\)\n\" 2>&1)",
+      "Bash(python -c \"\nfrom agent import run_agent\ntry:\n    run_agent\\('sk-ant-fake-key', 'hello'\\)\nexcept Exception as e:\n    import traceback\n    traceback.print_exc\\(\\)\n\" 2>&1)",
+      "Bash(taskkill //F //PID 9224 2>&1; taskkill //F //IM python.exe //T 2>&1 | head -5)",
+      "Bash(python -c \"import anthropic; print\\(anthropic.__version__\\)\")",
+      "Bash(taskkill //F //PID 9540 2>&1; taskkill //F //PID 27804 2>&1)",
+      "Bash(taskkill //F //PID 8496 2>&1; taskkill //F //PID 14724 2>&1; taskkill //F //PID 17824 2>&1)",
+      "Bash(taskkill //F //PID 14724 2>&1; taskkill //F //PID 17792 2>&1; taskkill //F //PID 8496 2>&1; taskkill //F //PID 22664 2>&1)"
     ]
   }
 }

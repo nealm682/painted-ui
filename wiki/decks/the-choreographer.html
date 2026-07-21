@@ -34,8 +34,7 @@
 <div class="wrap">
 
 <h1>The Choreographer</h1>
-<div class="sub">The layer that decides <i>how</i> things move — and why it's the difference between
-a demo and something a large company can actually ship.</div>
+<div class="sub">A deterministic semantic compiler between model intent and client experience. The layer that turns generative output into governable product behavior.</div>
 
 <h2>The theater metaphor (the whole architecture in one breath)</h2>
 <div class="roles">
@@ -44,19 +43,20 @@ a demo and something a large company can actually ship.</div>
   <div class="role"><b>The Animator</b><span>the frame-rate loop. Applies tween values to A2UI components as CSS transforms, 60×/s on the user's own device. Never makes decisions.</span></div>
   <div class="role"><b>The Stage</b><span>the node map — the shared state all four loops meet at.</span></div>
 </div>
-<div class="card key">Separating these is what makes the system scale: <em>directors are expensive, choreographers
-and animators are free.</em> Every decision you move down the chain moves from tokens (money, latency,
-variance) to code (free, instant, deterministic).</div>
+<div class="card key">Separating these is what makes the system scale: every routine decision moved from the model into policy moves from <em>tokens, latency, and variance</em> into code that is <em>local, instant, testable, and reusable.</em></div>
 
 <h2>Why a choreographer must exist (five forces)</h2>
 <table>
 <tr><th>Force</th><th>Without a choreographer</th><th>With one</th></tr>
 <tr><td><b>Taste variance</b></td><td>run 1–3 showed it: model verb choices range from lovely to lazy, per request</td><td>motion quality has a floor — the policy's floor</td></tr>
-<tr><td><b>Tokens = money + latency</b></td><td>every <code>"enter":{"kind":"flyin","from":"left","dur":700}</code> is ~15 tokens × every node × every scene</td><td>model emits semantic ops only; ~30–40% fewer output tokens per scene</td></tr>
+<tr><td><b>Tokens = money + latency</b></td><td>every <code>"enter":{"kind":"flyin","from":"left","dur":700}</code> is ~15 tokens × every node × every scene</td><td>model emits semantic ops only; ~30–40% fewer output tokens per scene (experiment estimates)</td></tr>
 <tr><td><b>Consistency = brand</b></td><td>every session moves differently</td><td>the policy <i>is</i> a motion design system — versioned, reviewed, enforced</td></tr>
 <tr><td><b>Determinism = testability</b></td><td>can't unit-test a model's whim</td><td>a pure function: same patch + same policy → same motion. CI-friendly.</td></tr>
 <tr><td><b>Interruption handling</b></td><td>model can't react in 16ms when a new patch lands mid-transition</td><td>local policy retargets tweens instantly</td></tr>
 </table>
+
+<!-- POLICY DOMAINS -->
+<div class="card">Motion is the current implementation focus, but the concept extends to other policy domains: layout response, focus management, announcement priority, reduced-motion behavior, and brand-specific overrides. The same compiler boundary applies — model declares intent, policy governs expression.</div>
 
 <h2>Three architectures</h2>
 <table>
@@ -95,6 +95,19 @@ motion parameters. This is the actual decision table used in the demo below:</di
 mood → tempo</em>. Nothing here needs a model. This is why it can run in 0ms on every patch — including
 patches that interrupt other patches.</div>
 
+<div class="card">
+<b style="color:var(--accent)">Conceptual policy contract</b><br>
+<pre style="margin:8px 0 4px">compileBehavior({ patch, node, scene, userPreferences, designSystem })
+  → { motion, layout, focus, announcement, interaction }</pre>
+An implementation can start with only <code>motion</code> — the other outputs are the conceptual ceiling, not a current requirement.
+</div>
+
+<div class="card">
+<b style="color:var(--accent)">Policy precedence chain</b><br>
+Safety and accessibility &gt; user preferences &gt; product design system &gt; scene mood &gt; model override.<br>
+<span class="dim">A model override must never bypass reduced-motion, accessibility, or security constraints.</span>
+</div>
+
 <h2>See it: same semantic stream, four choreographies</h2>
 <div class="ctl">
   <select id="policy">
@@ -114,15 +127,15 @@ patches that interrupt other patches.</div>
 <tr><td>server GPU</td><td>1 dedicated stream while screen is on</td><td>none</td><td>none</td></tr>
 <tr><td>bytes to client</td><td>~15 MB/min, forever</td><td>~2.4 KB once</td><td>~1.5 KB once</td></tr>
 <tr><td>output tokens</td><td>—</td><td>~700</td><td>~400</td></tr>
-<tr><td>est. cost*</td><td>~$0.03–0.07 per user-<i>minute</i>, continuous</td><td>~$0.002–0.01 per <i>interaction</i></td><td>~40% less; $0 with on-device SLM</td></tr>
+<tr><td>est. cost*</td><td>~$0.03–0.07 per user-<i>minute</i>, continuous</td><td>~$0.002–0.01 per <i>interaction</i></td><td>~40% fewer tokens; near-zero idle cost with on-device SLM</td></tr>
 <tr><td>cost between interactions</td><td>full rate</td><td>$0</td><td>$0</td></tr>
 <tr><td>cacheable</td><td>nothing</td><td>assets, layouts, prompts</td><td>+ whole choreography (it's code)</td></tr>
 </table>
 <div class="dim" style="font-size:13px">*order-of-magnitude estimates: GPU-hour rental vs typical output-token pricing; refine in wiki cost-model.
-The structural point survives any price shift: <b>one path is per-second-per-user, the other is per-interaction with $0 idle.</b></div>
+The structural point survives any price shift: <b>one path is per-second-per-user, the other is per-interaction with near-zero idle cost.</b></div>
 
 <h2>Scaling this in a large enterprise (vendor-neutral)</h2>
-<div class="card">The choreographer is not a competitor to declarative UI protocols and agent frameworks —
+<div class="card"><em>The Choreographer turns generative output into governable product behavior.</em> It is not a competitor to declarative UI protocols and agent frameworks —
 it's the <em>feel layer</em> that sits on top of exactly that kind of stack:</div>
 <table>
 <tr><th>Layer</th><th>Enterprise reality</th><th>Where painted-UI fits</th></tr>
@@ -134,7 +147,7 @@ it's the <em>feel layer</em> that sits on top of exactly that kind of stack:</di
 <tr><td>Scale profile</td><td>millions of users, bursty</td><td>KB-sized payloads = ordinary web traffic; rendering cost is distributed to client devices; only real per-interaction cost is tokens — reducible via choreographer (B), caching, and on-device SLMs.</td></tr>
 </table>
 <div class="card key">The honest enterprise summary: <em>the parts that scale hard (GPU, rendering, motion)
-cost ~nothing in this architecture; the part that costs (tokens) is per-interaction, shrinkable, and
+have near-zero marginal runtime cost in this architecture; the part that costs (tokens) is per-interaction, shrinkable, and
 already the cost every agent product accepts.</em> The risk isn't economics — it's craft: whether the
 policy's taste survives contact with a design-system committee.</div>
 

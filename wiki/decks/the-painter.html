@@ -108,9 +108,10 @@
 <div class="wrap">
 
 <!-- HERO -->
-<div style="margin-bottom:6px;font:12px monospace;color:var(--dim);letter-spacing:.1em;text-transform:uppercase">Painted UI · the cast · role 4</div>
+<div style="margin-bottom:6px;font:12px monospace;color:var(--dim);letter-spacing:.1em;text-transform:uppercase">Painted UI · the cast · execution layer</div>
 <h1>The <span style="color:var(--accent)">Animator</span></h1>
-<p class="sub">It runs sixty times a second. It doesn't know — or care — what the network is doing.</p>
+<p class="sub">The Animator is the execution layer of semantic rendering. It reads current state at display speed and applies it to Canvas, DOM, or another rendering target.</p>
+<p class="sub" style="margin-top:6px">It runs sixty times a second. It doesn't know — or care — what the network is doing.</p>
 
 <div class="card" style="margin-top:24px;border-left:3px solid var(--green)">
   <span style="color:var(--green);font:12px monospace">NOTE</span> &mdash; In the original experiments (exp-01 through exp-11), this role was called the <b>Painter</b> and drew on Canvas2D. With A2UI integration, it becomes the <b>Animator</b> — same tween math, same 60fps loop, but driving CSS transforms on accessible HTML components instead of canvas pixels. The demo below still uses canvas to illustrate the concepts.
@@ -153,11 +154,16 @@
   <div class="step">
     <div class="num">step 3</div>
     <div class="icon" style="color:var(--soft)">&#9632;</div>
-    <h3>Draw, then repeat</h3>
-    <p>Clear the canvas, paint every node at its current values, then schedule the next frame in ~16 ms.</p>
+    <h3>Render, then repeat</h3>
+    <p>Clear the canvas, render every node at its current values, then schedule the next frame in ~16 ms.</p>
   </div>
 </div>
 
+
+<!-- RENDERING TARGETS -->
+<div class="card" style="margin-top:4px">
+  <b>Canvas implementation:</b> clear and redraw every frame (immediate mode — the approach used in this demo). <b>Retained component implementation:</b> sample state and update transforms/properties on existing DOM or A2UI elements. The universal responsibility is the same: sample current state and apply it at display rate.
+</div>
 
 <!-- LIVE DEMO -->
 <h2>See it: the loop, live</h2>
@@ -165,7 +171,7 @@
 
 <div class="demo-wrap">
   <div class="demo-head">
-    <span>painter canvas</span>
+    <span>animation target · Canvas demo</span>
     <span class="live"><span class="pulse"></span> loop running</span>
   </div>
   <canvas id="mainCanvas" height="300"></canvas>
@@ -175,7 +181,7 @@
     </div>
     <div>
       <div class="frame-counter" id="frameCounter">0</div>
-      <div class="frame-counter fc-label">frames painted</div>
+      <div class="frame-counter fc-label">frames rendered</div>
     </div>
   </div>
   <div class="controls">
@@ -240,7 +246,7 @@
     const x = <em>cur</em>(node, "x");           <i>// ask the tween: "where is x right now?"</i>
     const y = <em>cur</em>(node, "y");
     const a = <em>alpha</em>(node);              <i>// enter / exit fade</i>
-    <em>drawNode</em>(node, x, y, a);            <i>// paint it</i>
+    <em>drawNode</em>(node, x, y, a);            <i>// render it</i>
   }
 
   requestAnimationFrame(frame);         <i>// schedule the next frame (~16 ms from now)</i>
@@ -321,6 +327,14 @@
       <tr><td>Knowing when a tween started or what caused it</td><td>The Stage — it stores the tween; the Animator just samples it</td></tr>
     </table>
     <p>The Animator is the dumbest member of the cast on purpose. The dumber it is, the faster it runs, the harder it is to break, and the easier it is to A/B test with different visual styles.</p>
+    <p><b>Animator invariants:</b></p>
+    <ul>
+      <li>Never waits for network input</li>
+      <li>Never calls the model</li>
+      <li>Never chooses semantic meaning</li>
+      <li>Does not own business state</li>
+      <li>Can be replaced without changing the semantic protocol</li>
+    </ul>
   </div>
 </details>
 
@@ -351,7 +365,7 @@
 </div>
 
 <div class="card key" style="margin-top:8px">
-  <b style="color:var(--accent)">The one-sentence summary:</b> The Animator is a loop that runs at screen speed, samples the stage at each frame, and applies those values to A2UI components — smooth animation emerges from repeatedly asking a math function where things are right now.
+  <b style="color:var(--accent)">The one-sentence summary:</b> The Animator is the execution layer of semantic rendering: a loop that runs at display speed, samples the stage each frame, and applies current values to the rendering target. It performs; it does not interpret.
 </div>
 
 <p class="dim" style="margin-top:32px;font-size:14px">Companions: <code>the-cast.html</code> · <code>the-choreographer.html</code> · <code>why-four-loops.html</code> · wiki: concepts/four-loops</p>

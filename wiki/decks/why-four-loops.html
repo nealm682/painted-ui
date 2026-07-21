@@ -34,7 +34,8 @@
 
 <section class="slide on">
   <h1>Why <span class="k">Four Loops</span>?</h1>
-  <div class="sub">The architecture behind the live painter (exp-03) — and why no single loop can fake a screen being painted by a model.</div>
+  <div class="sub" style="font-size:26px;color:var(--accent);margin-bottom:6px">Why Independent Clocks?</div>
+  <div class="sub">Four loops describe the reference implementation. Independent clocks describe the architectural requirement. Here is why no single loop can reproduce a continuously authored interface.</div>
   <div class="card" style="margin-top:26px">The one-sentence version: <span class="big"><em>streaming mutates state, rendering samples state,</em></span> and four processes at four different speeds only ever meet in one place — the node map.</div>
   <div class="d" style="margin-top:14px">→ / ← to navigate</div>
 </section>
@@ -86,19 +87,19 @@
     <li><b>Incremental parsers</b> — tokenizers that maintain state across arbitrary chunk boundaries are standard compiler/network practice.</li>
     <li><b>Immediate-mode rendering</b> — redraw everything every frame from current state (Canvas, Dear ImGui), instead of mutating a widget tree.</li>
   </ul>
-  <div class="card">None of the four loops is novel. <b>The composition is the design</b>: wiring token-speed streaming to a frame-rate compositor — with a motion policy layer between them — to reproduce the painted-live feel without video generation.</div>
+  <div class="card">None of the individual clocks is novel. <b>The synthesis is the boundary design between them</b> — wiring semantic streaming to a frame-rate compositor, with a local policy layer between them, to produce a continuously authored interface.</div>
 </section>
 
 <section class="slide">
   <h2>Does it already exist? The prior-art map</h2>
   <table>
-    <tr><th>System</th><th>What it does</th><th>What it doesn't do</th></tr>
-    <tr><td><b>Flipbook</b></td><td>full illusion via generated video</td><td>unit economics (GPU per user)</td></tr>
-    <tr><td><b>Vercel AI SDK</b> (streamUI)</td><td>streams React components from LLM tools</td><td>looks like a website; no scene graph, no choreography</td></tr>
-    <tr><td><b>Google A2UI</b></td><td>open declarative protocol; agent emits JSON UI from a component catalog; built to stream</td><td>native widgets by design — not painterly, no transition language</td></tr>
-    <tr><td><b>Thesys C1</b></td><td>commercial API: LLM out → streaming charts/forms/cards</td><td>component-library aesthetics; the illusion isn't the goal</td></tr>
+    <tr><th>System</th><th>Primary focus</th><th>Additional layer explored here</th></tr>
+    <tr><td><b>Flipbook</b></td><td>Full generative illusion via video models</td><td>Semantic structure for governance, accessibility, interactivity at lower cost</td></tr>
+    <tr><td><b>Vercel AI SDK</b> (streamUI)</td><td>Streams React components from LLM tool calls</td><td>Scene-level transition choreography and continuous visual authoring</td></tr>
+    <tr><td><b>Google A2UI</b></td><td>Open declarative protocol; agent emits JSON UI from a component catalog</td><td>Transition vocabulary and motion policy on top of the component protocol</td></tr>
+    <tr><td><b>Thesys C1</b></td><td>Commercial API: LLM out → streaming charts/forms/cards</td><td>Painterly continuity feel via local choreography</td></tr>
   </table>
-  <div class="card"><b>The open gap we're working in:</b> generative UI exists and streams; nobody in this list is adding <em>transition choreography on top of a standard component protocol</em> to reproduce the <em>video-model feel</em>. That synthesis — and the four-role decomposition it tests — is the wiki's original contribution.</div>
+  <div class="card">The individual techniques are established. The contribution is the composition: streamed semantic mutation, stable identity, local behavioral policy, and frame-rate execution combined to produce a continuously authored interface without generating every pixel remotely.</div>
 </section>
 
 <section class="slide">
@@ -114,7 +115,7 @@
   <h2>Small models on-device: yes — three roles</h2>
   <ul>
     <li><b>The choreographer.</b> A small local model picks transition verbs and layout while a big cloud model authors content. Tiny structured task, perfect for a 1–4B model.</li>
-    <li><b>The whole painter, offline.</b> WebLLM runs Llama/Phi/Gemma/Qwen-class models <em>in the browser</em> via WebGPU at up to ~80% native speed, OpenAI-compatible API, streaming + JSON mode included. Zero marginal cost, zero network latency, private.</li>
+    <li><b>The whole rendering pipeline, offline.</b> WebLLM runs Llama/Phi/Gemma/Qwen-class models <em>in the browser</em> via WebGPU at up to ~80% native speed, OpenAI-compatible API, streaming + JSON mode included. Near-zero marginal cost, zero network latency, private.</li>
     <li><b>The reliability fix — this one matters most.</b> Local inference allows <b>grammar-constrained decoding</b> (llama.cpp GBNF, Outlines): invalid tokens are masked at generation time, so patches are <em>guaranteed</em> valid against our protocol grammar. Runs 1–2 (narration, <code>.5</code> decimals) become <b>structurally impossible</b> — the model literally cannot emit them.</li>
   </ul>
   <div class="cite">SLM caveat: composition taste may drop before syntax does — that's an empirical question for exp-05.</div>
@@ -122,8 +123,7 @@
 
 <section class="slide">
   <h2>How to explain it to someone in 30 seconds</h2>
-  <div class="card big">"Products like Flipbook make UI feel <em>alive</em> by generating every pixel with a video model — magical, but you're renting a GPU per viewer.<br><br>
-  We get the same feeling by having the model choreograph with <em>instructions instead of pixels</em> — a few kilobytes of semantic patches, streamed live, animated on your own device. The model is the director; your machine is the animator; the token stream is the choreography score."</div>
+  <div class="card big">"Models are good at deciding what an interface should <em>mean</em>, but they are an expensive and unreliable place to execute every visual detail. Painted UI streams small semantic changes, compiles them through local product policy, and performs them at display speed on the client. The result is a generative interface that can feel continuously authored without generating and streaming every pixel."</div>
 </section>
 
 <section class="slide">

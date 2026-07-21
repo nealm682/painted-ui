@@ -45,19 +45,17 @@
 <div class="wrap">
 
 <h1>The Cast <span class="dim" style="font-size:17px">— who does what in Painted UI</span></h1>
-<div class="sub">Five roles, one show. In the original experiments, the frame-rate loop drew on canvas and was called the "painter." With A2UI components, it drives CSS transforms on accessible HTML elements — so its role is now the <b>Animator</b>. Same tween math, same 60fps loop, different output target.</div>
+<div class="sub">Semantic rendering separates judgment from execution. Painted UI explains that separation as five roles in one show. In the original experiments, the frame-rate loop drew on canvas and was called the "painter." With A2UI components, it becomes the <b>Animator</b> — same tween math, same 60fps loop, different output target.</div>
 
 <div class="cast">
- <div class="role r1"><div class="who">the LLM / agent</div><b>Director</b><span>Decides WHAT exists and WHAT changes. Speaks only in semantic patches — never pixels, never geometry math. Expensive, slow (tokens), brilliant.</span></div>
- <div class="role r2"><div class="who">tokens over the wire</div><b>The Script</b><span>The patch stream — the director's instructions arriving a few characters at a time. Kilobytes, not megabytes.</span></div>
- <div class="role r3"><div class="who">motion policy layer</div><b>Choreographer</b><span>Decides HOW each change moves: verb, duration, easing, direction, stagger. A pure function, not a runtime agent. Can live in patch data (model decides, costs tokens — current exp-03) or as a local policy function (free, deterministic, versioned — the production target).</span></div>
- <div class="role r4"><div class="who">the frame-rate loop</div><b>Animator</b><span>Samples tween state and applies CSS transforms to A2UI components at display rate. Owns the motion verb library. Never decides anything.</span></div>
- <div class="role r5"><div class="who">the node map (state)</div><b>Stage</b><span>One shared data structure. Directors and choreographers WRITE it; the animator READS it. They never talk directly.</span></div>
+ <div class="role r1"><div class="who">the LLM / agent</div><b>Director</b><span>Decides WHAT exists and WHAT changes. Emits allow-listed semantic patches — never pixels, never animation frames.</span></div>
+ <div class="role r2"><div class="who">tokens over the wire</div><b>The Script</b><span>The transport form of intent: small, incremental, replayable semantic patches arriving over the wire. Kilobytes, not megabytes.</span></div>
+ <div class="role r3"><div class="who">motion policy layer</div><b>Choreographer</b><span>Compiles semantic change into governed behavior: motion, timing, emphasis, and accessibility policy. Usually deterministic local code — not a runtime agent.</span></div>
+ <div class="role r4"><div class="who">the frame-rate loop</div><b>Animator</b><span>Samples the Stage at display rate and applies current values to the rendering target. It performs; it does not interpret.</span></div>
+ <div class="role r5"><div class="who">the node map (state)</div><b>Stage</b><span>The shared state boundary. Stable identity, current values, and active transitions live here. Directors and choreographers write; the Animator reads.</span></div>
 </div>
 
-<div class="key">The economic logic of the whole cast: <b>every decision moved down the chain moves from
-tokens (money, latency, variance) to code (free, instant, deterministic).</b> The director is the only
-paid actor. Everyone else works for free, forever, on the user's own device.</div>
+<div class="key">Every decision moved from the model into local policy moves from <b>tokens, latency, and variance</b> into code that is <b>local, instant, testable, and reusable.</b> The Director is the only role with per-interaction cost. Every other role runs at near-zero marginal runtime cost on the user's own device.</div>
 
 <h2>Open the boxes — real objects, real streams</h2>
 
@@ -69,7 +67,7 @@ paid actor. Everyone else works for free, forever, on the user's own device.</di
 <pre>{
   <b>"id"</b>: <em>"card2"</em>,            <i>// stable identity — this is what makes morphing possible:</i>
                              <i>// the same id later = "same thing, changed" → animate the difference</i>
-  <b>"kind"</b>: <em>"card"</em>,           <i>// which painter routine draws it</i>
+  <b>"kind"</b>: <em>"card"</em>,           <i>// which rendering routine draws it</i>
   <b>"x"</b>: <em>0.50</em>, <b>"y"</b>: <em>0.60</em>,     <i>// position as fractions of the viewport (resolution-independent)</i>
   <b>"w"</b>: <em>0.22</em>, <b>"h"</b>: <em>0.32</em>,
   <b>"img"</b>: <em>12</em>,                <i>// which cached asset fills it (a seed / cache key)</i>
@@ -100,7 +98,7 @@ scene (about 1 KB total — a 2 Mbps video stream sends this much every 4 millis
 {<b>"op"</b>:<em>"done"</em>}</pre>
 <p>Four verbs of change — <code>add</code>, <code>update</code>, <code>remove</code>,
 <code>palette</code> — cover everything exp-01 through exp-09 do. exp-10 adds <i>artistic</i> verbs
-(<code>strokeIn</code>, <code>materialize</code>…) where the model names a behavior the painter
+(<code>strokeIn</code>, <code>materialize</code>…) where the model names a behavior the Animator
 already knows how to perform.</p>
 <p class="dim">Key property: each line is useful the instant it closes. The interface assembles
 <i>while the director is still talking</i> — that overlap is the painted-live feeling.</p>
@@ -187,20 +185,27 @@ are still arriving. Streaming mutates; rendering samples. The overlap is the sho
 <summary>6 · Watch one patch travel the whole pipeline (live)</summary>
 <div class="body">
 <p>Press the button: a patch enters as text, the choreographer decides, the stage mutates, and the
-painter animates — with the trace narrated below.</p>
+Animator applies it — with the trace narrated below.</p>
 <canvas id="mini"></canvas>
 <button onclick="sendPatch()">Send the next patch</button>
 <button onclick="resetDemo()" style="background:var(--panel);color:var(--dim);border:1px solid var(--edge)">reset</button>
-<div class="trace" id="trace">pipeline idle — the painter is still running at 60fps (watch the glow breathe)</div>
+<div class="trace" id="trace">pipeline idle — the Animator is still running at 60fps (watch the glow breathe)</div>
 </div>
 </details>
 
+<!-- RESPONSIBILITY TEST -->
+<h2>The responsibility test</h2>
+<table>
+<tr><th>Role</th><th>Knows</th><th>Decides</th><th>Must never</th><th>Cost</th></tr>
+<tr><td><b>Director</b></td><td>Content, user intent</td><td>What exists, what changes</td><td>Render frames, choose motion</td><td>Tokens per interaction</td></tr>
+<tr><td><b>Script</b></td><td>Nothing — pure transport</td><td>Nothing</td><td>Transform or filter content</td><td>Network bytes only</td></tr>
+<tr><td><b>Choreographer</b></td><td>Patch semantics, scene mood</td><td>How a change behaves</td><td>Call the model, own state</td><td>Near-zero (local code)</td></tr>
+<tr><td><b>Stage</b></td><td>Current nodes + tweens</td><td>Nothing — stores what it's told</td><td>Filter, interpret, or render</td><td>Memory only</td></tr>
+<tr><td><b>Animator</b></td><td>Current state values</td><td>Nothing — samples and applies</td><td>Wait for network, choose meaning</td><td>Local compute only</td></tr>
+</table>
+
 <h2>The one-paragraph summary to keep</h2>
-<div class="key">The <b>director</b> (LLM) streams semantic patches — nouns and changes, never pixels.
-The <b>choreographer</b> (local policy) turns each change into a motion plan in microseconds.
-The <b>stage</b> (node map) absorbs the change as a tween. The <b>animator</b> (frame-rate loop) reads the stage sixty times a second and applies CSS transforms to A2UI components on the
-user's own silicon. Tokens buy meaning; code performs it; nothing waits for anything.
-<i>The model directs; your device animates.</i></div>
+<div class="key">The Director interprets. The Script transports. The Choreographer compiles. The Stage remembers. The Animator performs. <i>The model renders intent; the client renders experience.</i></div>
 
 <p class="dim" style="margin-top:20px">Companions: <code>how-it-works.html</code> (the four loops,
 step-through) · <code>the-choreographer.html</code> (policy deep-dive + demo) ·
