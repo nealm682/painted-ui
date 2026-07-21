@@ -1,0 +1,4 @@
+strands-agents[anthropic]
+fastapi[standard]
+uvicorn
+sse-starlette
