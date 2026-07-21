@@ -400,3 +400,17 @@ accuracy fix (Animator card claimed "CSS transforms to A2UI components"
 as present fact → target-agnostic: canvas in today's demos, component
 trees via adapters). Byline on site is now "Neal Meinke" (Neal's own
 choice in his file) — LICENSE placeholder can be updated to match.
+
+## [2026-07-21] naming | the-painter.html → the-animator.html (+ redirect)
+
+Site pushed live. Neal caught the last Painter remnant on the homepage:
+the Animator explainer's filename (the-painter.html) surfacing in the
+Library link URL. Index role cards were already cast-consistent
+(Director/Choreographer/Stage/Animator). Fix: content now lives at
+the-animator.html; the-painter.html replaced with a meta-refresh redirect
+(old links never 404, and the redirect page itself teaches the
+one-role-two-names rule); index Library href updated. Also confirmed the
+re-uploaded cast page is byte-identical to the deployed root copy — the
+canonical definitions were already in place. Cleanup note: sandbox-created
+files carry locked ACLs host-side; the delete-permission tool + fresh
+host Write is the recovery pattern.
