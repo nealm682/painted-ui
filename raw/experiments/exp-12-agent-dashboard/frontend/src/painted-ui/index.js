@@ -6,6 +6,7 @@
  */
 
 export { cur, alpha, tween, isAnimating, subscribe, getFrameCount } from './animator.js';
-export { choreograph, MOODS } from './choreographer.js';
-export { applyPatch, applyPatches, getNode, getAllNodes, hasNode, clearStage, onStageChange } from './stage.js';
+export { choreograph, compileBehavior, resolveAttention, MOODS } from './choreographer.js';
+export { PatchStreamParser } from './parser.js';
+export { applyPatch, applyPatches, getNode, getAllNodes, hasNode, clearStage, dissolveStage, onStageChange, getScene } from './stage.js';
 export { useAnimated } from './useAnimated.js';

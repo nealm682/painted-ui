@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Split Brain — Painted UI and on-device inference</title>
+<meta name="description" content="Why a phone-sized model is enough for Painted UI: what the cloud composes, what the device reacts to, what needs no model at all — and the honest costs.">
+<style>
+ :root{--bg:#0b0a10;--panel:#14121c;--edge:#2c2840;--ink:#efe9dc;--dim:#8a86a0;
+       --accent:#e8a34c;--green:#7fd4c1;--soft:#9a8fd0;--red:#e08a7a;--gold:#d9c86a}
+ *{box-sizing:border-box}
+ html{background:var(--bg)}
+ body{margin:0;color:var(--ink);font:16px/1.65 Georgia,serif}
+ .wrap{max-width:960px;margin:0 auto;padding:40px 20px 110px}
+ h1{font-size:31px;margin:0 0 6px;letter-spacing:-.01em}
+ h2{font-size:20px;color:var(--accent);margin:46px 0 10px;border-top:1px solid var(--edge);padding-top:22px}
+ h3{font-size:16px;margin:22px 0 6px;color:var(--ink)}
+ .sub{color:var(--dim);margin-bottom:8px}
+ .dim{color:var(--dim)}
+ p{margin:10px 0}
+ a{color:var(--green)}
+
+ .verdict{background:linear-gradient(180deg,#191529,#14121c);border:1px solid var(--edge);
+          border-left:3px solid var(--accent);border-radius:12px;padding:16px 20px;margin:22px 0}
+ .verdict b{color:var(--accent)}
+ .key{background:var(--panel);border-left:3px solid var(--accent);border-radius:8px;padding:11px 16px;margin:14px 0}
+ .key.green{border-left-color:var(--green)}
+ .key.red{border-left-color:var(--red)}
+
+ .cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+ @media(max-width:760px){.cols{grid-template-columns:1fr}}
+ .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:14px 16px}
+ .card h4{margin:0 0 8px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;font-weight:normal}
+ .card ul{margin:6px 0 0;padding-left:18px}
+ .card li{margin:5px 0;font-size:14.5px}
+ .pro h4{color:var(--green)} .con h4{color:var(--red)}
+ .pro{border-color:#265449} .con{border-color:#54302a}
+
+ details{background:var(--panel);border:1px solid var(--edge);border-radius:12px;margin:10px 0;overflow:hidden}
+ summary{padding:13px 18px;cursor:pointer;font-size:16px;list-style:none;display:flex;gap:10px;align-items:center}
+ summary::-webkit-details-marker{display:none}
+ summary::before{content:"▸";color:var(--accent);transition:transform .2s}
+ details[open] summary::before{transform:rotate(90deg)}
+ summary:hover{background:#1a1726}
+ .body{padding:2px 18px 18px;border-top:1px solid var(--edge)}
+
+ pre{background:#0f0d16;border:1px solid var(--edge);border-radius:8px;padding:12px;overflow-x:auto;
+     font:12.5px/1.6 ui-monospace,Menlo,Consolas,monospace;color:#b9b4cc;white-space:pre}
+ pre em{color:var(--green);font-style:normal}
+ pre b{color:var(--accent);font-weight:normal}
+ pre i{color:var(--dim);font-style:normal}
+ pre u{color:var(--soft);text-decoration:none}
+ code{background:#1b1826;border-radius:4px;padding:1px 6px;font:13px ui-monospace,Menlo,Consolas,monospace;color:var(--green)}
+
+ table{border-collapse:collapse;font-size:13.5px;margin:10px 0;width:100%}
+ td,th{border:1px solid var(--edge);padding:7px 10px;text-align:left;vertical-align:top}
+ th{color:var(--accent);font-weight:normal}
+ .tag{font:10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;
+      padding:2px 7px;border-radius:20px;border:1px solid;display:inline-block}
+ .t-cloud{color:var(--soft);border-color:#453d6b;background:#1d1930}
+ .t-dev{color:var(--green);border-color:#265449;background:#132420}
+ .t-none{color:var(--gold);border-color:#4d452a;background:#211e12}
+
+ button{background:#1d1a2a;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
+        padding:8px 14px;font:14px Georgia,serif;cursor:pointer;margin:0 6px 6px 0;transition:.15s}
+ button:hover{background:#272238;border-color:#463f63}
+ button.primary{background:var(--soft);color:#140f22;border-color:var(--soft)}
+ button.primary:hover{filter:brightness(1.12)}
+ button.dev{background:var(--green);color:#08201c;border-color:var(--green)}
+ button.dev:hover{filter:brightness(1.12)}
+ button:disabled{opacity:.4;cursor:default}
+
+ /* ---- the demo ---- */
+ .stage{display:grid;grid-template-columns:1.05fr .95fr;gap:12px;margin:14px 0}
+ @media(max-width:820px){.stage{grid-template-columns:1fr}}
+ .screen{background:#08070d;border:1px solid var(--edge);border-radius:12px;padding:10px;position:relative}
+ canvas{width:100%;height:300px;display:block;border-radius:8px;background:#07060c}
+ .brainbar{display:flex;gap:8px;align-items:center;margin-bottom:8px;font-size:12px;color:var(--dim)}
+ .lamp{width:9px;height:9px;border-radius:50%;background:#2a2740;display:inline-block;margin-right:5px;
+       transition:.2s;vertical-align:middle}
+ .lamp.on-cloud{background:var(--soft);box-shadow:0 0 10px var(--soft)}
+ .lamp.on-dev{background:var(--green);box-shadow:0 0 10px var(--green)}
+ .wire{background:#0f0d16;border:1px solid var(--edge);border-radius:12px;padding:10px 12px;
+       display:flex;flex-direction:column}
+ .wirehead{font:10.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);
+           margin-bottom:6px;display:flex;justify-content:space-between}
+ .streambox{font:11.5px/1.55 ui-monospace,Menlo,Consolas,monospace;color:#b9b4cc;height:196px;
+            overflow-y:auto;white-space:pre-wrap;word-break:break-word;flex:1}
+ .streambox .ln{padding:1px 0;border-left:2px solid transparent;padding-left:6px;margin-bottom:1px}
+ .streambox .ln.cloud{border-left-color:var(--soft)}
+ .streambox .ln.dev{border-left-color:var(--green)}
+ .streambox .k{color:var(--accent)} .streambox .v{color:var(--green)}
+ .caret{display:inline-block;width:7px;background:var(--accent);animation:bl .9s steps(1) infinite;color:transparent}
+ @keyframes bl{50%{opacity:0}}
+ .ledger{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+ .met{background:#12101b;border:1px solid var(--edge);border-radius:8px;padding:7px 9px}
+ .met b{display:block;font:17px Georgia,serif;color:var(--ink)}
+ .met span{font:10px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+ .trace{font:11.5px/1.7 ui-monospace,Menlo,Consolas,monospace;color:var(--dim);
+        background:#0f0d16;border:1px solid var(--edge);border-radius:8px;padding:9px 11px;
+        height:104px;overflow-y:auto;margin-top:8px;white-space:pre-wrap}
+ .trace b{color:var(--green);font-weight:normal}
+ .trace u{color:var(--soft);text-decoration:none}
+ .trace i{color:var(--gold);font-style:normal}
+
+ /* ---- routing tree ---- */
+ .chips{margin:12px 0 6px}
+ .chip{display:inline-block;background:#161320;border:1px solid var(--edge);border-radius:20px;
+       padding:5px 13px;margin:0 6px 7px 0;font-size:13.5px;cursor:pointer;transition:.15s}
+ .chip:hover{background:#221d33;border-color:#463f63}
+ .chip.active{border-color:var(--accent);color:var(--accent)}
+ #treewrap{background:#0f0d16;border:1px solid var(--edge);border-radius:12px;padding:6px}
+ svg{display:block;width:100%;height:auto}
+ .nd rect,.nd path{transition:.25s}
+ .why{min-height:44px;margin-top:8px;font-size:14px;color:var(--dim);
+      background:var(--panel);border-left:3px solid var(--edge);border-radius:8px;padding:9px 14px}
+
+ /* ---- bars ---- */
+ .bars{margin:14px 0}
+ .barrow{display:grid;grid-template-columns:190px 1fr;gap:12px;align-items:center;margin:9px 0;font-size:13.5px}
+ .track{background:#12101b;border:1px solid var(--edge);border-radius:6px;height:26px;position:relative;overflow:hidden}
+ .fill{height:100%;width:0;transition:width 1.1s cubic-bezier(.2,.7,.3,1);position:relative}
+ .fill.good{background:linear-gradient(90deg,#20544a,var(--green))}
+ .fill.bad{background:linear-gradient(90deg,#5a2f28,var(--red))}
+ .fill span{position:absolute;right:8px;top:3px;font:12px ui-monospace,monospace;color:#08070d}
+ .flabel{color:var(--dim)}
+
+ .foot{margin-top:60px;border-top:1px solid var(--edge);padding-top:16px;font-size:13.5px;color:var(--dim)}
+ .foot a{margin-right:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>The Split Brain</h1>
+<div class="sub">Painted UI and on-device inference — what the cloud composes, what the phone reacts to,
+what needs no model at all, and what it costs you. Companion to <i>The Cast</i> and <i>The Choreographer</i>.</div>
+
+<div class="verdict">
+<b>The short answer:</b> yes, Painted UI benefits from on-device inference — and it benefits
+<i>more than most generative-UI approaches do</i>, for a structural reason: the hard part was already
+moved off the model. A phone-sized model doesn't have to be a good designer here. It only has to name
+what changed. Local code owns everything else.
+<br><br>
+<b>The catch:</b> a small model on a phone can no longer emit a <i>broken</i> patch — the operating
+system guarantees the format — so instead it occasionally emits a <i>wrong</i> one, silently, and it
+renders perfectly. You trade loud failures for quiet ones. That trade is worth making, but only if you
+add a cheap checker. Scroll to <a href="#catch">The Catch</a> for the honest version.
+</div>
+
+<div class="cols">
+ <div class="card pro">
+  <h4>What you gain</h4>
+  <ul>
+   <li><b>Per-user model cost → $0.</b> The Director is the only role that ever cost money. On device, that line disappears.</li>
+   <li><b>Taps answer without a round trip.</b> No network, no queue, no cold start — motion begins in the same beat as the touch.</li>
+   <li><b>Painting ahead becomes free.</b> Speculative pre-paint is wasteful when tokens cost money; on device it costs battery and nothing else.</li>
+   <li><b>Works on a plane.</b> Offline, private, nothing leaves the device.</li>
+   <li><b>The parser layer disappears.</b> Patches arrive as typed objects in-process, not text over a wire.</li>
+  </ul>
+ </div>
+ <div class="card con">
+  <h4>What you don't</h4>
+  <ul>
+   <li><b>A better painter.</b> The phone model is smaller and weaker. Cheaper and faster — not smarter.</li>
+   <li><b>Judgment under constraint.</b> Forcing a schema onto a ~3B model measurably degrades its choices even as it guarantees the format.</li>
+   <li><b>Loud failures.</b> They go silent. A wrong patch now renders instead of crashing.</li>
+   <li><b>A short output budget.</b> Phone memory bandwidth is 30–50× narrower than a datacenter GPU's. Output tokens stay scarce — permanently.</li>
+   <li><b>One codebase.</b> Two brains means two prompts, two grammars, and a handoff to keep honest.</li>
+  </ul>
+ </div>
+</div>
+
+<h2>1 · Two brains, one stage</h2>
+
+<p>Painted UI has always had exactly one expensive role. In <i>The Cast</i>: the <b>Director</b> decides
+what exists and what changes; the <b>Choreographer</b> turns each change into motion; the <b>Animator</b>
+draws at 60fps; the <b>Stage</b> holds the nodes. Only the Director costs money, because only the Director
+is a model.</p>
+
+<p>On-device inference doesn't replace the Director. It <b>splits</b> it — into a slow, expensive,
+thoughtful one in the cloud and a fast, free, limited one in your pocket, both writing to the same stage
+in the same patch language.</p>
+
+<table>
+<tr><th>The job</th><th>Who does it</th><th>Why</th></tr>
+<tr><td>First composition of a rich scene</td><td><span class="tag t-cloud">cloud</span></td><td>Needs taste, world knowledge, and hundreds of output tokens at once. A phone would take 15–30 s.</td></tr>
+<tr><td>Reasoning over real data</td><td><span class="tag t-cloud">cloud</span></td><td>"Why did delays increase?" is a thinking problem, not a painting problem.</td></tr>
+<tr><td>Click → mutation</td><td><span class="tag t-dev">device</span></td><td>One or two patches. A round trip would cost more than the decision.</td></tr>
+<tr><td>Emphasis shifts, mood, small edits</td><td><span class="tag t-dev">device</span></td><td>Cheap, frequent, and the user is watching. Latency is the whole product here.</td></tr>
+<tr><td>Speculative pre-painting</td><td><span class="tag t-dev">device</span></td><td>Free tokens against an already-warm scene. Wasteful to buy in the cloud.</td></tr>
+<tr><td>Entry/exit motion, easing, stagger</td><td><span class="tag t-none">no model</span></td><td>The Choreographer. Deterministic code — it was never a model's job.</td></tr>
+<tr><td>Layout re-solve on rotate/resize</td><td><span class="tag t-none">no model</span></td><td>Constraint solver + springs. Zero inference.</td></tr>
+<tr><td>Checking a patch makes sense</td><td><span class="tag t-none">no model</span></td><td>Geometry checks. See <a href="#catch">The Catch</a>.</td></tr>
+</table>
+
+<div class="key">The row that surprises people is the third block. In a painted interface, <b>most of what
+moves needs no inference at all.</b> That's why a weak local model is enough — it isn't being asked to
+do the expressive work.</div>
+
+<h2>2 · Watch it happen</h2>
+
+<p>Below: the wire on the right, the screen on the left. Press the buttons in order. Watch <i>where the
+latency lives</i> — the cloud pass waits, then streams fast; the device pass never waits, but decodes
+slowly. Both paint the same way, because the patch language is the same.</p>
+
+<div class="stage">
+ <div class="screen">
+  <div class="brainbar">
+   <span><i class="lamp" id="lampC"></i>cloud director</span>
+   <span style="margin-left:12px"><i class="lamp" id="lampD"></i>device director</span>
+   <span style="margin-left:auto" id="phase">idle</span>
+  </div>
+  <canvas id="cv" width="880" height="600"></canvas>
+ </div>
+ <div class="wire">
+  <div class="wirehead"><span>the wire — patches as they arrive</span><span id="rate"></span></div>
+  <div class="streambox" id="stream"></div>
+  <div class="ledger">
+   <div class="met"><b id="mLat">—</b><span>first token</span></div>
+   <div class="met"><b id="mTok">0</b><span>tokens out</span></div>
+   <div class="met"><b id="mBytes">0 B</b><span>on the wire</span></div>
+   <div class="met"><b id="mCost">$0.0000</b><span>cost so far</span></div>
+  </div>
+ </div>
+</div>
+
+<div>
+ <button class="primary" id="bCloud">1 · Cloud composes the scene</button>
+ <button class="dev" id="bTap" disabled>2 · Tap "Berth 7" (device)</button>
+ <button class="dev" id="bPre" disabled>3 · Device pre-paints ahead</button>
+ <button id="bAsk" disabled>4 · Ask "why the delays?" (escalates to cloud)</button>
+ <button id="bReset">Reset</button>
+</div>
+
+<div class="trace" id="trace"></div>
+
+<div class="key green">Notice what the ledger does at step 2 and 3: the byte counter stops moving and the
+cost counter stays frozen. The interface keeps changing anyway. <b>That gap is the entire argument for
+on-device inference in one number.</b></div>
+
+<h2>3 · What a streamed patch actually looks like</h2>
+
+<p>Same intent, three forms — on the wire from the cloud, in memory on the device, and after the
+Choreographer has had its say. Open them in order.</p>
+
+<details open>
+<summary>A · From the cloud — text, arriving token by token</summary>
+<div class="body">
+<p>One JSON object per line, streamed. The parser scans brace depth and emits a patch the instant an
+object closes — which is why the screen assembles <i>while the model is still talking</i>.</p>
+<pre>{<b>"op"</b>:<em>"palette"</em>,"set":{"bg0":<em>"#101a2a"</em>,"accent":<em>"#e8a34c"</em>}}
+{<b>"op"</b>:<em>"add"</em>,"node":{"id":<em>"title"</em>,"kind":"text","x":0.5,"y":0.14,
+        "text":<em>"Harbor — Tuesday"</em>,"z":3}}
+{<b>"op"</b>:<em>"add"</em>,"node":{"id":<em>"c2"</em>,"kind":"card","x":0.5,"y":0.56,
+        "w":0.2,"h":0.3,"label":<em>"Berth 7"</em>,"z":2}}          <i>// ~40 tokens</i>
+{<b>"op"</b>:<em>"done"</em>}</pre>
+<p class="dim">Cost shape: ~700 ms before the first token appears (network + queue + prefill), then
+tokens arrive in a burst. You pay per token, per user, every time.</p>
+</div>
+</details>
+
+<details>
+<summary>B · On the device — the same patch, as a typed object that cannot be malformed</summary>
+<div class="body">
+<p>There is no wire and no text. The OS runs constrained decoding against a schema you declare, so the
+model's output <i>is</i> a typed object — the shape is enforced during generation, not validated after.</p>
+<pre><i>// Swift — Apple Foundation Models</i>
+@<u>Generable</u> <b>struct</b> Patch {
+  @<u>Guide</u>(description: <em>"what changed — never how it moves"</em>)
+  <b>var</b> op: Op                      <i>// enum: add | update | remove | scene | focus</i>
+  <b>var</b> id: String
+  <b>var</b> set: Props?                 <i>// x, y, w, h as 0…1 fractions</i>
+  <b>var</b> intent: Intent?             <i>// action / importance / cause</i>
+}</pre>
+<pre><i>// Kotlin — ML Kit GenAI / Gemini Nano, same idea</i>
+<b>data class</b> Patch(<b>val</b> op: Op, <b>val</b> id: String,
+                 <b>val</b> set: Props? = null, <b>val</b> intent: Intent? = null)</pre>
+<div class="key">The failure classes that broke exp-03 twice — the model narrating instead of painting,
+and <code>.5</code> written where <code>0.5</code> was required — become <b>unemittable</b>. Not
+"caught". Not "retried". They cannot be produced.</div>
+<p class="dim">Cost shape: ~0 ms to first token (nothing to wait for), then slow steady decode. You pay
+nothing, ever. The scarce resource flips from <i>money</i> to <i>output tokens</i>.</p>
+<p><b>Field names are not free.</b> The words in that schema — <code>op</code>, <code>intent</code>,
+<code>importance</code> — are read by the model on every emission; they instruct it as much as the
+prompt does. Minifying <code>emphasize</code> to <code>e</code> saves tokens and costs quality. Compress
+the values, keep the keys meaningful.</p>
+</div>
+</details>
+
+<details>
+<summary>C · What the Choreographer turns it into — the part no model touches</summary>
+<div class="body">
+<p>The Director said <i>what</i>. It said nothing about motion. Local code decides all of that, in
+microseconds, identically on both brains:</p>
+<pre><b>choreograph</b>({op:"update", id:"c2", set:{w:0.34}}, node, mood)
+  → { tween:<b>true</b>, dur:<em>1100</em>, ease:<em>"inout"</em>, kind:<em>"morph"</em> }
+     <i>// same id + new numbers ⇒ the same thing changing ⇒ morph, never blink</i>
+
+<b>choreograph</b>({op:"scene", focus:["c2"], mode:"spotlight"}, …)
+  → siblings: { tween: alpha → <em>0.35</em>, dur:<em>600</em> }        <i>// recede</i>
+     focus:   { tween: scale → <em>1.06</em>, dur:<em>600</em> }        <i>// advance</i>
+     <i>// the model named an INTENT; the choreographer produced six animations</i></pre>
+<table>
+<tr><th>Model emits</th><th>Tokens</th><th>Choreographer produces</th></tr>
+<tr><td><code>{"op":"focus","id":"c2"}</code></td><td>~9</td><td>6 tweens across 4 nodes, mood-scaled timing, reduced-motion fallback</td></tr>
+<tr><td>the same, spelled out as motion</td><td>~180</td><td>the same thing, inconsistently, at 20× the token cost</td></tr>
+</table>
+<div class="key green">This is why a phone-sized model suffices. <b>The ratio in that table is the reason
+Painted UI ports to a weak model and ordinary generative UI doesn't.</b> Anything that has to author a
+whole component tree with its own copy and layout is asking the model for the expensive thing.
+We ask for nine tokens.</div>
+</div>
+</details>
+
+<details>
+<summary>D · The check that runs after — the verifier</summary>
+<div class="body">
+<p>Deterministic, no inference, ~100 lines. It exists because the format guarantee removed the parser's
+accidental safety net (see <a href="#catch">The Catch</a>).</p>
+<pre><b>verify</b>(patch, stage) {
+  <i>// geometry</i>
+  reject <b>if</b> node.x &lt; 0 || node.x &gt; 1 || node.y &lt; 0 || node.y &gt; 1   <i>// off-screen</i>
+  reject <b>if</b> textWidth(node) &gt; container(node).w                    <i>// overflow</i>
+  reject <b>if</b> contrast(node.fill, behind(node)) &lt; 3.0                 <i>// unreadable</i>
+  <i>// references</i>
+  reject <b>if</b> patch.id ∉ stage.nodes                                  <i>// dangling target</i>
+  reject <b>if</b> patch.op === "scene" && result.visibleNodes === 0        <i>// empties the screen</i>
+  <i>// coherence</i>
+  flag   <b>if</b> node.hasActiveTween && patch.contradicts(node.tween)     <i>// interruption case</i>
+}</pre>
+<p>A rejected patch has two honest destinations: <b>quarantine</b> (repaint from last-good and move on),
+or <b>hand it back to the Director as a message</b> — which fits the architecture already, since clicks
+are messages too. A failed check is just another event the Director hears.</p>
+<p class="dim">Where does it live? Probably inside the Choreographer, not beside it — the Choreographer
+is the only component that already knows every node's position, what's mid-animation, and what the
+layout resolved to. That's exactly the knowledge a verifier needs.</p>
+</div>
+</details>
+
+<h2>4 · Who handles what — the routing tree</h2>
+
+<p>Every event that hits a painted interface gets routed to one of three places. Tap an event to watch
+it fall through the questions.</p>
+
+<div class="chips" id="chips"></div>
+<div id="treewrap">
+<svg id="tree" viewBox="0 0 880 430" xmlns="http://www.w3.org/2000/svg" aria-label="routing decision tree">
+ <defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+   <path d="M0 0 L10 5 L0 10 z" fill="#3a3455"/>
+  </marker>
+ </defs>
+ <g id="edges" stroke="#3a3455" stroke-width="1.6" fill="none" marker-end="url(#ar)"></g>
+ <g id="nodes"></g>
+ <circle id="dot" r="7" fill="#e8a34c" opacity="0" />
+</svg>
+</div>
+<div class="why" id="why">Pick an event above.</div>
+
+<div class="key">Two thirds of everyday interaction never reaches a model at all. That's not an
+optimization — it's the architecture. The Director is consulted only when something genuinely new has to
+be <i>decided</i>.</div>
+
+<h2 id="catch">5 · The catch — what you're actually trading</h2>
+
+<p>Here is the finding that changed this page. Forcing a small model to fill in a schema is like making
+someone solve a hard problem <i>while</i> speaking a language they're half fluent in. They stop making
+grammar mistakes — and start saying more wrong things, because the effort went into the grammar.</p>
+
+<p>Measured across 15,000 generations on sub-3B models, comparing free-form output to hard
+schema-constrained decoding:</p>
+
+<div class="bars" id="bars">
+ <div class="barrow"><span class="flabel">Format always valid</span>
+   <div class="track"><div class="fill good" data-w="61.5"><span>61.5% → </span></div></div></div>
+ <div class="barrow"><span class="flabel">…after constraining</span>
+   <div class="track"><div class="fill good" data-w="100"><span>100%</span></div></div></div>
+ <div class="barrow"><span class="flabel">Answer actually correct</span>
+   <div class="track"><div class="fill bad" data-w="19.7"><span>19.7% → </span></div></div></div>
+ <div class="barrow"><span class="flabel">…after constraining</span>
+   <div class="track"><div class="fill bad" data-w="11"><span>11.0%</span></div></div></div>
+ <div class="barrow"><span class="flabel">Wrong, but perfectly formed</span>
+   <div class="track"><div class="fill bad" data-w="49.5"><span>49.5% → </span></div></div></div>
+ <div class="barrow"><span class="flabel">…after constraining</span>
+   <div class="track"><div class="fill bad" data-w="88.9"><span>88.9%</span></div></div></div>
+</div>
+<p class="dim" style="font-size:12.5px">Source: <i>The Constraint Tax</i> (arXiv 2605.26128), on general
+reasoning tasks — not on patch emission. Treat the direction as established and the magnitude as
+untested for our grammar.</p>
+
+<h3>What that does to Painted UI's failure modes</h3>
+
+<table>
+<tr><th></th><th>Cloud, text stream (today)</th><th>Device, guided generation</th></tr>
+<tr><td>Failure looks like</td><td>narration instead of painting; <code>.5</code> decimals; truncated JSON</td><td>a flawless, well-formed patch</td></tr>
+<tr><td>Who notices</td><td>the parser — immediately, loudly</td><td>nobody. It renders.</td></tr>
+<tr><td>User sees</td><td>a stall, or nothing</td><td>the headline fifteen pixels off the bottom edge</td></tr>
+<tr><td>Real example</td><td>exp-03 run 1 and run 2</td><td>emphasis lands on the wrong card</td></tr>
+</table>
+
+<div class="key red">Both of exp-03's live failures were <b>loud</b>. Their on-device replacements are
+<b>quiet</b>. That is a strictly harder debugging problem, and it is the single most important thing to
+understand before shipping a phone-side Director.</div>
+
+<h3>The four mitigations, in order of leverage</h3>
+
+<table>
+<tr><th>Move</th><th>What it does</th><th>Effort</th></tr>
+<tr><td><b>Ask the model for less</b></td><td>The tax scales with how much you make the model decide. Emitting <code>{"op":"focus","id":"c2"}</code> barely taxes it; emitting full motion specs taxes it heavily. This is Architecture B on the Choreographer page — and on device its justification upgrades from <i>saves tokens</i> to <i>saves correctness</i>.</td><td>already built</td></tr>
+<tr><td><b>Add the verifier</b></td><td>Restores the safety net the parser used to provide by accident. Geometry, not judgment.</td><td>~100 lines</td></tr>
+<tr><td><b>Optimize the system prompt</b></td><td>In one study, naive prompting produced 85% correct answers and 0% usable output; automated prompt optimization reached 84–87% usable, with no fine-tuning and no added latency. The cloud model can author and re-optimize the device model's prompt offline.</td><td>a weekend</td></tr>
+<tr><td><b>Train an adapter</b></td><td>A ~160 MB LoRA adapter on your own patch corpus (exp-02/03/10 already emitted thousands) buys back the capacity the constraint consumes. This is the experiment that would settle the taste question.</td><td>a real project</td></tr>
+</table>
+
+<h2>6 · The honest cost list</h2>
+
+<div class="cols">
+ <div class="card con">
+  <h4>Costs you'll actually feel</h4>
+  <ul>
+   <li><b>Silent wrongness.</b> Covered above. Non-negotiable: build the verifier first.</li>
+   <li><b>Two Directors to maintain.</b> Two prompts, two grammars, and a handoff policy that can drift.</li>
+   <li><b>A hard output budget.</b> Phone memory bandwidth (50–90 GB/s vs a datacenter GPU's 2–3 TB/s) makes decoding slow in a way faster chips won't fix. A verbose protocol will never fit.</li>
+   <li><b>Battery and thermals.</b> Cheaper than a datacenter, not free. Pre-painting ahead is "free" in dollars and not in milliamp-hours.</li>
+   <li><b>Platform lock.</b> Guided generation is an OS feature. iOS and Android give you different guarantees; the browser gives you fewer still.</li>
+   <li><b>A weaker first scene.</b> If the device composes from cold, it's noticeably less good than the cloud would have been.</li>
+  </ul>
+ </div>
+ <div class="card pro">
+  <h4>Why Painted UI absorbs them well</h4>
+  <ul>
+   <li><b>Tiny output by construction.</b> Patches, not component trees, not pixels. The scarce resource on a phone is exactly the one we use least.</li>
+   <li><b>The model doesn't need taste.</b> It names the change; the Choreographer owns expression. A weak model is <i>sufficient</i> here in a way it isn't elsewhere.</li>
+   <li><b>Wrong is visible.</b> In a chatbot a wrong-but-valid answer just looks like an answer. On a canvas it's off-centre, overlapping, or unreadable — checkable with geometry.</li>
+   <li><b>The handoff already exists.</b> Clicks are messages; patches are patches. Two Directors writing to one stage needs no new protocol.</li>
+   <li><b>Graceful degradation.</b> Lose the device model and you're back to today's architecture. Lose the network and you keep reacting.</li>
+  </ul>
+ </div>
+</div>
+
+<div class="verdict">
+<b>Where this leaves the concept.</b> On-device inference is a poor fit for generative UI in general —
+it asks a small model to author a whole interface — and an unusually good fit for Painted UI, because
+the expensive judgment was moved into deterministic local code years before the hardware made that
+mandatory. The Choreographer was built as a cost optimization. On device it turns out to be the
+reliability layer. That's the finding worth keeping.
+</div>
+
+<div class="foot">
+Companion pages: <a href="the-cast.html">The Cast</a> · <a href="the-choreographer.html">The Choreographer</a> ·
+<a href="why-four-loops.html">Why Four Loops</a> · <a href="how-it-works-together.html">How It Works Together</a><br>
+<span style="font-size:12.5px">Wiki sources: <code>concepts/on-device-models</code> ·
+<code>sources/on-device-inference-2026</code> · <code>concepts/four-loops</code> ·
+<code>techniques/scene-grammar-v2</code>. Research figures are from public 2026 papers and move fast —
+re-verify before quoting. Numbers in the demo ledger are illustrative, not measured.</span>
+</div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════
+   MINI COMPOSITOR — a real (small) version of the architecture:
+   patches mutate a node map; a rAF loop samples it. Never waits.
+   ══════════════════════════════════════════════════════════════ */
+var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+var W = cv.width, H = cv.height;
+var stage = { nodes: [], palette: { bg0:'#0d1220', bg1:'#080a12', accent:'#e8a34c' } };
+var now = function(){ return performance.now(); };
+
+function ease(p){ return p<0.5 ? 4*p*p*p : 1-Math.pow(-2*p+2,3)/2; }
+function clamp(v,a,b){ return v<a?a:v>b?b:v; }
+
+function addNode(n){
+  n.alpha = 0; n.scale = 1; n.reveal = 0; n.anims = [];
+  n.t0 = now();
+  stage.nodes.push(n);
+  return n;
+}
+function find(id){ for(var i=0;i<stage.nodes.length;i++) if(stage.nodes[i].id===id) return stage.nodes[i]; return null; }
+
+/* the choreographer: (patch, node) -> motion. no model involved. */
+function choreograph(op, node, extra){
+  var t = now();
+  if(op==='enter'){
+    if(node.kind==='text') return [{k:'reveal',from:0,to:1,dur:900,t0:t},{k:'alpha',from:0,to:1,dur:400,t0:t}];
+    if(node.kind==='grad') return [{k:'alpha',from:0,to:1,dur:1100,t0:t}];
+    var dir = node.x<0.34 ? -0.16 : node.x>0.66 ? 0.16 : 0;
+    var a = [{k:'alpha',from:0,to:1,dur:700,t0:t},{k:'scale',from:0.86,to:1,dur:800,t0:t}];
+    if(dir) a.push({k:'x',from:node.x+dir,to:node.x,dur:800,t0:t});
+    return a;
+  }
+  if(op==='morph'){
+    var out=[];
+    for(var key in extra){ out.push({k:key,from:node[key],to:extra[key],dur:1000,t0:t}); }
+    return out;
+  }
+  if(op==='recede') return [{k:'alpha',from:node.alpha,to:0.3,dur:600,t0:t},{k:'scale',from:node.scale,to:0.96,dur:600,t0:t}];
+  if(op==='advance')return [{k:'alpha',from:node.alpha,to:1,dur:600,t0:t},{k:'scale',from:node.scale,to:1.06,dur:600,t0:t}];
+  return [];
+}
+function apply(node, anims){ for(var i=0;i<anims.length;i++) node.anims.push(anims[i]); }
+
+function sample(){
+  var t = now();
+  for(var i=0;i<stage.nodes.length;i++){
+    var n = stage.nodes[i];
+    for(var j=n.anims.length-1;j>=0;j--){
+      var a = n.anims[j];
+      var p = clamp((t-a.t0)/a.dur,0,1), e = ease(p);
+      n[a.k] = a.from + (a.to-a.from)*e;
+      if(p>=1) n.anims.splice(j,1);
+    }
+  }
+}
+
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#07060c'); g.addColorStop(1,'#07060c');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  var list = stage.nodes.slice().sort(function(a,b){ return (a.z||0)-(b.z||0); });
+  for(var i=0;i<list.length;i++){
+    var n = list[i]; if(n.alpha<=0.001) continue;
+    ctx.save(); ctx.globalAlpha = clamp(n.alpha,0,1);
+
+    if(n.kind==='grad'){
+      var gg = ctx.createLinearGradient(0,0,0,H);
+      gg.addColorStop(0, stage.palette.bg0); gg.addColorStop(1, stage.palette.bg1);
+      ctx.fillStyle = gg; ctx.fillRect(0,0,W,H);
+      /* horizon + water shimmer, so the stage is never static */
+      var hz = H*0.44;
+      ctx.globalAlpha = clamp(n.alpha,0,1)*0.5;
+      ctx.strokeStyle = '#2b3a55'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(0,hz); ctx.lineTo(W,hz); ctx.stroke();
+      var t = now()/1000;
+      for(var k=0;k<5;k++){
+        var yy = hz + 22 + k*26 + Math.sin(t*0.9 + k)*3;
+        ctx.globalAlpha = clamp(n.alpha,0,1)*(0.16 - k*0.02);
+        ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(W,yy); ctx.stroke();
+      }
+    }
+
+    else if(n.kind==='text'){
+      var full = n.text || '';
+      var chars = Math.round(full.length * clamp(n.reveal,0,1));
+      ctx.font = (n.size||30)+'px Georgia, serif';
+      ctx.fillStyle = n.fill || '#efe9dc';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(full.slice(0,chars), n.x*W, n.y*H);
+      if(chars<full.length && chars>0){
+        var wdt = ctx.measureText(full.slice(0,chars)).width;
+        ctx.fillStyle = stage.palette.accent; ctx.globalAlpha *= 0.8;
+        ctx.fillRect(n.x*W + wdt/2 + 3, n.y*H - (n.size||30)*0.4, 3, (n.size||30)*0.8);
+      }
+    }
+
+    else if(n.kind==='card'){
+      var w = n.w*W*n.scale, h = n.h*H*n.scale;
+      var x = n.x*W - w/2, y = n.y*H - h/2;
+      ctx.save();
+      ctx.translate(x+w/2, y+h/2); ctx.translate(-(x+w/2), -(y+h/2));
+      rr(x,y,w,h,10);
+      var cg = ctx.createLinearGradient(x,y,x,y+h);
+      cg.addColorStop(0,'#1b2438'); cg.addColorStop(1,'#121826');
+      ctx.fillStyle = cg; ctx.fill();
+      ctx.strokeStyle = n.hot ? stage.palette.accent : '#2c3a52';
+      ctx.lineWidth = n.hot ? 2 : 1; ctx.stroke();
+      /* "image" band */
+      ctx.save(); rr(x+8,y+8,w-16,h*0.44,7); ctx.clip();
+      var ig = ctx.createLinearGradient(x,y,x+w,y+h*0.5);
+      ig.addColorStop(0, n.hue||'#25506b'); ig.addColorStop(1,'#16263a');
+      ctx.fillStyle = ig; ctx.fillRect(x+8,y+8,w-16,h*0.44);
+      ctx.globalAlpha *= 0.55; ctx.strokeStyle='#4d7fa1'; ctx.lineWidth=1;
+      for(var s=0;s<3;s++){ ctx.beginPath();
+        ctx.moveTo(x+8, y+8+h*0.44 - 6 - s*7 + Math.sin(now()/900+s)*2);
+        ctx.lineTo(x+w-8, y+8+h*0.44 - 10 - s*7 + Math.cos(now()/900+s)*2); ctx.stroke(); }
+      ctx.restore();
+      ctx.fillStyle = '#efe9dc'; ctx.font = '18px Georgia, serif';
+      ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+      ctx.fillText(n.label||'', x+12, y+h*0.44+34);
+      if(n.sub){ ctx.fillStyle='#8a86a0'; ctx.font='14px Georgia, serif'; ctx.fillText(n.sub, x+12, y+h*0.44+56); }
+      ctx.restore();
+    }
+
+    else if(n.kind==='ghost'){
+      var gw=n.w*W, gh=n.h*H, gx=n.x*W-gw/2, gy=n.y*H-gh/2;
+      ctx.setLineDash([5,5]); ctx.strokeStyle='#7fd4c1'; ctx.lineWidth=1.2;
+      rr(gx,gy,gw,gh,9); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='#7fd4c1'; ctx.font='13px Georgia, serif'; ctx.textAlign='center';
+      ctx.fillText(n.label||'', n.x*W, n.y*H);
+    }
+    ctx.restore();
+  }
+
+  /* idle breath so the painter never stops */
+  ctx.globalAlpha = 0.5 + Math.sin(now()/1400)*0.12;
+  ctx.fillStyle = stage.palette.accent;
+  ctx.fillRect(W-16, H-16, 6, 6);
+  ctx.globalAlpha = 1;
+}
+
+var alive = true;
+(function loop(){
+  try { sample(); draw(); }
+  catch(e){ /* self-healing: always re-arm */ }
+  if(alive) requestAnimationFrame(loop);
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   THE WIRE — patch scripts, typed in at brain-appropriate speed
+   ══════════════════════════════════════════════════════════════ */
+var streamEl = document.getElementById('stream'),
+    traceEl  = document.getElementById('trace'),
+    lampC = document.getElementById('lampC'), lampD = document.getElementById('lampD'),
+    phaseEl = document.getElementById('phase'), rateEl = document.getElementById('rate'),
+    mLat = document.getElementById('mLat'), mTok = document.getElementById('mTok'),
+    mBytes = document.getElementById('mBytes'), mCost = document.getElementById('mCost');
+
+var totTok = 0, totBytes = 0, totCost = 0, busy = false;
+
+function fmtBytes(b){ return b<1024 ? b+' B' : (b/1024).toFixed(1)+' KB'; }
+function ledger(){ mTok.textContent = totTok; mBytes.textContent = fmtBytes(totBytes);
+                   mCost.textContent = '$'+totCost.toFixed(4); }
+function trace(html){ traceEl.innerHTML += html+'\n'; traceEl.scrollTop = traceEl.scrollHeight; }
+function colorize(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+          .replace(/"(op|id|node|set|kind|label|text|focus|mode|intent)"/g,'"<span class="k">$1</span>"')
+          .replace(/:("[^"]*")/g,':<span class="v">$1</span>');
+}
+
+/* scripts: [wireText, applyFn, tokenEstimate] */
+var CLOUD_SCENE = [
+ ['{"op":"palette","set":{"bg0":"#101a2a","accent":"#e8a34c"}}', function(){
+    stage.palette.bg0='#101a2a'; stage.palette.bg1='#070a12';
+    trace('<u>choreographer</u>: palette crossfade 900ms'); }, 26],
+ ['{"op":"add","node":{"id":"sky","kind":"grad","z":0}}', function(){
+    var n=addNode({id:'sky',kind:'grad',z:0}); apply(n,choreograph('enter',n));
+    trace('<u>choreographer</u>: grad → dissolve 1100ms'); }, 22],
+ ['{"op":"add","node":{"id":"title","kind":"text","x":0.5,"y":0.13,"text":"Harbor — Tuesday","z":3}}', function(){
+    var n=addNode({id:'title',kind:'text',x:0.5,y:0.13,text:'Harbor — Tuesday',size:34,z:3});
+    apply(n,choreograph('enter',n)); trace('<u>choreographer</u>: text → typeSet 900ms'); }, 44],
+ ['{"op":"add","node":{"id":"c1","kind":"card","x":0.22,"y":0.58,"w":0.24,"h":0.34,"label":"Berth 4","z":2}}', function(){
+    var n=addNode({id:'c1',kind:'card',x:0.22,y:0.58,w:0.24,h:0.34,label:'Berth 4',sub:'on time',hue:'#25506b',z:2});
+    apply(n,choreograph('enter',n)); trace('<u>choreographer</u>: x=0.22 → flyIn from LEFT'); }, 48],
+ ['{"op":"add","node":{"id":"c2","kind":"card","x":0.50,"y":0.58,"w":0.24,"h":0.34,"label":"Berth 7","z":2}}', function(){
+    var n=addNode({id:'c2',kind:'card',x:0.50,y:0.58,w:0.24,h:0.34,label:'Berth 7',sub:'3 delays',hue:'#5b3f2a',z:2});
+    apply(n,choreograph('enter',n)); trace('<u>choreographer</u>: centred → dissolve + scale'); }, 48],
+ ['{"op":"add","node":{"id":"c3","kind":"card","x":0.78,"y":0.58,"w":0.24,"h":0.34,"label":"Berth 9","z":2}}', function(){
+    var n=addNode({id:'c3',kind:'card',x:0.78,y:0.58,w:0.24,h:0.34,label:'Berth 9',sub:'on time',hue:'#25506b',z:2});
+    apply(n,choreograph('enter',n)); trace('<u>choreographer</u>: x=0.78 → flyIn from RIGHT'); }, 48],
+ ['{"op":"done"}', function(){ trace('<b>scene composed.</b> cloud director done.'); }, 8]
+];
+
+var DEVICE_TAP = [
+ ['{"op":"scene","focus":["c2"],"mode":"spotlight"}', function(){
+    ['c1','c3'].forEach(function(id){ var n=find(id); if(n) apply(n,choreograph('recede',n)); });
+    var f=find('c2'); if(f){ f.hot=true; apply(f,choreograph('advance',f)); }
+    trace('<u>choreographer</u>: spotlight → <b>6 tweens across 4 nodes</b> from 9 tokens'); }, 14],
+ ['{"op":"update","id":"c2","set":{"w":0.34,"h":0.42,"y":0.55}}', function(){
+    var n=find('c2'); if(n) apply(n,choreograph('morph',n,{w:0.34,h:0.42,y:0.55}));
+    trace('<u>choreographer</u>: same id + new numbers ⇒ <b>morph</b>, never blink'); }, 22],
+ ['{"op":"add","node":{"id":"d1","kind":"text","x":0.5,"y":0.90,"text":"3 delays · 41 min lost","z":4}}', function(){
+    var n=addNode({id:'d1',kind:'text',x:0.5,y:0.90,text:'3 delays · 41 min lost',size:19,fill:'#e8a34c',z:4});
+    apply(n,choreograph('enter',n)); trace('<b>verifier</b>: y=0.90 in bounds · contrast 6.1 · id free → <b>pass</b>'); }, 40]
+];
+
+var DEVICE_PRE = [
+ ['{"op":"add","node":{"id":"g1","kind":"ghost","x":0.22,"y":0.58,"w":0.24,"h":0.34,"label":"pre-painted"}}', function(){
+    var n=addNode({id:'g1',kind:'ghost',x:0.22,y:0.58,w:0.24,h:0.34,label:'pre-painted',z:5});
+    apply(n,[{k:'alpha',from:0,to:0.9,dur:600,t0:now()}]);
+    trace('speculative: guessing the next tap · <i>costs battery, not dollars</i>'); }, 38],
+ ['{"op":"add","node":{"id":"g2","kind":"ghost","x":0.78,"y":0.58,"w":0.24,"h":0.34,"label":"pre-painted"}}', function(){
+    var n=addNode({id:'g2',kind:'ghost',x:0.78,y:0.58,w:0.24,h:0.34,label:'pre-painted',z:5});
+    apply(n,[{k:'alpha',from:0,to:0.9,dur:600,t0:now()}]);
+    trace('<b>two scenes ready before the user decides.</b> wire bytes: 0'); }, 38]
+];
+
+var CLOUD_ASK = [
+ ['{"op":"add","node":{"id":"ans","kind":"text","x":0.5,"y":0.26,"text":"Tide window shifted 40 min","z":4}}', function(){
+    var n=addNode({id:'ans',kind:'text',x:0.5,y:0.26,text:'Tide window shifted 40 min',size:21,fill:'#7fd4c1',z:4});
+    apply(n,choreograph('enter',n));
+    trace('escalated: <u>reasoning over data</u> — the device could not answer this'); }, 46],
+ ['{"op":"done"}', function(){ trace('<b>cloud consulted once.</b> everything else stayed local.'); }, 8]
+];
+
+/* type a script onto the wire; cloud waits then bursts, device starts instantly but decodes slowly */
+function run(script, mode, firstTokenMs, msPerChar, cb){
+  if(busy) return; busy = true;
+  var isCloud = mode==='cloud';
+  lampC.className = 'lamp' + (isCloud?' on-cloud':'');
+  lampD.className = 'lamp' + (isCloud?'':' on-dev');
+  phaseEl.textContent = isCloud ? 'cloud director thinking…' : 'device director decoding…';
+  rateEl.textContent = isCloud ? '~90 tok/s · over network' : '~28 tok/s · on NPU';
+  mLat.textContent = firstTokenMs + ' ms';
+  if(isCloud) trace('<u>cloud</u>: request sent · waiting ' + firstTokenMs + 'ms for first token…');
+  else trace('<b>device</b>: no network. decoding immediately.');
+
+  var i = 0;
+  function nextLine(){
+    if(i >= script.length){
+      busy = false; phaseEl.textContent = 'idle';
+      lampC.className='lamp'; lampD.className='lamp';
+      if(cb) cb(); return;
+    }
+    var entry = script[i], text = entry[0], fn = entry[1], toks = entry[2];
+    var div = document.createElement('div');
+    div.className = 'ln ' + (isCloud?'cloud':'dev');
+    streamEl.appendChild(div); streamEl.scrollTop = streamEl.scrollHeight;
+    var c = 0;
+    (function type(){
+      c += Math.max(1, Math.round(3));
+      var shown = text.slice(0, c);
+      div.innerHTML = colorize(shown) + (c<text.length ? '<span class="caret">|</span>' : '');
+      streamEl.scrollTop = streamEl.scrollHeight;
+      if(c < text.length){ setTimeout(type, msPerChar); }
+      else {
+        /* brace closed → the patch is applied the instant it completes */
+        totTok += toks; totBytes += isCloud ? text.length : 0;
+        totCost += isCloud ? toks * 0.000015 : 0;
+        ledger(); fn();
+        i++; setTimeout(nextLine, isCloud ? 120 : 260);
+      }
+    })();
+  }
+  setTimeout(nextLine, firstTokenMs);
+}
+
+var bCloud=document.getElementById('bCloud'), bTap=document.getElementById('bTap'),
+    bPre=document.getElementById('bPre'), bAsk=document.getElementById('bAsk'),
+    bReset=document.getElementById('bReset');
+
+bCloud.onclick = function(){
+  streamEl.innerHTML=''; traceEl.innerHTML='';
+  run(CLOUD_SCENE,'cloud',700,7,function(){
+    bTap.disabled=false; bPre.disabled=false; bAsk.disabled=false; bCloud.disabled=true;
+  });
+};
+bTap.onclick = function(){ run(DEVICE_TAP,'device',0,16,function(){ bTap.disabled=true; }); };
+bPre.onclick = function(){ run(DEVICE_PRE,'device',0,16,function(){ bPre.disabled=true; }); };
+bAsk.onclick = function(){ run(CLOUD_ASK,'cloud',700,7,function(){ bAsk.disabled=true; }); };
+bReset.onclick = function(){
+  stage.nodes.length = 0; streamEl.innerHTML=''; traceEl.innerHTML='';
+  totTok=0; totBytes=0; totCost=0; ledger(); mLat.textContent='—'; rateEl.textContent='';
+  busy=false; bCloud.disabled=false; bTap.disabled=true; bPre.disabled=true; bAsk.disabled=true;
+  phaseEl.textContent='idle'; lampC.className='lamp'; lampD.className='lamp';
+};
+
+/* ══════════════════════════════════════════════════════════════
+   ROUTING TREE
+   ══════════════════════════════════════════════════════════════ */
+var TN = {
+  start:{x:60,y:200,w:112,h:44,label:'event',type:'start'},
+  q1:{x:216,y:60,w:150,h:56,label:'Needs new\nknowledge?',type:'q'},
+  q2:{x:216,y:186,w:150,h:56,label:'First rich\ncomposition?',type:'q'},
+  q3:{x:216,y:312,w:150,h:56,label:'Any decision\nat all?',type:'q'},
+  q4:{x:420,y:312,w:150,h:56,label:'Must answer\nwithin a beat?',type:'q'},
+  cloud:{x:660,y:96,w:150,h:56,label:'CLOUD\ndirector',type:'cloud'},
+  dev:{x:660,y:250,w:150,h:56,label:'DEVICE\ndirector',type:'dev'},
+  none:{x:660,y:360,w:150,h:56,label:'NO MODEL\nchoreographer',type:'none'}
+};
+var EDGES = [['start','q1'],['start','q2'],['start','q3'],['q1','cloud'],['q2','cloud'],
+             ['q3','q4'],['q4','dev'],['q4','none'],['q2','q3']];
+
+var svgNodes = document.getElementById('nodes'), svgEdges = document.getElementById('edges');
+var NS='http://www.w3.org/2000/svg';
+function cx(n){ return n.x+n.w/2; } function cy(n){ return n.y+n.h/2; }
+
+EDGES.forEach(function(e){
+  var a=TN[e[0]], b=TN[e[1]];
+  var p=document.createElementNS(NS,'path');
+  var x1=a.x+a.w, y1=cy(a), x2=b.x, y2=cy(b), mx=(x1+x2)/2;
+  p.setAttribute('d','M'+x1+' '+y1+' C'+mx+' '+y1+' '+mx+' '+y2+' '+(x2-6)+' '+y2);
+  p.setAttribute('id','e_'+e[0]+'_'+e[1]);
+  svgEdges.appendChild(p);
+});
+
+var COL = {q:'#2c2840', start:'#3a3455', cloud:'#453d6b', dev:'#265449', none:'#4d452a'};
+var TXT = {q:'#efe9dc', start:'#efe9dc', cloud:'#9a8fd0', dev:'#7fd4c1', none:'#d9c86a'};
+var FIL = {q:'#14121c', start:'#1d1a2a', cloud:'#1d1930', dev:'#132420', none:'#211e12'};
+
+Object.keys(TN).forEach(function(id){
+  var n=TN[id];
+  var g=document.createElementNS(NS,'g'); g.setAttribute('class','nd'); g.setAttribute('id','n_'+id);
+  var r=document.createElementNS(NS,'rect');
+  r.setAttribute('x',n.x); r.setAttribute('y',n.y); r.setAttribute('width',n.w); r.setAttribute('height',n.h);
+  r.setAttribute('rx',10); r.setAttribute('fill',FIL[n.type]); r.setAttribute('stroke',COL[n.type]);
+  r.setAttribute('stroke-width',1.4);
+  g.appendChild(r);
+  var lines=n.label.split('\n');
+  lines.forEach(function(ln,k){
+    var t=document.createElementNS(NS,'text');
+    t.setAttribute('x',cx(n)); t.setAttribute('y', cy(n) - (lines.length-1)*8 + k*17 + 5);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('fill',TXT[n.type]);
+    t.setAttribute('font-family','Georgia, serif'); t.setAttribute('font-size', n.type==='q'?'13':'13.5');
+    if(n.type!=='q') t.setAttribute('letter-spacing','0.04em');
+    t.textContent=ln; g.appendChild(t);
+  });
+  svgNodes.appendChild(g);
+});
+
+var EVENTS = [
+ {label:'Tap "Berth 7"', route:['start','q3','q4','dev'],
+  why:'A decision is needed (which node to emphasise, what detail to show) and the user is watching. '+
+      'One or two patches — a round trip would cost more than the decision itself. <b>Device.</b>'},
+ {label:'Hover a card', route:['start','q3','q4','none'],
+  why:'Nothing is being decided. Hover emphasis is a policy the Choreographer already owns. '+
+      '<b>No model runs at all</b> — this is most of what an interface does.'},
+ {label:'Rotate the phone', route:['start','q3','q4','none'],
+  why:'Layout re-solve plus spring settle. Constraint containers own placement; the Choreographer '+
+      'animates the difference. <b>Zero inference</b>, and it still reads as repainting.'},
+ {label:'"Why did delays increase?"', route:['start','q1','cloud'],
+  why:'A thinking problem, not a painting problem — it needs data the device does not hold and reasoning '+
+      'a 3B model will not do well. <b>Escalate to the cloud</b>, once.'},
+ {label:'Compose the morning brief', route:['start','q2','cloud'],
+  why:'A rich first scene is 400–700 output tokens. At phone decode speeds that is 15–30 seconds. '+
+      '<b>Cloud composes</b>; the device takes over the moment it is on screen.'},
+ {label:'Pre-paint likely next taps', route:['start','q3','q4','dev'],
+  why:'Speculative work against an already-warm scene. Worth doing only because the tokens are free. '+
+      '<b>Device</b> — this row does not exist in a cloud-only architecture.'},
+ {label:'Dim all but the selected', route:['start','q3','q4','none'],
+  why:'The model already said <code>focus</code>. Turning one intent into six tweens is the '+
+      "Choreographer's whole job. <b>No second model call.</b>"}
+];
+
+var chips = document.getElementById('chips'), whyEl = document.getElementById('why'),
+    dot = document.getElementById('dot');
+EVENTS.forEach(function(ev,i){
+  var b=document.createElement('span'); b.className='chip'; b.textContent=ev.label;
+  b.onclick=function(){
+    [].forEach.call(chips.children,function(c){ c.classList.remove('active'); });
+    b.classList.add('active'); runRoute(ev);
+  };
+  chips.appendChild(b);
+});
+
+var routeAnim = null;
+function resetTree(){
+  Object.keys(TN).forEach(function(id){
+    var r=document.querySelector('#n_'+id+' rect');
+    r.setAttribute('stroke',COL[TN[id].type]); r.setAttribute('stroke-width',1.4);
+    r.setAttribute('fill',FIL[TN[id].type]);
+  });
+  [].forEach.call(svgEdges.children,function(p){ p.setAttribute('stroke','#3a3455'); p.setAttribute('stroke-width',1.6); });
+}
+function runRoute(ev){
+  if(routeAnim) cancelAnimationFrame(routeAnim);
+  resetTree(); whyEl.innerHTML = ev.why;
+  var pts=[], route=ev.route;
+  for(var i=0;i<route.length;i++){ var n=TN[route[i]]; pts.push([cx(n),cy(n)]); }
+  for(var j=0;j<route.length-1;j++){
+    var p=document.getElementById('e_'+route[j]+'_'+route[j+1]);
+    if(p){ p.setAttribute('stroke','#e8a34c'); p.setAttribute('stroke-width',2.4); }
+  }
+  var seg=0, t0=performance.now(), SEG=520;
+  dot.setAttribute('opacity','1');
+  (function step(){
+    var t=performance.now(), p=clamp((t-t0)/SEG,0,1), e=ease(p);
+    if(seg < pts.length-1){
+      var a=pts[seg], b2=pts[seg+1];
+      dot.setAttribute('cx', a[0]+(b2[0]-a[0])*e);
+      dot.setAttribute('cy', a[1]+(b2[1]-a[1])*e);
+      var lit=document.querySelector('#n_'+route[seg]+' rect');
+      lit.setAttribute('stroke','#e8a34c'); lit.setAttribute('stroke-width',2.2);
+      if(p>=1){ seg++; t0=t; }
+      routeAnim=requestAnimationFrame(step);
+    } else {
+      var end=route[route.length-1];
+      var er=document.querySelector('#n_'+end+' rect');
+      er.setAttribute('stroke','#e8a34c'); er.setAttribute('stroke-width',2.6);
+      er.setAttribute('fill', end==='cloud'?'#2a2247':end==='dev'?'#173129':end==='none'?'#2c2717':FIL[TN[end].type]);
+      dot.setAttribute('opacity','0');
+    }
+  })();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BARS — animate when scrolled into view
+   ══════════════════════════════════════════════════════════════ */
+var fired=false;
+function fillBars(){
+  if(fired) return; var box=document.getElementById('bars').getBoundingClientRect();
+  if(box.top < window.innerHeight - 60){
+    fired=true;
+    [].forEach.call(document.querySelectorAll('.fill'),function(f,i){
+      setTimeout(function(){ f.style.width = f.getAttribute('data-w')+'%'; }, i*130);
+    });
+  }
+}
+window.addEventListener('scroll', fillBars); fillBars();
+
+ledger();
+})();
+</script>
+</body>
+</html>

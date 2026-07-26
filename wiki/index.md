@@ -1,6 +1,8 @@
 # Index — Painted UI wiki
 
 Content catalog. Read this first on every query. Updated on every ingest.
+Latest health check: [[lint-2026-07-21]] (experiment status table lives
+there).
 
 ## Overview & thesis
 
@@ -13,7 +15,8 @@ Content catalog. Read this first on every query. Updated on every ingest.
 
 - [[concepts/four-loops]] — the architecture: conversation / network read /
   parser scan / render, four speeds, one shared node map; mutate vs sample;
-  sourced lineage from the game-loop pattern.
+  sourced lineage from the game-loop pattern. Now includes **the verifier**
+  — the semantic gate that guided generation makes necessary.
 - [[concepts/the-illusion]] — **the core analytical page.** Decomposes the
   "painted live" feeling into four ingredients (fluid layout, live motion,
   universal interactivity, bespoke content) and shows each is reproducible
@@ -42,6 +45,12 @@ Content catalog. Read this first on every query. Updated on every ingest.
 - [[concepts/experience-frontier]] — beyond 60fps: why frame rate is the
   wrong lever; painterly shaders, speculative pre-paint, infinite canvas,
   audio choreography, user-inside-the-painting.
+- [[concepts/on-device-models]] — the endgame, now shipping, **revised
+  2026-07-25**: guided generation makes invalid patches unemittable — but
+  ⚠️ the *constraint tax* means small models then emit more
+  wrong-but-valid ones, so failure goes silent. Adds the verifier,
+  session-as-cache, speculative decoding, LoRA taste adapters, diffusion
+  decoding, and a corrected browser path. Three open questions closed.
 
 ## Techniques
 
@@ -59,6 +68,12 @@ Content catalog. Read this first on every query. Updated on every ingest.
   lineage; prior-art map; SLM/on-device direction.
 - `the-choreographer.html` — the how-of-motion layer in detail, with a live
   same-stream/four-choreographies demo and unit economics.
+- `the-split-brain.html` — **on-device inference explained for newcomers**:
+  the pros and cons, how streamed patches actually look (wire JSON vs typed
+  device object vs choreographer output), a live two-brain demo where the
+  cloud composes the scene and the device handles taps and pre-painting, an
+  interactive routing tree (cloud / device / no model at all), the
+  constraint tax, and the honest cost list.
 - `the-cast.html` — the roles explained for newcomers: director / script /
   choreographer / painter(compositor) / stage, with accordion examples of
   real node objects, patch streams, policy decisions, the frame loop, and
@@ -86,15 +101,23 @@ Content catalog. Read this first on every query. Updated on every ingest.
 - [[sources/game-loop-lineage]] — source #5: Nystrom's Game Loop chapter +
   Fiedler's Fix Your Timestep. The canonical simulation/render decoupling
   painted UI inherits — and the two loops + visible-mismatch it adds.
-- [[sources/audit-2026-07]] — source #6: independent audit. Confirms the
-  differentiator (streams *how* a persistent scene evolves, not *what*
-  components exist); specifies the validating experiment → built as exp-08
-  (blind three-way perception study, ready to run).
+- [[sources/audit-2026-07]] — source #6: independent audit (full text +
+  exp-10 follow-up, visual 6.5→8.0). Confirms the differentiator; its
+  perception study was built as exp-08, now **paused** pending a stronger
+  painted condition.
+- [[sources/painted-ui-messaging-reframe-spec]] — the original spec behind
+  the July deck-upgrade batch (recovered by lint; reviewed in
+  [[sources/upgrades]]).
 - [[sources/chatgpt-motion-recommendations]] — source #7: the motion
   roadmap. Intent verbs over composable primitives, attention
   orchestration, hierarchy choreography, velocity-continuous interruption
   ("Interrupt the Choreographer" = exp-12), grammars+themes distinction,
   restraint doctrine. Adopted with three amendments.
+- [[sources/on-device-inference-2026]] — source #8: the July 2026
+  on-device inference research batch (constraint tax, schema keys as an
+  instruction channel, bandwidth ceiling, speculative decoding, LoRA
+  adapters, mobile diffusion LLMs, browser API status). **First source to
+  contradict an existing wiki claim.**
 - [[sources/upgrades]] — review record of the July deck-upgrade batch:
   ~90% kept, two corrections (present-tense claims; Painter/Animator
   reconciliation), plus the merge rule for future upgrade batches.
@@ -107,6 +130,10 @@ sources are ingested)*
 ## Planned pages (mentioned, not yet created)
 
 - `concepts/a2ui-and-standards` — hunting list has the A2UI docs; ingest next.
-- `concepts/on-device-models` — awaiting WebLLM / constrained-decoding ingest.
 - `concepts/accessibility-mirror` — audit's proposal: synchronized hidden
   DOM tree generated from node semantics, as a first-class loop.
+- `concepts/executors` — from [[lint-2026-07-21]] §F: choreographer as
+  compiler, canvas/rAF and WAAPI/View Transitions as backends.
+- `concepts/diffusion-painting` — from [[sources/on-device-inference-2026]]:
+  non-autoregressive decoding would make coarse-to-fine resolution a
+  decoder property rather than a streaming trick.

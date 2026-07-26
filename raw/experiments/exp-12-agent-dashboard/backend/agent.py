@@ -6,6 +6,7 @@ that the frontend renders with Painted UI choreography.
 """
 
 import json
+import re
 from strands import Agent
 from strands.models.anthropic import AnthropicModel
 
@@ -59,6 +60,112 @@ Guidelines:
 - Be concise but insightful
 - Output ONLY the JSON array, no markdown, no explanation
 """
+
+
+# ---------------------------------------------------------------------------
+# Streaming patch parser — Python port of the exp-03 v3 brace-depth scanner.
+# Extracts every complete top-level {...} from arbitrary text fragments,
+# regardless of chunk boundaries, markdown fences, prose, or pretty-printing.
+# Tolerates JS-style .5 decimals and trailing commas (the run-2 lesson).
+# ---------------------------------------------------------------------------
+
+_LEADING_DECIMAL = re.compile(r"([:\[,]\s*)\.(\d)")
+_TRAILING_COMMA = re.compile(r",\s*([}\]])")
+
+
+class PatchStreamParser:
+    """Feed text fragments in; get completed patch dicts out."""
+
+    def __init__(self):
+        self.buf = ""
+        self.unparsed = 0
+
+    def feed(self, text: str) -> list[dict]:
+        self.buf += text
+        out: list[dict] = []
+        depth = 0
+        in_str = False
+        esc = False
+        start = -1
+        last_end = 0
+        for i, ch in enumerate(self.buf):
+            if in_str:
+                if esc:
+                    esc = False
+                elif ch == "\\":
+                    esc = True
+                elif ch == '"':
+                    in_str = False
+                continue
+            if ch == '"':
+                if depth > 0:
+                    in_str = True
+                continue
+            if ch == "{":
+                if depth == 0:
+                    start = i
+                depth += 1
+            elif ch == "}" and depth > 0:
+                depth -= 1
+                if depth == 0 and start >= 0:
+                    chunk = self.buf[start:i + 1]
+                    last_end = i + 1
+                    try:
+                        out.append(json.loads(chunk))
+                    except json.JSONDecodeError:
+                        try:
+                            fixed = _TRAILING_COMMA.sub(
+                                r"\1", _LEADING_DECIMAL.sub(r"\g<1>0.\2", chunk))
+                            out.append(json.loads(fixed))
+                        except json.JSONDecodeError:
+                            self.unparsed += 1
+                    start = -1
+        if depth > 0 and start >= 0:
+            self.buf = self.buf[start:]          # incomplete object waits for more tokens
+        elif last_end:
+            self.buf = self.buf[last_end:]       # keep tail after last complete object
+        else:
+            self.buf = ""                        # prose/fences between objects — discard
+        return out
+
+
+async def stream_agent(
+    api_key: str,
+    prompt: str,
+    current_stage: list[dict] | None = None,
+    history: list[dict] | None = None,
+):
+    """
+    Async generator: run the Strands agent with streaming and yield raw text
+    chunks as they arrive from the model. The client-side brace-depth parser
+    (Loop 3) assembles complete patches — keeping the parser client-side so
+    the same code path works for cloud LLMs and on-device SLMs alike.
+    """
+    agent = create_agent(api_key)
+
+    if history:
+        for msg in history:
+            agent.messages.append({
+                "role": msg["role"],
+                "content": [{"type": "text", "text": msg["content"]}],
+            })
+
+    full_prompt = prompt
+    if current_stage:
+        stage_json = json.dumps(current_stage, indent=2)
+        full_prompt = (
+            f"CURRENT STAGE (components already on screen):\n{stage_json}\n\n"
+            f"USER REQUEST: {prompt}\n\n"
+            f"Respond with ONLY the patches needed to fulfill this request. "
+            f"Use 'update' or 'remove' for existing components. Only 'add' new ones if needed."
+        )
+
+    async for event in agent.stream_async(full_prompt):
+        data = event.get("data") if isinstance(event, dict) else None
+        if data:
+            text = str(data)
+            if text:
+                yield text
 
 
 def create_agent(api_key: str) -> Agent:

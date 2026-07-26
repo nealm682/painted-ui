@@ -1,8 +1,10 @@
 """
-FastAPI server — SSE endpoint for the Workforce Advisor agent.
+FastAPI server — SSE relay for the Workforce Advisor agent.
 
-The frontend POSTs a prompt + API key, and receives a stream of A2UI patches
-via Server-Sent Events. Supports conversation memory across turns.
+The frontend POSTs a prompt + API key, and receives raw token chunks via
+Server-Sent Events. The client-side brace-depth parser (Loop 3) assembles
+complete patches — keeping parsing client-side so the same code path works
+for cloud LLMs and on-device SLMs alike.
 """
 
 import json
@@ -14,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from agent import run_agent
+from agent import run_agent, stream_agent
 
 
 @asynccontextmanager
@@ -58,28 +60,30 @@ async def query(req: QueryRequest):
     history = conversations[conv_id]
 
     async def generate():
+        """
+        Phase A (Painted UI): raw token relay. The server streams token
+        chunks as they arrive from the model — no parsing server-side.
+        The client's brace-depth parser (Loop 3) assembles complete patches
+        from the raw text, so token pacing IS the timing source.
+        """
+        full_response = ""
         try:
-            loop = asyncio.get_event_loop()
-            patches = await loop.run_in_executor(
-                None, run_agent, req.api_key, req.prompt,
-                req.current_stage, history,
-            )
+            async for text_chunk in stream_agent(
+                req.api_key, req.prompt, req.current_stage, history,
+            ):
+                full_response += text_chunk
+                yield {
+                    "event": "token",
+                    "data": json.dumps({"text": text_chunk}),
+                }
 
             # Store this turn in conversation history
             history.append({"role": "user", "content": req.prompt})
-            history.append({"role": "assistant", "content": json.dumps(patches)})
+            history.append({"role": "assistant", "content": full_response})
 
             # Keep history bounded (last 10 turns = 20 messages)
             while len(history) > 20:
                 history.pop(0)
-
-            # Stream patches one at a time
-            for patch in patches:
-                yield {
-                    "event": "patch",
-                    "data": json.dumps(patch),
-                }
-                await asyncio.sleep(0.12)
 
             yield {
                 "event": "done",

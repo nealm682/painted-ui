@@ -5,12 +5,19 @@ import { Badge } from '@/components/ui/badge'
 import { A2UIRenderer } from '@/components/a2ui/A2UIRenderer'
 import { BackgroundCanvas } from '@/components/BackgroundCanvas'
 import { applyPatch, getAllNodes, clearStage, onStageChange } from '@/painted-ui/stage.js'
-import { getFrameCount, subscribe } from '@/painted-ui/animator.js'
+import { PatchStreamParser } from '@/painted-ui/parser.js'
+import { getFrameCount } from '@/painted-ui/animator.js'
 import { MOODS } from '@/painted-ui/choreographer.js'
-import { streamDemo } from './demo-stream'
+import { streamDemo, streamPatches, drillSalesPatches, returnOverviewPatches } from './demo-stream'
 
 const BACKEND_URL = 'http://localhost:8000'
 
+/**
+ * Stream from backend: receives raw token chunks via SSE, assembles complete
+ * patches client-side using the brace-depth parser (Loop 3). This keeps the
+ * parser on the client so the same code path works for cloud LLMs and
+ * on-device SLMs alike.
+ */
 async function streamFromBackend(
   apiKey: string,
   prompt: string,
@@ -42,6 +49,7 @@ async function streamFromBackend(
   if (!reader) { onError('No response body'); return }
 
   const decoder = new TextDecoder()
+  const parser = new PatchStreamParser()
   let buffer = ''
 
   while (true) {
@@ -53,6 +61,8 @@ async function streamFromBackend(
     buffer = lines.pop() || ''
 
     for (const line of lines) {
+      if (line.startsWith('event:')) continue
+
       if (line.startsWith('data:')) {
         const data = line.slice(5).trim()
         if (!data) continue
@@ -62,11 +72,19 @@ async function streamFromBackend(
             onError(parsed.error)
             return
           }
+          // Raw token text from the model — feed into brace-depth parser
+          if (parsed.text !== undefined) {
+            const patches = parser.feed(parsed.text)
+            for (const patch of patches) {
+              onPatch(patch)
+            }
+            continue
+          }
+          // done event has mood field
           if (parsed.mood !== undefined) {
             continue
           }
-          onPatch(parsed)
-        } catch { /* skip non-JSON lines */ }
+        } catch { /* skip non-JSON SSE lines */ }
       }
     }
   }
@@ -92,21 +110,24 @@ export default function App() {
     return unsub
   }, [])
 
-  // FPS counter
+  // FPS counter — uses setInterval instead of subscribing to the animator,
+  // so it doesn't keep the animation loop running when nothing is animating
   useEffect(() => {
     let lastFrame = getFrameCount()
     let lastTime = performance.now()
 
-    const unsub = subscribe(() => {
+    const id = setInterval(() => {
       const now = performance.now()
-      if (now - lastTime >= 1000) {
-        const currentFrame = getFrameCount()
-        setFps(Math.round((currentFrame - lastFrame) / ((now - lastTime) / 1000)))
-        lastFrame = currentFrame
-        lastTime = now
+      const currentFrame = getFrameCount()
+      const elapsed = now - lastTime
+      if (elapsed > 0) {
+        setFps(Math.round((currentFrame - lastFrame) / (elapsed / 1000)))
       }
-    })
-    return unsub
+      lastFrame = currentFrame
+      lastTime = now
+    }, 1000)
+
+    return () => clearInterval(id)
   }, [])
 
   const runDemo = useCallback(() => {
@@ -177,7 +198,26 @@ export default function App() {
 
   const handleAction = useCallback((action: string) => {
     console.log('Action triggered:', action)
-  }, [])
+    if (streaming) return
+
+    if (action === 'drill-sales') {
+      setStreaming(true)
+      setAgentStatus('streaming')
+      streamPatches(
+        drillSalesPatches,
+        (patch) => applyPatch(patch, mood),
+        () => { setStreaming(false); setAgentStatus('done') },
+      )
+    } else if (action === 'return-overview') {
+      setStreaming(true)
+      setAgentStatus('streaming')
+      streamPatches(
+        returnOverviewPatches,
+        (patch) => applyPatch(patch, mood),
+        () => { setStreaming(false); setAgentStatus('done') },
+      )
+    }
+  }, [streaming, mood])
 
   const isThinking = agentStatus === 'thinking' && nodes.length > 0
 

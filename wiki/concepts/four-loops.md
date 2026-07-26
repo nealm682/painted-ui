@@ -44,9 +44,51 @@ are closed-form functions of elapsed time, so the compositor tolerates any
 frame rate without instability — which is why four loops need no
 scheduler, just the shared node map.
 
+## The verifier: the loop the on-device platform makes necessary
+
+Added 2026-07-25 from [[sources/on-device-inference-2026]]. Loop 3's
+parser is a *syntactic* gate: malformed JSON never reaches the node map.
+On device that gate disappears — platform guided generation makes
+malformed output unemittable ([[concepts/on-device-models]]). What the
+2026 SLM literature shows is that this does not remove errors, it makes
+them **well-formed**: constrained sub-3B models produce far more
+wrong-but-valid outputs than unconstrained ones. A patch that would once
+have crashed the parser now renders, silently and confidently.
+
+So the architecture needs a **semantic** gate where the syntactic one
+used to be: a verifier sitting at the loop-3 boundary that rejects or
+quarantines patches which are valid but incoherent against the current
+node map. It is deterministic and inference-free — geometry and
+reference checks, not judgment:
+
+- node placed outside the viewport, or fully occluded by a later node
+- text overflowing its container, or contrast below a legibility floor
+- verb targeting an id that does not exist, or a scene diff that empties
+  the screen
+- a mutation that contradicts an in-flight animation on the same node
+  (the interruption case — exp-14 territory)
+
+Rejected patches don't have to be dropped: the honest options are
+*quarantine and repaint from last-good*, or *return the violation to
+loop 1 as a message*, which fits the wiki's existing rule that clicks are
+messages — a failed check is just another event the director hears.
+exp-09's self-healing loop was an ad-hoc instance of this idea; naming it
+generalizes it.
+
+Whether this is genuinely a fifth loop or a filter on loop 3 is open. It
+runs at patch rate, not frame rate, and it mutates rather than samples —
+which argues for "gate on loop 3." The claim that matters is
+architectural, not nomenclatural: **the stronger the emission guarantee,
+the more the system needs a cheap semantic check downstream of it.**
+
 ## Extensions
 
 Swarms add writers, not loops: N agents are N interleaved patch streams
 into the same node map ([[concepts/swarm-painting]]). The
 [[concepts/choreographer]] sits between loops 3 and 4, turning semantic
 patches into motion parameters in zero time.
+
+On device the loop count falls rather than rises: loops 2 and 3 collapse
+into a typed function call, and prefix KV caching collapses loop 1 into
+resident memory — leaving a resident director, the verifier, and the
+render loop ([[concepts/on-device-models]]).

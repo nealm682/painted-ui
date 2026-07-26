@@ -414,3 +414,149 @@ re-uploaded cast page is byte-identical to the deployed root copy — the
 canonical definitions were already in place. Cleanup note: sandbox-created
 files carry locked ACLs host-side; the delete-permission tool + fresh
 host Write is the recovery pattern.
+
+## [2026-07-21] plan | exp-13 flagship: generalize the runtime, not the demo
+
+Neal asked whether the flagship should be a general agent rather than
+HR-specific, and whether generality makes it harder. Settled in
+`raw/experiments/exp-13-flagship/PLAN.md`: exp-12's catalog is already
+domain-agnostic — HR-ness lives only in the persona paragraph and seed
+data — so the answer is **domain packs** (~30 lines each: persona + seed
++ vocabulary) over an unbounded agent, which would break choreography
+reliability and demo predictability. Default pack: harbor operations
+(employer-neutral, lighthouse-brand); a switcher proving the engine
+claim. Golden path = source #7's nine-step narrative re-skinned ("Why did
+delays increase?" → focus/recede/table-transform/drillDown/connect/
+reveal/breadcrumb/return + mid-flight interruption). Phases: A streaming
+SSE foundation (token pacing finally visible in the dashboard) → B
+choreographer v2 honoring the intent envelope + FLIP relayout → C
+hierarchy/reversibility → D domain packs → E instrumentation + the
+flagship screen recording. Success bar: a first-time viewer says "the
+interface understood the question" — directed, not animated.
+
+## [2026-07-21] build | exp-13 Phase A: true streaming in the exp-12 backend
+
+Discovery: server.py already spoke SSE but the streaming was staged —
+run_agent to completion, then drip-feed finished patches at 120 ms.
+Theater, not token pacing. Phase A makes it real: `PatchStreamParser` in
+agent.py (Python port of the exp-03 v3 brace-depth scanner — chunk-split
+safe, fence/prose tolerant, .5-decimal + trailing-comma sanitizer;
+unit-tested against the full hostile suite including the new scene op,
+zero unparsed) + `stream_agent()` async generator over Strands
+`stream_async` (verified API: events carry text deltas in "data") +
+server.py generate() rewritten to yield each patch the moment its object
+closes. Frontend unchanged — it already consumes `patch` SSE events.
+run_agent kept as fallback. The artificial 120 ms sleep is gone: patch
+arrival rhythm is now the model's actual composition rhythm, which is
+the thesis made audible. Awaiting Neal's live run to confirm.
+
+## [2026-07-21] lint | full health check → [[lint-2026-07-21]]
+
+Prompted by Neal's sustainability concerns. Knowledge layer: healthy —
+one intentional dangling link, orphans fixed. Best catches: recovered
+the ORIGINAL deck-upgrade spec ([[sources/painted-ui-messaging-reframe-spec]],
+the empty-upload mystery solved); found a misfiled raw duplicate in
+sources/ (delete queued); discovered **exp-11-profile-form** — built by
+Neal, never logged (needs his description). Honest experiment registry
+filed (04–07 numbers retired; 08 paused; 09 superseded by 10; 12 active
+with Phase A done). Duplicates: 4/5 explainer pages divergent between
+root (canonical site) and wiki/decks (stale) → redirect stubs queued.
+The spaghetti finding quantified: ~12 independent tween/parse/choreograph
+implementations — right for the research phase, expired now → the
+runtime extraction is the next structural move, spec'd by
+scene-grammar-v2 + choreographer + four-loops. Settled the "is the
+gaming way best" question: the choreographer is a compiler; executors
+are backends — canvas/rAF for painterly targets, Web Animations API +
+View Transitions for component targets (new planned page:
+concepts/executors). FPS inconsistency was two unnamed executors; now
+named.
+
+## [2026-07-22] research | device inference × generative UI → [[concepts/on-device-models]]
+
+Neal asked for insights on device inference + genUI. Web-researched
+(July 2026 state) and filed the long-planned page. Headline: **both OS
+vendors shipped our reliability thesis as infrastructure** — Apple
+Foundation Models (~3B on-device, @Generable guided generation:
+constrained+speculative decoding by an OS daemon, model post-trained on
+the format spec) and Android ML Kit GenAI over AICore (Gemini Nano 4,
+typed Structured Output). Patches as native typed objects in-process →
+the parser layer VANISHES on device; four loops become three. Speed
+math: 20–50 tok/s decode, NPU prefill >1,000 tok/s, 35–59× energy
+advantage on NPU → per-patch pacing fine, but full v1 scenes too slow →
+**grammar-v2 compression is the on-device feasibility bridge, not just
+cost optimization** (prefill-cheap/decode-scarce is exactly the regime
+compact grammars serve). Split-brain division of labor table filed;
+mobile Animator targets SwiftUI/Compose per executor doctrine. Gap
+confirmed unclaimed: on-device model directing a persistent
+choreographed scene. exp-05 "works on a plane" now buildable with zero
+custom inference infra.
+
+## [2026-07-25] ⚠️ ingest + correction | on-device inference research batch → source #8
+
+Neal asked how to improve the concept, especially on device inference.
+Researched the 2026 literature (raw:
+`on-device-inference-research-2026-07.md` →
+[[sources/on-device-inference-2026]]) and it **contradicts the previous
+entry's headline**. Guided generation guarantees *validity*, not
+*reliability*: on sub-3B models hard schema decoding takes validity
+61.5%→100% but answer accuracy 19.7%→11.0%, and wrong-but-valid outputs
+49.5%→**88.9%** (the "constraint tax", arXiv 2605.26128; corroborated by
+diversity collapse across 44 models and tool-call suppression). For
+painted UI the failure mode *migrates* from loud (parser dies on
+narration/`.5` decimals — the exp-03 runs) to **silent** (a perfect patch
+paints the wrong thing). ⚠️ Contradiction filed on
+[[concepts/on-device-models]], which was substantially rewritten.
+Architectural consequence: **the verifier** — a deterministic,
+inference-free semantic gate where loop 3's syntactic gate used to be
+(off-canvas, occlusion, contrast, overflow, dangling ids, screen-emptying
+diffs), with rejects returned to loop 1 as messages since clicks are
+already messages. Filed into [[concepts/four-loops]]; exp-09's
+self-healing loop was an ad-hoc instance. Other findings: schema **keys
+instruct** (key wording alone moves accuracy — compress values, keep keys
+semantic; ⚠️ floor added to [[techniques/scene-grammar-v2]]'s token
+economics); grammar overhead is **solved** (20–50 ms one-time compile,
+<40 µs/token — open question closed) but **memory bandwidth is the
+durable ceiling** (mobile 50–90 GB/s vs 2–3 TB/s, decode is
+memory-bound); prefix KV caching collapses loop 1 into **resident
+memory** (session-as-cache); **speculative decoding** is the biggest
+unclaimed speedup and patch streams are an unusually good drafting
+distribution (Apple ships a draft-model toolkit; corpus already exists in
+exp-02/03/10); **rank-32 LoRA adapters** (~160 MB) attack the constraint
+tax at its root — capacity — giving the taste experiment a design
+(base+guided vs adapter+guided, scored on taste since validity is 100%
+by construction). Two speculative finds: **mobile diffusion LLMs**
+(llada.cpp, 17–42× over CPU) decode non-autoregressively, which would
+make coarse-to-fine *resolution* a decoder property rather than a
+streaming trick (candidate page `concepts/diffusion-painting`); and
+automated **system-prompt optimization** (0%→84–87% output accuracy)
+adds a cloud job to the split-brain table. Browser path corrected —
+Chrome Prompt API stable for extensions (138+), origin trial for pages,
+stable web projected 145–150. Three open questions closed, six opened.
+
+## [2026-07-25] explainer | the-split-brain.html — on-device inference for newcomers
+
+Neal found the research entry above hard to follow and asked for a single
+rich HTML explainer of the pros and cons, how streamed patches look, and
+the split-brain division of labor. Built
+`wiki/decks/the-split-brain.html` (self-contained, house palette, no
+external resources): gain/cost cards up front; the split-brain table with
+a third destination made explicit — **no model at all** (choreographer,
+layout re-solve, verification), which is the row that explains why a weak
+local model suffices; a **live two-brain demo** driven by a real mini
+compositor (patches mutate a node map, rAF samples it, self-healing loop
+per the exp-09 lesson) where step 1 has the cloud compose a harbor scene
+at 700 ms first-token then burst, and steps 2–3 have the device handle a
+tap and pre-paint ahead at 0 ms latency but slower decode — with a ledger
+whose byte and cost counters visibly **freeze** while the interface keeps
+changing (the argument in one number); the patch shown in three forms
+(streamed wire JSON → `@Generable`/Kotlin typed object → choreographer
+output, with the 9-tokens-to-6-tweens ratio as the reason painted UI ports
+to a small model and component-authoring generative UI doesn't); the
+verifier as code; an **interactive routing tree** (7 events animate down
+questions to cloud / device / no-model); the constraint-tax bars; the
+loud-vs-silent failure table; and an honest cost list (silent wrongness,
+two Directors, output budget, battery, platform lock, weaker cold
+composition) paired with why painted UI absorbs each. Verified: no
+external resources, tags balanced, JS parses clean. Not yet copied to repo
+root — per [[lint-2026-07-21]] §D the root pages are the canonical site,
+so promoting this one is Neal's call.

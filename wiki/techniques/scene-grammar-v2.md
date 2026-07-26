@@ -90,7 +90,34 @@ continuous painting.
 Roughly **4–30× fewer tokens** while *raising* the visual ceiling — the
 rare change that improves cost and quality in the same move. Also
 compounds+containers shrink the constrained-decoding grammar for on-device
-SLMs (fewer, higher-level productions).
+SLMs (fewer, higher-level productions) — and shallower schemas carry a
+smaller constraint tax ([[concepts/on-device-models]]).
+
+## ⚠️ Compression has a floor: key wording is an instruction channel
+
+Added 2026-07-25 from [[sources/on-device-inference-2026]]. The token
+economics above treat every character as pure cost. That is wrong for
+*key* tokens. Schema keys enter the autoregressive context and **instruct
+the model**: changing only key wording measurably moves accuracy with
+prompt, model, structure and decoding all held fixed (arXiv 2604.14862).
+Prompt-channel and schema-channel instruction interact non-additively,
+and the effect is model-dependent (Qwen-family models lean on schema
+keys; LLaMA-family on the prompt).
+
+**Design rule this imposes:** compress *values* aggressively, keep *keys*
+semantically loaded. `emphasize` earns its tokens; `e` does not.
+`{"intent":{"action":"drillDown","cause":"userTap"}}` is not merely more
+readable than a numeric enum — it is a prompt fragment the model reads on
+every emission. The compounds in Layer B and the intent verbs in Layer D
+get this benefit for free precisely *because* they are named after what
+they mean; that naming is now a functional property rather than a
+stylistic one.
+
+Corollary for the catalog question below: compound names are part of the
+model's instruction surface, so a poorly-named org catalog degrades
+output quality, not just legibility. Ablation is cheap and worth running
+— same scene, same model, semantic keys vs. minified keys, scored on
+composition quality.
 
 ## Layer D — intent verbs (expanded via source #7)
 
