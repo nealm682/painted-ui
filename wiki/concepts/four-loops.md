@@ -44,6 +44,16 @@ are closed-form functions of elapsed time, so the compositor tolerates any
 frame rate without instability — which is why four loops need no
 scheduler, just the shared node map.
 
+**Springs do not break this** (noted 2026-07-25). Moving the choreographer's
+output from duration+easing to physical springs
+([[techniques/motion-physics]]) looks like it reintroduces integration, and
+naive implementations do. It isn't necessary: a damped harmonic oscillator
+has an exact analytic solution, so a spring can be evaluated as a
+closed-form function of `(u₀, v₀, elapsed)` — same sampler shape, same
+frame-rate tolerance, no accumulated error. The lineage's claim survives
+intact, and we gain velocity-continuity (and therefore interruption
+handling) that a scripted tween cannot provide.
+
 ## The verifier: the loop the on-device platform makes necessary
 
 Added 2026-07-25 from [[sources/on-device-inference-2026]]. Loop 3's

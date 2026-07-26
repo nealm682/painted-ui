@@ -560,3 +560,52 @@ composition) paired with why painted UI absorbs each. Verified: no
 external resources, tags balanced, JS parses clean. Not yet copied to repo
 root — per [[lint-2026-07-21]] §D the root pages are the canonical site,
 so promoting this one is Neal's call.
+
+## [2026-07-25] ingest | Material 3 Expressive → source #9 + techniques/motion-physics
+
+Neal opened the **physical expression** thread and supplied the M3
+Expressive post. Clipped it plus the motion-physics and shape specs (raw:
+`m3-expressive-2025.md`, structured notes + short attributed quotes; spec
+tables verbatim as factual data) → [[sources/m3-expressive]], the wiki's
+first design-system source. Headline: Material **replaced easing+duration
+with a spring physics system** in May 2025 and gave our own reason for it —
+springs "handle gestures, interruptions, and retargeting seamlessly."
+Filed the substantive work as [[techniques/motion-physics]]. Five things
+gained: (1) **spatial vs effects** — position/size/rotation/corner-radius
+overshoot, opacity/colour never do (overshooting opacity reads as flicker);
+our choreographer returns one uniform motion shape for every property, so
+this is a ~two-line change and the cheapest physicality upgrade available,
+and it is legible in Material's own curves (spatial control points >1.0,
+effects capped at 1.00). (2) **Interruption answered** — a spring carries
+velocity, so retargeting is four lines and never snaps; this unblocks
+**exp-14 "Interrupt the Choreographer."** Reconciled with the
+[[sources/game-loop-lineage]] closed-form requirement: the damped
+oscillator has an *exact analytic solution*, so springs stay closed-form
+functions of elapsed time and frame-rate tolerance survives — the solution
+was written out and **verified against numerical integration** (ζ ∈
+{0.55,0.75,1.0,1.4}, agreement <2e-3 position / <5e-3 velocity), then their
+published web durations were solved back into a (ζ, stiffness) token table
+(expressive spatial ζ 0.65–0.72 with 3.8–6.8% overshoot; effects ζ=1.0,
+zero). (3) **Six tokens, two schemes**, scheme applied at product level so
+token names never mention it — [[techniques/scene-grammar-v2]]'s
+grammars-vs-themes split shipped by someone else, and a discipline check
+against inventing forty knobs. (4) **Speed scales by element size and
+device class**, not just mood — both local reads, zero tokens, and per
+[[concepts/on-device-models]] now a correctness win too. (5) **Shape verbs**
+— `squish` / `cornerMorph` / `shapeShift` added to grammar-v2 Layer A;
+their "shape is versatile, not semantic" and 2.5D layering principles
+adopted. Bonus find for the paused **exp-08**: their 46-study/18,000-
+participant programme reports users spotting key elements **up to 4×
+faster** on expressive screens — *time-to-locate-target* is an objective
+behavioural metric and a far stronger design than exp-08's seven subjective
+scales, which the auditor could not distinguish. ⚠️ **Recorded
+disagreement:** Material's restraint doctrine (decoration without meaning =
+clutter; cap hero moments at one or two) conflicts with our deliberate
+ambient motion; proposed reconciliation is a **quiescence policy** (true
+stillness after N seconds, ambience budgeted) which also answers the
+ProMotion battery cost — adaptive panels only downclock to ~10 Hz when
+content is genuinely static. Not taken: the component catalog (would
+undercut the differentiator) and the branding (vendor-neutrality); noted
+that Android's own frame-timing class is literally named `Choreographer`,
+one layer downstream of ours — document before any Android build.
+exp-15 = implement the spring runtime + interruption demo.

@@ -38,12 +38,63 @@ are loggable, auditable, and compatible with allow-listed UI protocols
 [[concepts/a2ui-and-standards]] once sourced). Numbers live in
 [[concepts/cost-model]].
 
+## Output format: springs, not durations (added 2026-07-25)
+
+From [[sources/m3-expressive]]. The choreographer currently returns a
+uniform `{dur, ease}` for every property. Two changes, both
+choreographer-side only — no protocol change, no token cost:
+
+1. **Spatial vs effects.** Position, size, rotation, scale and corner
+   radius *should* overshoot and bounce into place; opacity, colour and fx
+   amounts *must not* — an overshooting opacity sails past full and reads
+   as a flicker. The property being animated determines whether bounce is
+   permitted. Roughly a two-line change and the fastest available upgrade
+   to perceived physicality.
+2. **Speed picks up two more axes.** Today duration scales by mood only
+   (calm ×1.3 / neutral ×1.0 / energetic ×0.55). Add *element size* (small
+   fast, full-screen slow) and *device class* (the token ordering is
+   invariant; the absolute values differ for watch/phone/tablet). Both are
+   local reads — free, and per [[concepts/on-device-models]] every decision
+   kept out of the Director is now a correctness win, not just a cost one.
+
+Full spec, the analytic solution, and a derived (ζ, stiffness) token table:
+[[techniques/motion-physics]].
+
+## Interruption — answered
+
+The open question below ("retarget-vs-queue") had no good answer while the
+output format was a duration-based tween: a closed-form tween carries no
+velocity, so a mid-flight change of target either snaps or requires
+reconstructing the derivative. A spring carries position **and** velocity,
+so retargeting is four lines and the motion simply continues. That is
+Material's stated reason for switching, and it is what unblocks exp-14
+"Interrupt the Choreographer" ([[sources/chatgpt-motion-recommendations]]).
+Crucially this costs nothing architecturally: the damped oscillator has an
+exact analytic solution, so springs stay closed-form functions of elapsed
+time and [[concepts/four-loops]]'s frame-rate tolerance is preserved.
+
+## Quiescence — a policy the choreographer should own
+
+Ambient motion (gardener cycle, idle breath) is deliberate here and
+deliberately *discouraged* by Material's restraint guidance — a real
+disagreement, recorded in [[sources/m3-expressive]]. It also has a battery
+edge: ProMotion-class displays only downclock to ~10 Hz when content is
+genuinely static, so perpetual ambience holds the panel at full refresh.
+Proposed: a **quiescence policy** — true stillness after N seconds without
+interaction, ambient motion budgeted rather than always-on — which
+reconciles restraint, battery, and `prefers-reduced-motion` in one
+mechanism.
+
 ## Open questions
 
-Expressiveness ceiling of policy-only motion; retarget-vs-queue interruption
-semantics under rapid agent turns; inferring `mood` from content; an
-A2UI→scene-graph adapter so the same choreographer animates standard
-protocol messages (exp-06 candidate).
+Expressiveness ceiling of policy-only motion; ~~retarget-vs-queue
+interruption semantics~~ (**answered above** — springs retarget; the
+remaining question is what to do when a retarget would carry a node
+*through* an occlusion); inferring `mood` from content; an A2UI→scene-graph
+adapter so the same choreographer animates standard protocol messages
+(exp-06 candidate); whether `importance` in the semantic envelope maps to
+stiffness or to scheme selection; whether the quiescence threshold is fixed
+or content-dependent.
 
 ## Sources
 

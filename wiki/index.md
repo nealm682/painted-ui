@@ -57,6 +57,12 @@ there).
 - [[techniques/transition-choreography]] — replicate video-UI dissolves,
   zooms, flyouts, and morphs from a streamed patch protocol; 8 verbs, no
   pixels generated. Distilled from exp-02.
+- [[techniques/motion-physics]] — **physical expression**: springs replace
+  duration+easing as the choreographer's output. The spatial/effects
+  overshoot rule, the analytic damped-spring solution (closed-form, so
+  frame-rate tolerance survives), a derived (ζ, stiffness) token table,
+  size/device speed axes, shape verbs, and the quiescence policy. Unblocks
+  exp-14. exp-15 candidate.
 - [[techniques/scene-grammar-v2]] — the expressive protocol design:
   primitives (paths/masks/fx/texture) + compound catalog + constraint
   containers + scene diffs; new verbs (strokeIn, materialize, pageMorph);
@@ -113,6 +119,11 @@ there).
   orchestration, hierarchy choreography, velocity-continuous interruption
   ("Interrupt the Choreographer" = exp-12), grammars+themes distinction,
   restraint doctrine. Adopted with three amendments.
+- [[sources/m3-expressive]] — source #9: Material 3 Expressive (May 2025).
+  The motion-physics/spring system, six-token vocabulary, shape-morph
+  principles, and the 46-study research programme. First design-system
+  source; convergent validation for the choreographer, plus a ⚠️ recorded
+  disagreement on decorative ambient motion.
 - [[sources/on-device-inference-2026]] — source #8: the July 2026
   on-device inference research batch (constraint tax, schema keys as an
   instruction channel, bandwidth ceiling, speculative decoding, LoRA

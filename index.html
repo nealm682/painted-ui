@@ -114,9 +114,97 @@
   footer{padding:34px 0 55px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
   footer a{color:var(--accent2);text-decoration:none}
   .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}.reveal.on{opacity:1;transform:none}
-  @media(max-width:950px){.hero,.proof,.honesty{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr}.arrow{width:2px;height:40px;margin:auto;background:linear-gradient(var(--accent2),var(--accent))}.arrow:after{right:-4px;top:auto;bottom:-1px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid var(--accent);border-bottom:0}.stage-card{min-height:500px}}
-  @media(max-width:620px){.links{display:none}.grid4,.comparison{grid-template-columns:1fr}.hero{padding-top:46px}.stage-card{min-height:440px}#heroCanvas{height:410px}section{padding:72px 0}.cta{padding:32px 20px}.quote{font-size:23px}}
-  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.pulse{animation:none}}
+
+  /* ── The split brain ─────────────────────────────────────────────── */
+  .sb-verdict{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:20px;padding:26px 30px;
+    background:linear-gradient(145deg,rgba(243,166,75,.10),rgba(171,156,255,.06));margin-bottom:30px}
+  .sb-verdict p{margin:0 0 13px;color:#d3d5dd;font-size:17px}
+  .sb-verdict p:last-child{margin:0}
+  .sb-verdict b{color:var(--accent)}
+  .sb-verdict i{font-style:normal;color:var(--ink)}
+  .sb-verdict a{color:var(--accent2)}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .sb-who{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 22px}
+  .sb-who .sb-tag{font:11px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.13em;text-transform:uppercase}
+  .sb-who h4{margin:7px 0 0;font:700 22px Georgia,serif}
+  .sb-who ul{margin:13px 0 0;padding-left:18px;color:var(--muted);font-size:14.5px}
+  .sb-who li{margin:7px 0}
+  .sb-who li b{color:var(--ink);font-weight:600}
+  .sb-who.c-cloud{border-color:rgba(171,156,255,.3)}.sb-who.c-cloud .sb-tag,.sb-who.c-cloud h4{color:var(--violet)}
+  .sb-who.c-dev{border-color:rgba(127,225,204,.3)}.sb-who.c-dev .sb-tag,.sb-who.c-dev h4{color:var(--accent2)}
+  .sb-who.c-none{border-color:rgba(229,198,101,.28)}.sb-who.c-none .sb-tag,.sb-who.c-none h4{color:#e5c665}
+  .sb-h3{font:700 27px Georgia,serif;margin:62px 0 10px;letter-spacing:-.02em}
+  .sb-p{color:var(--muted);max-width:780px;margin:0 0 22px;font-size:17px}
+  .sb-p i{font-style:normal;color:var(--ink)}
+
+  .sb-stage{display:grid;grid-template-columns:1.02fr .98fr;gap:16px}
+  .sb-panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;display:flex;flex-direction:column}
+  .sb-head{display:flex;align-items:center;gap:18px;padding:13px 17px;border-bottom:1px solid var(--line);
+    font:11.5px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.05em;color:var(--muted)}
+  .sb-head .sb-right{margin-left:auto;color:#8d92a3}
+  .sb-lamp{width:8px;height:8px;border-radius:50%;background:#333a4d;display:inline-block;margin-right:7px;vertical-align:middle;transition:.2s}
+  .sb-lamp.on-cloud{background:var(--violet);box-shadow:0 0 10px var(--violet)}
+  .sb-lamp.on-dev{background:var(--accent2);box-shadow:0 0 10px var(--accent2)}
+  #sbCanvas{display:block;width:100%;height:356px;background:#07080e}
+  .sb-wirebody{padding:14px 16px;display:flex;flex-direction:column;gap:11px;flex:1}
+  .sb-stream{font:11.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#b9bdcc;flex:1;
+    min-height:150px;max-height:258px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+  .sb-ln{padding-left:8px;border-left:2px solid transparent;margin-bottom:2px}
+  .sb-ln.cloud{border-left-color:var(--violet)}.sb-ln.dev{border-left-color:var(--accent2)}
+  .sb-stream .k{color:var(--accent)}.sb-stream .v{color:var(--accent2)}
+  .sb-caret{display:inline-block;width:6px;background:var(--accent);color:transparent;animation:sbbl .9s steps(1) infinite}
+  @keyframes sbbl{50%{opacity:0}}
+  .sb-ledger{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .sb-met{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+  .sb-met b{display:block;font:17px Georgia,serif;color:var(--ink)}
+  .sb-met span{font:10px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+  .sb-controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+  .sb-btn{background:rgba(255,255,255,.045);color:var(--ink);border:1px solid var(--line);border-radius:9px;
+    padding:9px 15px;font:600 13.5px Inter,ui-sans-serif,sans-serif;cursor:pointer;transition:.15s}
+  .sb-btn:hover:not(:disabled){background:rgba(255,255,255,.1)}
+  .sb-btn.c-cloud{background:rgba(171,156,255,.16);border-color:rgba(171,156,255,.4);color:#cfc6ff}
+  .sb-btn.c-dev{background:rgba(127,225,204,.13);border-color:rgba(127,225,204,.38);color:#a8ede0}
+  .sb-btn:disabled{opacity:.32;cursor:default}
+  .sb-trace{margin-top:14px;font:11.5px/1.75 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);
+    background:rgba(5,7,12,.5);border:1px solid var(--line);border-radius:13px;padding:11px 15px;height:98px;
+    overflow-y:auto;white-space:pre-wrap}
+  .sb-trace b{color:var(--accent2);font-weight:400}.sb-trace u{color:var(--violet);text-decoration:none}
+  .sb-trace i{color:#e5c665;font-style:normal}
+  .sb-key{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent2);
+    border-radius:14px;padding:16px 20px;color:#d3d5dd}
+  .sb-key b{color:var(--ink)}
+  .sb-key.warn{border-left-color:var(--danger)}
+
+  .sb-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .sb-chip{padding:7px 14px;border-radius:99px;background:rgba(255,255,255,.045);border:1px solid var(--line);
+    font-size:13.5px;cursor:pointer;transition:.15s;user-select:none}
+  .sb-chip:hover{background:rgba(255,255,255,.09)}
+  .sb-chip.active{border-color:var(--accent);color:var(--accent)}
+  .sb-treewrap{background:rgba(5,7,12,.45);border:1px solid var(--line);border-radius:20px;padding:10px}
+  #sbTree{display:block;width:100%;height:auto}
+  #sbTree .nd rect{transition:.25s}
+  .sb-why{min-height:48px;margin-top:12px;color:var(--muted);background:var(--panel);border:1px solid var(--line);
+    border-left:3px solid var(--line);border-radius:13px;padding:14px 18px;font-size:14.5px}
+  .sb-why b{color:var(--ink)}
+  .sb-why code{font:12.5px ui-monospace,monospace;color:var(--accent2);background:rgba(255,255,255,.05);padding:1px 6px;border-radius:5px}
+
+  .sb-bars{margin:20px 0 10px}
+  .sb-barrow{display:grid;grid-template-columns:215px 1fr;gap:14px;align-items:center;margin:9px 0;font-size:14px;color:var(--muted)}
+  .sb-track{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;height:28px;overflow:hidden}
+  .sb-fill{height:100%;width:0;transition:width 1.1s cubic-bezier(.2,.7,.3,1);position:relative}
+  .sb-fill.good{background:linear-gradient(90deg,rgba(127,225,204,.3),var(--accent2))}
+  .sb-fill.bad{background:linear-gradient(90deg,rgba(239,143,135,.28),var(--danger))}
+  .sb-fill span{position:absolute;right:9px;top:4px;font:12px ui-monospace,monospace;color:#0b0d14}
+  .sb-cmp{width:100%;border-collapse:collapse;font-size:14.5px;margin-top:8px}
+  .sb-cmp th,.sb-cmp td{border:1px solid var(--line);padding:12px 15px;text-align:left;vertical-align:top;color:var(--muted)}
+  .sb-cmp th{color:var(--accent);font-weight:600}
+  .sb-cmp td:first-child{color:var(--ink)}
+  .sb-cmp code{font:12.5px ui-monospace,monospace;color:var(--accent2)}
+  .sb-src{font-size:12.5px;color:#7d8291;margin:6px 0 0}
+
+  @media(max-width:950px){.hero,.proof,.honesty{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr}.arrow{width:2px;height:40px;margin:auto;background:linear-gradient(var(--accent2),var(--accent))}.arrow:after{right:-4px;top:auto;bottom:-1px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid var(--accent);border-bottom:0}.stage-card{min-height:500px}.sb-stage,.grid3{grid-template-columns:1fr}#sbCanvas{height:300px}}
+  @media(max-width:620px){.links{display:none}.grid4,.comparison{grid-template-columns:1fr}.hero{padding-top:46px}.stage-card{min-height:440px}#heroCanvas{height:410px}section{padding:72px 0}.cta{padding:32px 20px}.quote{font-size:23px}.sb-verdict{padding:20px 21px}.sb-barrow{grid-template-columns:1fr;gap:5px}#sbCanvas{height:240px}.sb-cmp{font-size:13px}.sb-cmp th,.sb-cmp td{padding:9px 10px}}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.pulse{animation:none}.sb-caret{animation:none}}
 </style>
 </head>
 <body>
@@ -124,7 +212,7 @@
 <nav class="nav">
   <div class="wrap navin">
     <div class="brand"><span class="brandmark"></span> Painted UI</div>
-    <div class="links"><a href="#architecture">Architecture</a><a href="#proof">Proof</a><a href="#enterprise">Enterprise</a><a href="#library">Library</a><a href="#next">Next experiment</a></div>
+    <div class="links"><a href="#architecture">Architecture</a><a href="#proof">Proof</a><a href="#split-brain">Split brain</a><a href="#enterprise">Enterprise</a><a href="#library">Library</a><a href="#next">Next experiment</a></div>
   </div>
 </nav>
 
@@ -211,6 +299,128 @@ choreograph(patch) → {
     </div>
   </section>
 
+  <section id="split-brain">
+    <div class="wrap reveal">
+      <div class="section-kicker">On-device inference</div>
+      <h2>The split brain.</h2>
+      <p class="section-lede">The Director is the only role that ever cost money. Split it — a slow, thoughtful one in the cloud, a fast, free, limited one in your pocket — and both write to the same stage in the same patch language.</p>
+
+      <div class="sb-verdict">
+        <p><b>The short answer:</b> Painted UI benefits from on-device inference <i>more than most generative-UI approaches do</i>, for a structural reason: the hard part was already moved off the model. A phone-sized model doesn't have to be a good designer here. It only has to name what changed. Local code owns everything else.</p>
+        <p><b>The catch:</b> a small model on a phone can no longer emit a <i>broken</i> patch — the operating system guarantees the format — so instead it occasionally emits a <i>wrong</i> one, silently, and it renders perfectly. You trade loud failures for quiet ones. Worth making, but only with a cheap checker. <a href="#sb-catch">Jump to the catch ↓</a></p>
+      </div>
+
+      <div class="grid3">
+        <div class="sb-who c-cloud">
+          <span class="sb-tag">cloud director</span>
+          <h4>Composes</h4>
+          <ul>
+            <li><b>First rich scene.</b> Needs taste, world knowledge, and hundreds of output tokens at once. A phone would take 15–30 s.</li>
+            <li><b>Reasoning over real data.</b> “Why did delays increase?” is a thinking problem, not a painting problem.</li>
+          </ul>
+        </div>
+        <div class="sb-who c-dev">
+          <span class="sb-tag">device director</span>
+          <h4>Reacts</h4>
+          <ul>
+            <li><b>Click → mutation.</b> One or two patches. A round trip would cost more than the decision.</li>
+            <li><b>Emphasis, mood, small edits.</b> Cheap, frequent, and the user is watching. Latency is the whole product here.</li>
+            <li><b>Speculative pre-painting.</b> Free tokens against an already-warm scene.</li>
+          </ul>
+        </div>
+        <div class="sb-who c-none">
+          <span class="sb-tag">no model at all</span>
+          <h4>Moves</h4>
+          <ul>
+            <li><b>Entry/exit motion, easing, stagger.</b> The Choreographer. Deterministic code — never a model's job.</li>
+            <li><b>Layout re-solve on rotate/resize.</b> Constraint solver plus springs. Zero inference.</li>
+            <li><b>Checking a patch makes sense.</b> Geometry checks, ~100 lines.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 class="sb-h3">Watch where the latency lives.</h3>
+      <p class="sb-p">The wire on the right, the screen on the left. Press the buttons in order. The cloud pass waits, then streams fast; the device pass never waits, but decodes slowly. Both paint the same way, because the patch language is the same.</p>
+
+      <div class="sb-stage">
+        <div class="sb-panel">
+          <div class="sb-head">
+            <span><i class="sb-lamp" id="sbLampC"></i>cloud director</span>
+            <span><i class="sb-lamp" id="sbLampD"></i>device director</span>
+            <span class="sb-right" id="sbPhase">idle</span>
+          </div>
+          <canvas id="sbCanvas" width="880" height="540"></canvas>
+        </div>
+        <div class="sb-panel">
+          <div class="sb-head"><span>the wire — patches as they arrive</span><span class="sb-right" id="sbRate"></span></div>
+          <div class="sb-wirebody">
+            <div class="sb-stream" id="sbStream"></div>
+            <div class="sb-ledger">
+              <div class="sb-met"><b id="sbLat">—</b><span>first token</span></div>
+              <div class="sb-met"><b id="sbTok">0</b><span>tokens out</span></div>
+              <div class="sb-met"><b id="sbBytes">0 B</b><span>on the wire</span></div>
+              <div class="sb-met"><b id="sbCost">$0.0000</b><span>cost so far</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-controls">
+        <button class="sb-btn c-cloud" id="sbBCloud">1 · Cloud composes the scene</button>
+        <button class="sb-btn c-dev" id="sbBTap" disabled>2 · Tap “Berth 7” (device)</button>
+        <button class="sb-btn c-dev" id="sbBPre" disabled>3 · Device pre-paints ahead</button>
+        <button class="sb-btn" id="sbBAsk" disabled>4 · Ask “why the delays?” (escalates)</button>
+        <button class="sb-btn" id="sbBReset">Reset</button>
+      </div>
+      <div class="sb-trace" id="sbTrace"></div>
+
+      <div class="sb-key">Watch the ledger at steps 2 and 3: the byte counter stops moving and the cost counter stays frozen. The interface keeps changing anyway. <b>That gap is the entire argument for on-device inference, in one number.</b></div>
+
+      <h3 class="sb-h3">Who handles what.</h3>
+      <p class="sb-p">Every event that hits a painted interface gets routed to one of three places. Tap an event to watch it fall through the questions.</p>
+
+      <div class="sb-chips" id="sbChips"></div>
+      <div class="sb-treewrap">
+        <svg id="sbTree" viewBox="0 0 880 430" xmlns="http://www.w3.org/2000/svg" aria-label="routing decision tree">
+          <defs><marker id="sbAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3d4459"/></marker></defs>
+          <g id="sbEdges" stroke="#3d4459" stroke-width="1.6" fill="none" marker-end="url(#sbAr)"></g>
+          <g id="sbNodes"></g>
+          <circle id="sbDot" r="7" fill="#f3a64b" opacity="0"></circle>
+        </svg>
+      </div>
+      <div class="sb-why" id="sbWhy">Pick an event above.</div>
+
+      <div class="sb-key">Two thirds of everyday interaction never reaches a model at all. That's not an optimization — <b>it's the architecture.</b> The Director is consulted only when something genuinely new has to be decided.</div>
+
+      <h3 class="sb-h3" id="sb-catch">The catch — what you're actually trading.</h3>
+      <p class="sb-p">Forcing a small model to fill in a schema is like making someone solve a hard problem <i>while</i> speaking a language they're half fluent in. They stop making grammar mistakes — and start saying more wrong things, because the effort went into the grammar. Measured across 15,000 generations on sub-3B models, free-form output versus hard schema-constrained decoding:</p>
+
+      <div class="sb-bars" id="sbBars">
+        <div class="sb-barrow"><span>Format always valid</span><div class="sb-track"><div class="sb-fill good" data-w="61.5"><span>61.5% →</span></div></div></div>
+        <div class="sb-barrow"><span>…after constraining</span><div class="sb-track"><div class="sb-fill good" data-w="100"><span>100%</span></div></div></div>
+        <div class="sb-barrow"><span>Answer actually correct</span><div class="sb-track"><div class="sb-fill bad" data-w="19.7"><span>19.7% →</span></div></div></div>
+        <div class="sb-barrow"><span>…after constraining</span><div class="sb-track"><div class="sb-fill bad" data-w="11"><span>11.0%</span></div></div></div>
+        <div class="sb-barrow"><span>Wrong, but perfectly formed</span><div class="sb-track"><div class="sb-fill bad" data-w="49.5"><span>49.5% →</span></div></div></div>
+        <div class="sb-barrow"><span>…after constraining</span><div class="sb-track"><div class="sb-fill bad" data-w="88.9"><span>88.9%</span></div></div></div>
+      </div>
+      <p class="sb-src">Source: <i>The Constraint Tax</i> (arXiv 2605.26128), on general reasoning tasks — not on patch emission. Treat the direction as established and the magnitude as untested for this grammar.</p>
+
+      <table class="sb-cmp">
+        <tr><th></th><th>Cloud, text stream (today)</th><th>Device, guided generation</th></tr>
+        <tr><td>Failure looks like</td><td>narration instead of painting; <code>.5</code> decimals; truncated JSON</td><td>a flawless, well-formed patch</td></tr>
+        <tr><td>Who notices</td><td>the parser — immediately, loudly</td><td>nobody. It renders.</td></tr>
+        <tr><td>User sees</td><td>a stall, or nothing</td><td>the headline fifteen pixels off the bottom edge</td></tr>
+      </table>
+
+      <div class="sb-key warn">Both of exp-03's live failures were <b>loud</b>. Their on-device replacements are <b>quiet</b>. That is a strictly harder debugging problem, and it is the single most important thing to understand before shipping a phone-side Director. The mitigation is not a smarter model — it's a ~100-line deterministic verifier inside the Choreographer, which already knows every node's position, what's mid-animation, and what the layout resolved to.</div>
+
+      <div class="sb-verdict" style="margin-top:30px;margin-bottom:0">
+        <p><b>Where this leaves it.</b> On-device inference is a poor fit for generative UI in general — it asks a small model to author a whole interface — and an unusually good fit for Painted UI, because the expensive judgment was moved into deterministic local code before the hardware made that mandatory. The Choreographer was built as a cost optimization. On device it turns out to be the reliability layer.</p>
+        <p style="font-size:15px"><a href="the-split-brain.html">Read the full explainer →</a> — guided-generation code in Swift and Kotlin, the verifier, the four mitigations, and the honest cost list.</p>
+      </div>
+    </div>
+  </section>
+
   <section id="enterprise">
     <div class="wrap reveal">
       <div class="section-kicker">Enterprise value</div>
@@ -259,10 +469,13 @@ choreograph(patch) → {
         <a class="role" style="--glow:rgba(127,225,204,.14)" href="why-four-loops.html"><span class="num">explainer</span><h3>Why Four Loops</h3><p>Independent clocks, what breaks with fewer, and the honest lineage from game engines.</p></a>
       </div>
       <div class="grid4" style="margin-top:14px">
+        <a class="role" style="--glow:rgba(171,156,255,.18)" href="the-split-brain.html"><span class="num">explainer</span><h3>The Split Brain</h3><p>On-device inference: what the cloud composes, what the phone reacts to, and the constraint tax you pay for it.</p></a>
         <a class="role" style="--glow:rgba(127,225,204,.14)" href="how-it-works-together.html"><span class="num">explainer</span><h3>All Together</h3><p>How the four roles cooperate end to end — the full pipeline in one walkthrough.</p></a>
         <a class="role" style="--glow:rgba(243,166,75,.18)" href="raw/experiments/exp-10-expressive-verbs/index.html"><span class="num">live demo</span><h3>Watch It Sketch Itself</h3><p>strokeIn, materialize, typeSet — a scene drawn into existence, then painted, then alive.</p></a>
         <a class="role" style="--glow:rgba(171,156,255,.14)" href="pitch.html"><span class="num">one-pager</span><h3>The Pitch</h3><p>The whole idea on one page, with a live painted sample at the top.</p></a>
-        <a class="role" style="--glow:rgba(127,225,204,.18)" href="https://github.com/nealm682/painted-ui"><span class="num">github</span><h3>The Repository</h3><p>The paper, ten experiments with failure logs, the research wiki, and the full history. MIT licensed.</p></a>
+      </div>
+      <div class="grid4" style="margin-top:14px;grid-template-columns:1fr">
+        <a class="role" style="--glow:rgba(127,225,204,.18);min-height:0" href="https://github.com/nealm682/painted-ui"><span class="num">github</span><h3 style="margin-top:12px">The Repository</h3><p>The paper, ten experiments with failure logs, the research wiki, and the full history. MIT licensed.</p></a>
       </div>
     </div>
   </section>
@@ -347,6 +560,386 @@ function pipeLoop(t){
 requestAnimationFrame(pipeLoop);
 
 const obs=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&e.target.classList.add('on')),{threshold:.12});document.querySelectorAll('.reveal').forEach(x=>obs.observe(x));
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   THE SPLIT BRAIN — mini compositor, the wire, the routing tree
+   Self-contained: patches mutate a node map, a rAF loop samples it.
+   ══════════════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+var cv = document.getElementById('sbCanvas'); if(!cv) return;
+var ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+var stage = { nodes: [], palette: { bg0:'#111726', bg1:'#080a12', accent:'#f3a64b' } };
+var now = function(){ return performance.now(); };
+function ez(p){ return p<0.5 ? 4*p*p*p : 1-Math.pow(-2*p+2,3)/2; }
+function cl(v,a,b){ return v<a?a:v>b?b:v; }
+
+function addNode(n){ n.alpha=0; n.scale=1; n.reveal=0; n.anims=[]; stage.nodes.push(n); return n; }
+function find(id){ for(var i=0;i<stage.nodes.length;i++) if(stage.nodes[i].id===id) return stage.nodes[i]; return null; }
+
+/* the choreographer: (patch, node) -> motion. no model involved. */
+function choreograph(op, node, extra){
+  var t = now();
+  if(op==='enter'){
+    if(node.kind==='text') return [{k:'reveal',from:0,to:1,dur:900,t0:t},{k:'alpha',from:0,to:1,dur:400,t0:t}];
+    if(node.kind==='grad') return [{k:'alpha',from:0,to:1,dur:1100,t0:t}];
+    var dir = node.x<0.34 ? -0.16 : node.x>0.66 ? 0.16 : 0;
+    var a = [{k:'alpha',from:0,to:1,dur:700,t0:t},{k:'scale',from:0.86,to:1,dur:800,t0:t}];
+    if(dir) a.push({k:'x',from:node.x+dir,to:node.x,dur:800,t0:t});
+    return a;
+  }
+  if(op==='morph'){ var out=[]; for(var key in extra){ out.push({k:key,from:node[key],to:extra[key],dur:1000,t0:t}); } return out; }
+  if(op==='recede')  return [{k:'alpha',from:node.alpha,to:0.3,dur:600,t0:t},{k:'scale',from:node.scale,to:0.96,dur:600,t0:t}];
+  if(op==='advance') return [{k:'alpha',from:node.alpha,to:1,dur:600,t0:t},{k:'scale',from:node.scale,to:1.06,dur:600,t0:t}];
+  return [];
+}
+function apply(node, anims){ for(var i=0;i<anims.length;i++) node.anims.push(anims[i]); }
+
+function sample(){
+  var t = now();
+  for(var i=0;i<stage.nodes.length;i++){
+    var n = stage.nodes[i];
+    for(var j=n.anims.length-1;j>=0;j--){
+      var a = n.anims[j], p = cl((t-a.t0)/a.dur,0,1);
+      n[a.k] = a.from + (a.to-a.from)*ez(p);
+      if(p>=1) n.anims.splice(j,1);
+    }
+  }
+}
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#07080e'; ctx.fillRect(0,0,W,H);
+  var list = stage.nodes.slice().sort(function(a,b){ return (a.z||0)-(b.z||0); });
+  for(var i=0;i<list.length;i++){
+    var n = list[i]; if(n.alpha<=0.001) continue;
+    ctx.save(); ctx.globalAlpha = cl(n.alpha,0,1);
+
+    if(n.kind==='grad'){
+      var gg = ctx.createLinearGradient(0,0,0,H);
+      gg.addColorStop(0, stage.palette.bg0); gg.addColorStop(1, stage.palette.bg1);
+      ctx.fillStyle = gg; ctx.fillRect(0,0,W,H);
+      var hz = H*0.42, t = now()/1000;
+      ctx.globalAlpha = cl(n.alpha,0,1)*0.5; ctx.strokeStyle='#2f3a55'; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.moveTo(0,hz); ctx.lineTo(W,hz); ctx.stroke();
+      for(var k=0;k<5;k++){
+        var yy = hz + 20 + k*24 + Math.sin(t*0.9 + k)*3;
+        ctx.globalAlpha = cl(n.alpha,0,1)*(0.16 - k*0.02);
+        ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(W,yy); ctx.stroke();
+      }
+    }
+    else if(n.kind==='text'){
+      var full = n.text || '', chars = Math.round(full.length * cl(n.reveal,0,1));
+      ctx.font = (n.size||30)+'px Georgia, serif';
+      ctx.fillStyle = n.fill || '#f5f1e8';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(full.slice(0,chars), n.x*W, n.y*H);
+      if(chars<full.length && chars>0){
+        var wdt = ctx.measureText(full.slice(0,chars)).width;
+        ctx.fillStyle = stage.palette.accent; ctx.globalAlpha *= 0.8;
+        ctx.fillRect(n.x*W + wdt/2 + 3, n.y*H - (n.size||30)*0.4, 3, (n.size||30)*0.8);
+      }
+    }
+    else if(n.kind==='card'){
+      var w = n.w*W*n.scale, h = n.h*H*n.scale, x = n.x*W - w/2, y = n.y*H - h/2;
+      rr(x,y,w,h,12);
+      var cg = ctx.createLinearGradient(x,y,x,y+h);
+      cg.addColorStop(0,'#1c2438'); cg.addColorStop(1,'#121826');
+      ctx.fillStyle = cg; ctx.fill();
+      ctx.strokeStyle = n.hot ? stage.palette.accent : '#303c54';
+      ctx.lineWidth = n.hot ? 2 : 1; ctx.stroke();
+      ctx.save(); rr(x+8,y+8,w-16,h*0.44,8); ctx.clip();
+      var ig = ctx.createLinearGradient(x,y,x+w,y+h*0.5);
+      ig.addColorStop(0, n.hue||'#25506b'); ig.addColorStop(1,'#16263a');
+      ctx.fillStyle = ig; ctx.fillRect(x+8,y+8,w-16,h*0.44);
+      ctx.globalAlpha *= 0.55; ctx.strokeStyle='#4d7fa1'; ctx.lineWidth=1;
+      for(var s=0;s<3;s++){ ctx.beginPath();
+        ctx.moveTo(x+8, y+8+h*0.44 - 6 - s*7 + Math.sin(now()/900+s)*2);
+        ctx.lineTo(x+w-8, y+8+h*0.44 - 10 - s*7 + Math.cos(now()/900+s)*2); ctx.stroke(); }
+      ctx.restore();
+      ctx.fillStyle='#f5f1e8'; ctx.font='18px Georgia, serif';
+      ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+      ctx.fillText(n.label||'', x+13, y+h*0.44+34);
+      if(n.sub){ ctx.fillStyle='#a4a8b7'; ctx.font='14px Georgia, serif'; ctx.fillText(n.sub, x+13, y+h*0.44+56); }
+    }
+    else if(n.kind==='ghost'){
+      var gw=n.w*W, gh=n.h*H, gx=n.x*W-gw/2, gy=n.y*H-gh/2;
+      ctx.setLineDash([5,5]); ctx.strokeStyle='#7fe1cc'; ctx.lineWidth=1.2;
+      rr(gx,gy,gw,gh,10); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='#7fe1cc'; ctx.font='13px Georgia, serif'; ctx.textAlign='center';
+      ctx.fillText(n.label||'', n.x*W, n.y*H);
+    }
+    ctx.restore();
+  }
+  /* idle breath — the painter never stops */
+  ctx.globalAlpha = 0.5 + Math.sin(now()/1400)*0.12;
+  ctx.fillStyle = stage.palette.accent; ctx.fillRect(W-18, H-18, 6, 6);
+  ctx.globalAlpha = 1;
+}
+
+/* only burn frames while the section is on screen */
+var visible = false, running = false;
+function loop(){
+  if(!visible){ running=false; return; }
+  try { sample(); draw(); } catch(e){ /* self-healing: always re-arm */ }
+  requestAnimationFrame(loop);
+}
+new IntersectionObserver(function(es){
+  visible = es[0].isIntersecting;
+  if(visible && !running){ running=true; requestAnimationFrame(loop); }
+},{threshold:0}).observe(cv);
+
+/* ── the wire ─────────────────────────────────────────────────────── */
+var streamEl=document.getElementById('sbStream'), traceEl=document.getElementById('sbTrace'),
+    lampC=document.getElementById('sbLampC'), lampD=document.getElementById('sbLampD'),
+    phaseEl=document.getElementById('sbPhase'), rateEl=document.getElementById('sbRate'),
+    mLat=document.getElementById('sbLat'), mTok=document.getElementById('sbTok'),
+    mBytes=document.getElementById('sbBytes'), mCost=document.getElementById('sbCost');
+var totTok=0, totBytes=0, totCost=0, busy=false;
+
+function fmtBytes(b){ return b<1024 ? b+' B' : (b/1024).toFixed(1)+' KB'; }
+function ledger(){ mTok.textContent=totTok; mBytes.textContent=fmtBytes(totBytes); mCost.textContent='$'+totCost.toFixed(4); }
+function trace(html){ traceEl.innerHTML += html+'\n'; traceEl.scrollTop = traceEl.scrollHeight; }
+function colorize(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+          .replace(/"(op|id|node|set|kind|label|text|focus|mode|intent)"/g,'"<span class="k">$1</span>"')
+          .replace(/:("[^"]*")/g,':<span class="v">$1</span>');
+}
+
+var CLOUD_SCENE = [
+ ['{"op":"palette","set":{"bg0":"#111726","accent":"#f3a64b"}}', function(){
+    stage.palette.bg0='#111726'; stage.palette.bg1='#080a12';
+    trace('<u>choreographer</u>: palette crossfade 900ms'); }, 26],
+ ['{"op":"add","node":{"id":"sky","kind":"grad","z":0}}', function(){
+    var n=addNode({id:'sky',kind:'grad',z:0}); apply(n,choreograph('enter',n));
+    trace('<u>choreographer</u>: grad → dissolve 1100ms'); }, 22],
+ ['{"op":"add","node":{"id":"title","kind":"text","x":0.5,"y":0.13,"text":"Harbor — Tuesday","z":3}}', function(){
+    var n=addNode({id:'title',kind:'text',x:0.5,y:0.13,text:'Harbor — Tuesday',size:34,z:3});
+    apply(n,choreograph('enter',n)); trace('<u>choreographer</u>: text → typeSet 900ms'); }, 44],
+ ['{"op":"add","node":{"id":"c1","kind":"card","x":0.22,"y":0.58,"w":0.24,"h":0.34,"label":"Berth 4","z":2}}', function(){
+    var n=addNode({id:'c1',kind:'card',x:0.22,y:0.58,w:0.24,h:0.34,label:'Berth 4',sub:'on time',hue:'#25506b',z:2});
+    apply(n,choreograph('enter',n)); trace('<u>choreographer</u>: x=0.22 → flyIn from LEFT'); }, 48],
+ ['{"op":"add","node":{"id":"c2","kind":"card","x":0.50,"y":0.58,"w":0.24,"h":0.34,"label":"Berth 7","z":2}}', function(){
+    var n=addNode({id:'c2',kind:'card',x:0.50,y:0.58,w:0.24,h:0.34,label:'Berth 7',sub:'3 delays',hue:'#5b3f2a',z:2});
+    apply(n,choreograph('enter',n)); trace('<u>choreographer</u>: centred → dissolve + scale'); }, 48],
+ ['{"op":"add","node":{"id":"c3","kind":"card","x":0.78,"y":0.58,"w":0.24,"h":0.34,"label":"Berth 9","z":2}}', function(){
+    var n=addNode({id:'c3',kind:'card',x:0.78,y:0.58,w:0.24,h:0.34,label:'Berth 9',sub:'on time',hue:'#25506b',z:2});
+    apply(n,choreograph('enter',n)); trace('<u>choreographer</u>: x=0.78 → flyIn from RIGHT'); }, 48],
+ ['{"op":"done"}', function(){ trace('<b>scene composed.</b> cloud director done.'); }, 8]
+];
+var DEVICE_TAP = [
+ ['{"op":"scene","focus":["c2"],"mode":"spotlight"}', function(){
+    ['c1','c3'].forEach(function(id){ var n=find(id); if(n) apply(n,choreograph('recede',n)); });
+    var f=find('c2'); if(f){ f.hot=true; apply(f,choreograph('advance',f)); }
+    trace('<u>choreographer</u>: spotlight → <b>6 tweens across 4 nodes</b> from 9 tokens'); }, 14],
+ ['{"op":"update","id":"c2","set":{"w":0.34,"h":0.42,"y":0.55}}', function(){
+    var n=find('c2'); if(n) apply(n,choreograph('morph',n,{w:0.34,h:0.42,y:0.55}));
+    trace('<u>choreographer</u>: same id + new numbers ⇒ <b>morph</b>, never blink'); }, 22],
+ ['{"op":"add","node":{"id":"d1","kind":"text","x":0.5,"y":0.90,"text":"3 delays · 41 min lost","z":4}}', function(){
+    var n=addNode({id:'d1',kind:'text',x:0.5,y:0.90,text:'3 delays · 41 min lost',size:19,fill:'#f3a64b',z:4});
+    apply(n,choreograph('enter',n)); trace('<b>verifier</b>: y=0.90 in bounds · contrast 6.1 · id free → <b>pass</b>'); }, 40]
+];
+var DEVICE_PRE = [
+ ['{"op":"add","node":{"id":"g1","kind":"ghost","x":0.22,"y":0.58,"w":0.24,"h":0.34,"label":"pre-painted"}}', function(){
+    var n=addNode({id:'g1',kind:'ghost',x:0.22,y:0.58,w:0.24,h:0.34,label:'pre-painted',z:5});
+    apply(n,[{k:'alpha',from:0,to:0.9,dur:600,t0:now()}]);
+    trace('speculative: guessing the next tap · <i>costs battery, not dollars</i>'); }, 38],
+ ['{"op":"add","node":{"id":"g2","kind":"ghost","x":0.78,"y":0.58,"w":0.24,"h":0.34,"label":"pre-painted"}}', function(){
+    var n=addNode({id:'g2',kind:'ghost',x:0.78,y:0.58,w:0.24,h:0.34,label:'pre-painted',z:5});
+    apply(n,[{k:'alpha',from:0,to:0.9,dur:600,t0:now()}]);
+    trace('<b>two scenes ready before the user decides.</b> wire bytes: 0'); }, 38]
+];
+var CLOUD_ASK = [
+ ['{"op":"add","node":{"id":"ans","kind":"text","x":0.5,"y":0.26,"text":"Tide window shifted 40 min","z":4}}', function(){
+    var n=addNode({id:'ans',kind:'text',x:0.5,y:0.26,text:'Tide window shifted 40 min',size:21,fill:'#7fe1cc',z:4});
+    apply(n,choreograph('enter',n));
+    trace('escalated: <u>reasoning over data</u> — the device could not answer this'); }, 46],
+ ['{"op":"done"}', function(){ trace('<b>cloud consulted once.</b> everything else stayed local.'); }, 8]
+];
+
+/* cloud waits then bursts; device starts instantly but decodes slowly */
+function run(script, mode, firstTokenMs, msPerChar, cb){
+  if(busy) return; busy = true;
+  var isCloud = mode==='cloud';
+  lampC.className = 'sb-lamp' + (isCloud?' on-cloud':'');
+  lampD.className = 'sb-lamp' + (isCloud?'':' on-dev');
+  phaseEl.textContent = isCloud ? 'cloud director thinking…' : 'device director decoding…';
+  rateEl.textContent = isCloud ? '~90 tok/s · over network' : '~28 tok/s · on NPU';
+  mLat.textContent = firstTokenMs + ' ms';
+  trace(isCloud ? '<u>cloud</u>: request sent · waiting '+firstTokenMs+'ms for first token…'
+                : '<b>device</b>: no network. decoding immediately.');
+  var i = 0;
+  function nextLine(){
+    if(i >= script.length){
+      busy = false; phaseEl.textContent = 'idle';
+      lampC.className='sb-lamp'; lampD.className='sb-lamp';
+      if(cb) cb(); return;
+    }
+    var entry=script[i], text=entry[0], fn=entry[1], toks=entry[2];
+    var div = document.createElement('div');
+    div.className = 'sb-ln ' + (isCloud?'cloud':'dev');
+    streamEl.appendChild(div); streamEl.scrollTop = streamEl.scrollHeight;
+    var c = 0;
+    (function type(){
+      c += 3;
+      var shown = text.slice(0, c);
+      div.innerHTML = colorize(shown) + (c<text.length ? '<span class="sb-caret">|</span>' : '');
+      streamEl.scrollTop = streamEl.scrollHeight;
+      if(c < text.length){ setTimeout(type, msPerChar); }
+      else {
+        /* brace closed → the patch applies the instant it completes */
+        totTok += toks; totBytes += isCloud ? text.length : 0;
+        totCost += isCloud ? toks * 0.000015 : 0;
+        ledger(); fn();
+        i++; setTimeout(nextLine, isCloud ? 120 : 260);
+      }
+    })();
+  }
+  setTimeout(nextLine, firstTokenMs);
+}
+
+var bCloud=document.getElementById('sbBCloud'), bTap=document.getElementById('sbBTap'),
+    bPre=document.getElementById('sbBPre'), bAsk=document.getElementById('sbBAsk'),
+    bReset=document.getElementById('sbBReset');
+bCloud.onclick=function(){ streamEl.innerHTML=''; traceEl.innerHTML='';
+  run(CLOUD_SCENE,'cloud',700,7,function(){ bTap.disabled=false; bPre.disabled=false; bAsk.disabled=false; bCloud.disabled=true; }); };
+bTap.onclick=function(){ run(DEVICE_TAP,'device',0,16,function(){ bTap.disabled=true; }); };
+bPre.onclick=function(){ run(DEVICE_PRE,'device',0,16,function(){ bPre.disabled=true; }); };
+bAsk.onclick=function(){ run(CLOUD_ASK,'cloud',700,7,function(){ bAsk.disabled=true; }); };
+bReset.onclick=function(){
+  stage.nodes.length=0; streamEl.innerHTML=''; traceEl.innerHTML='';
+  totTok=0; totBytes=0; totCost=0; ledger(); mLat.textContent='—'; rateEl.textContent='';
+  busy=false; bCloud.disabled=false; bTap.disabled=true; bPre.disabled=true; bAsk.disabled=true;
+  phaseEl.textContent='idle'; lampC.className='sb-lamp'; lampD.className='sb-lamp';
+};
+
+/* ── the routing tree ─────────────────────────────────────────────── */
+var TN = {
+  start:{x:60,y:200,w:112,h:44,label:'event',type:'start'},
+  q1:{x:216,y:60,w:150,h:56,label:'Needs new\nknowledge?',type:'q'},
+  q2:{x:216,y:186,w:150,h:56,label:'First rich\ncomposition?',type:'q'},
+  q3:{x:216,y:312,w:150,h:56,label:'Any decision\nat all?',type:'q'},
+  q4:{x:420,y:312,w:150,h:56,label:'Must answer\nwithin a beat?',type:'q'},
+  cloud:{x:660,y:96,w:150,h:56,label:'CLOUD\ndirector',type:'cloud'},
+  dev:{x:660,y:250,w:150,h:56,label:'DEVICE\ndirector',type:'dev'},
+  none:{x:660,y:360,w:150,h:56,label:'NO MODEL\nchoreographer',type:'none'}
+};
+var EDGES=[['start','q1'],['start','q2'],['start','q3'],['q1','cloud'],['q2','cloud'],
+           ['q3','q4'],['q4','dev'],['q4','none'],['q2','q3']];
+var svgNodes=document.getElementById('sbNodes'), svgEdges=document.getElementById('sbEdges');
+var NS='http://www.w3.org/2000/svg';
+function cx(n){ return n.x+n.w/2; } function cy(n){ return n.y+n.h/2; }
+
+EDGES.forEach(function(e){
+  var a=TN[e[0]], b=TN[e[1]], p=document.createElementNS(NS,'path');
+  var x1=a.x+a.w, y1=cy(a), x2=b.x, y2=cy(b), mx=(x1+x2)/2;
+  p.setAttribute('d','M'+x1+' '+y1+' C'+mx+' '+y1+' '+mx+' '+y2+' '+(x2-6)+' '+y2);
+  p.setAttribute('id','sbe_'+e[0]+'_'+e[1]);
+  svgEdges.appendChild(p);
+});
+var COL={q:'rgba(255,255,255,.14)',start:'#4a5170',cloud:'rgba(171,156,255,.45)',dev:'rgba(127,225,204,.45)',none:'rgba(229,198,101,.42)'};
+var TXT={q:'#f5f1e8',start:'#f5f1e8',cloud:'#ab9cff',dev:'#7fe1cc',none:'#e5c665'};
+var FIL={q:'rgba(19,23,35,.85)',start:'rgba(36,42,58,.9)',cloud:'rgba(45,38,78,.6)',dev:'rgba(20,52,47,.6)',none:'rgba(48,42,20,.6)'};
+Object.keys(TN).forEach(function(id){
+  var n=TN[id], g=document.createElementNS(NS,'g');
+  g.setAttribute('class','nd'); g.setAttribute('id','sbn_'+id);
+  var r=document.createElementNS(NS,'rect');
+  r.setAttribute('x',n.x); r.setAttribute('y',n.y); r.setAttribute('width',n.w); r.setAttribute('height',n.h);
+  r.setAttribute('rx',11); r.setAttribute('fill',FIL[n.type]); r.setAttribute('stroke',COL[n.type]); r.setAttribute('stroke-width',1.4);
+  g.appendChild(r);
+  n.label.split('\n').forEach(function(ln,k,arr){
+    var t=document.createElementNS(NS,'text');
+    t.setAttribute('x',cx(n)); t.setAttribute('y', cy(n) - (arr.length-1)*8 + k*17 + 5);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('fill',TXT[n.type]);
+    t.setAttribute('font-family','Georgia, serif'); t.setAttribute('font-size', n.type==='q'?'13':'13.5');
+    if(n.type!=='q') t.setAttribute('letter-spacing','0.04em');
+    t.textContent=ln; g.appendChild(t);
+  });
+  svgNodes.appendChild(g);
+});
+
+var EVENTS=[
+ {label:'Tap “Berth 7”', route:['start','q3','q4','dev'],
+  why:'A decision is needed (which node to emphasise, what detail to show) and the user is watching. One or two patches — a round trip would cost more than the decision itself. <b>Device.</b>'},
+ {label:'Hover a card', route:['start','q3','q4','none'],
+  why:'Nothing is being decided. Hover emphasis is a policy the Choreographer already owns. <b>No model runs at all</b> — this is most of what an interface does.'},
+ {label:'Rotate the phone', route:['start','q3','q4','none'],
+  why:'Layout re-solve plus spring settle. Constraint containers own placement; the Choreographer animates the difference. <b>Zero inference</b>, and it still reads as repainting.'},
+ {label:'“Why did delays increase?”', route:['start','q1','cloud'],
+  why:'A thinking problem, not a painting problem — it needs data the device does not hold and reasoning a 3B model will not do well. <b>Escalate to the cloud</b>, once.'},
+ {label:'Compose the morning brief', route:['start','q2','cloud'],
+  why:'A rich first scene is 400–700 output tokens. At phone decode speeds that is 15–30 seconds. <b>Cloud composes</b>; the device takes over the moment it is on screen.'},
+ {label:'Pre-paint likely next taps', route:['start','q3','q4','dev'],
+  why:'Speculative work against an already-warm scene. Worth doing only because the tokens are free. <b>Device</b> — this row does not exist in a cloud-only architecture.'},
+ {label:'Dim all but the selected', route:['start','q3','q4','none'],
+  why:'The model already said <code>focus</code>. Turning one intent into six tweens is the Choreographer&rsquo;s whole job. <b>No second model call.</b>'}
+];
+var chips=document.getElementById('sbChips'), whyEl=document.getElementById('sbWhy'), dot=document.getElementById('sbDot');
+EVENTS.forEach(function(ev){
+  var b=document.createElement('span'); b.className='sb-chip'; b.textContent=ev.label;
+  b.onclick=function(){
+    [].forEach.call(chips.children,function(c){ c.classList.remove('active'); });
+    b.classList.add('active'); runRoute(ev);
+  };
+  chips.appendChild(b);
+});
+var routeAnim=null;
+function resetTree(){
+  Object.keys(TN).forEach(function(id){
+    var r=document.querySelector('#sbn_'+id+' rect');
+    r.setAttribute('stroke',COL[TN[id].type]); r.setAttribute('stroke-width',1.4); r.setAttribute('fill',FIL[TN[id].type]);
+  });
+  [].forEach.call(svgEdges.children,function(p){ p.setAttribute('stroke','#3d4459'); p.setAttribute('stroke-width',1.6); });
+}
+function runRoute(ev){
+  if(routeAnim) cancelAnimationFrame(routeAnim);
+  resetTree(); whyEl.innerHTML = ev.why;
+  var pts=[], route=ev.route;
+  for(var i=0;i<route.length;i++){ var n=TN[route[i]]; pts.push([cx(n),cy(n)]); }
+  for(var j=0;j<route.length-1;j++){
+    var p=document.getElementById('sbe_'+route[j]+'_'+route[j+1]);
+    if(p){ p.setAttribute('stroke','#f3a64b'); p.setAttribute('stroke-width',2.4); }
+  }
+  var seg=0, t0=performance.now(), SEG=520;
+  dot.setAttribute('opacity','1');
+  (function step(){
+    var t=performance.now(), p=cl((t-t0)/SEG,0,1), e=ez(p);
+    if(seg < pts.length-1){
+      var a=pts[seg], b2=pts[seg+1];
+      dot.setAttribute('cx', a[0]+(b2[0]-a[0])*e);
+      dot.setAttribute('cy', a[1]+(b2[1]-a[1])*e);
+      var lit=document.querySelector('#sbn_'+route[seg]+' rect');
+      lit.setAttribute('stroke','#f3a64b'); lit.setAttribute('stroke-width',2.2);
+      if(p>=1){ seg++; t0=t; }
+      routeAnim=requestAnimationFrame(step);
+    } else {
+      var end=route[route.length-1], er=document.querySelector('#sbn_'+end+' rect');
+      er.setAttribute('stroke','#f3a64b'); er.setAttribute('stroke-width',2.6);
+      er.setAttribute('fill', end==='cloud'?'rgba(62,52,105,.8)':end==='dev'?'rgba(25,68,61,.8)':end==='none'?'rgba(64,56,26,.8)':FIL[TN[end].type]);
+      dot.setAttribute('opacity','0');
+    }
+  })();
+}
+
+/* ── the constraint-tax bars ──────────────────────────────────────── */
+new IntersectionObserver(function(es,o){
+  if(!es[0].isIntersecting) return;
+  o.disconnect();
+  [].forEach.call(document.querySelectorAll('#sbBars .sb-fill'),function(f,i){
+    setTimeout(function(){ f.style.width = f.getAttribute('data-w')+'%'; }, i*130);
+  });
+},{threshold:.25}).observe(document.getElementById('sbBars'));
+
+ledger();
+})();
 </script>
 </body>
 </html>

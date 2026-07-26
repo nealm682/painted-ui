@@ -163,6 +163,34 @@ measurement marks; storybook = soft blobs + warm palette). The runtime
 stack the reviewer sketched — Painted Runtime → Scene Grammar → Verb
 Library → Renderer(Canvas|WebGL|native) — is the target architecture.
 
+## Layer A addendum — shape as physical expression (added 2026-07-25)
+
+From [[sources/m3-expressive]], which pairs a 35-shape library plus built-in
+morphing with its physics system, on the principle that shape morph should
+*respond to interaction* and communicate interaction state, work in
+progress, and environmental change. We have `pageMorph`, shared-element
+identity and `path` primitives — but no named vocabulary for **silhouette
+and corner radius as animated properties**:
+
+| Verb | Behavior | Spring family |
+|---|---|---|
+| `squish` | corner radius + non-uniform scale under press, released on lift | spatial, fast |
+| `cornerMorph` | per-corner radii animate to a new set (asymmetric silhouettes) | spatial, default |
+| `shapeShift` | interpolate between two closed paths by point correspondence | spatial, slow |
+
+All three are cheap (a radius is one number; path morphing is vertex
+interpolation once correspondence is fixed) and all three are *spatial*, so
+they overshoot — which is what makes a press feel like it has a material
+under it. Timing comes from [[techniques/motion-physics]], not from the
+model.
+
+Two of their principles constrain the catalog and are worth adopting:
+**shape is versatile, not semantic** (never bind one silhouette to one
+meaning — since the choreographer picks shape from intent, this falls out
+for free), and **use abstract shapes sparingly**. Open question inherited:
+point correspondence between paths of differing vertex counts — resample
+both to fixed N, or match by arc length?
+
 ## Fidelity tradeoffs
 
 The catalog trades open-endedness for reliability — emergent layouts the
