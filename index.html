@@ -115,6 +115,47 @@
   footer a{color:var(--accent2);text-decoration:none}
   .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}.reveal.on{opacity:1;transform:none}
 
+  /* ── Motion physics · exp-14 ─────────────────────────────────────── */
+  .mp-rig{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .mp-pane{background:rgba(5,7,12,.55);border:1px solid var(--line);border-radius:16px;padding:9px}
+  .mp-pane.e0{border-color:rgba(239,143,135,.32)}
+  .mp-pane.e1{border-color:rgba(229,198,101,.3)}
+  .mp-pane.e2{border-color:rgba(127,225,204,.34)}
+  .mp-phead{display:flex;justify-content:space-between;align-items:baseline;margin:2px 4px 8px;
+    font:10.5px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.07em;text-transform:uppercase}
+  .mp-phead span{color:#7d8291}
+  .mp-pane.e0 .mp-phead b{color:var(--danger)}
+  .mp-pane.e1 .mp-phead b{color:#e5c665}
+  .mp-pane.e2 .mp-phead b{color:var(--accent2)}
+  canvas.mp-scene{width:100%;height:206px;display:block;border-radius:11px;background:#07080e;cursor:crosshair}
+  .mp-ctl{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:16px}
+  .mp-ctl .sb-btn.primary{background:var(--accent);color:#18110a;border-color:var(--accent)}
+  .mp-ctl select{background:rgba(255,255,255,.045);color:var(--ink);border:1px solid var(--line);
+    border-radius:9px;padding:9px 11px;font:600 13.5px Inter,ui-sans-serif,sans-serif;cursor:pointer}
+  .mp-hint{color:#7d8291;font-size:13.5px}
+  .mp-err{color:var(--danger);font:12px ui-monospace,monospace;min-height:15px;margin-top:6px}
+  .mp-mets{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  .mp-met{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 16px}
+  .mp-met b{display:block;font:22px Georgia,serif}
+  .mp-met u{display:block;text-decoration:none;font:14px Georgia,serif;color:var(--muted);margin-top:1px}
+  .mp-met span{display:block;margin-top:6px;font:9.5px ui-monospace,monospace;letter-spacing:.07em;
+    text-transform:uppercase;color:#7d8291}
+  .mp-met.e0 b{color:var(--danger)}.mp-met.e1 b{color:#e5c665}.mp-met.e2 b{color:var(--accent2)}
+  canvas.mp-graph{width:100%;height:180px;display:block;border-radius:14px;background:rgba(5,7,12,.55);
+    border:1px solid var(--line);margin-top:16px}
+  .mp-legend{font:11.5px ui-monospace,monospace;color:#7d8291;margin-top:9px;display:flex;gap:18px;flex-wrap:wrap}
+  .mp-legend i{display:inline-block;width:16px;height:2px;vertical-align:middle;margin-right:6px}
+  .mp-btnrow{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;margin:4px 0 0}
+  .mp-xb{border:0;margin:0;cursor:pointer;user-select:none;font:600 15px Inter,ui-sans-serif,sans-serif;
+    padding:14px 24px;color:#0d1018;background:var(--accent2);border-radius:22px;transform-origin:center;
+    will-change:transform,border-radius;box-shadow:0 8px 22px rgba(0,0,0,.35);text-align:left}
+  .mp-xb.alt{background:var(--accent)}
+  .mp-xb.ghost{background:rgba(255,255,255,.06);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+  .mp-xb small{display:block;font:9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;
+    opacity:.62;margin-top:3px;font-weight:400}
+  .mp-read{font:11.5px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);white-space:pre-wrap;
+    background:rgba(5,7,12,.5);border:1px solid var(--line);border-radius:13px;padding:11px 15px;margin-top:16px}
+
   /* ── The split brain ─────────────────────────────────────────────── */
   .sb-verdict{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:20px;padding:26px 30px;
     background:linear-gradient(145deg,rgba(243,166,75,.10),rgba(171,156,255,.06));margin-bottom:30px}
@@ -202,8 +243,8 @@
   .sb-cmp code{font:12.5px ui-monospace,monospace;color:var(--accent2)}
   .sb-src{font-size:12.5px;color:#7d8291;margin:6px 0 0}
 
-  @media(max-width:950px){.hero,.proof,.honesty{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr}.arrow{width:2px;height:40px;margin:auto;background:linear-gradient(var(--accent2),var(--accent))}.arrow:after{right:-4px;top:auto;bottom:-1px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid var(--accent);border-bottom:0}.stage-card{min-height:500px}.sb-stage,.grid3{grid-template-columns:1fr}#sbCanvas{height:300px}}
-  @media(max-width:620px){.links{display:none}.grid4,.comparison{grid-template-columns:1fr}.hero{padding-top:46px}.stage-card{min-height:440px}#heroCanvas{height:410px}section{padding:72px 0}.cta{padding:32px 20px}.quote{font-size:23px}.sb-verdict{padding:20px 21px}.sb-barrow{grid-template-columns:1fr;gap:5px}#sbCanvas{height:240px}.sb-cmp{font-size:13px}.sb-cmp th,.sb-cmp td{padding:9px 10px}}
+  @media(max-width:950px){.hero,.proof,.honesty{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr}.arrow{width:2px;height:40px;margin:auto;background:linear-gradient(var(--accent2),var(--accent))}.arrow:after{right:-4px;top:auto;bottom:-1px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid var(--accent);border-bottom:0}.stage-card{min-height:500px}.sb-stage,.grid3{grid-template-columns:1fr}#sbCanvas{height:300px}.mp-rig,.mp-mets{grid-template-columns:1fr}canvas.mp-scene{height:180px}}
+  @media(max-width:620px){.links{display:none}.grid4,.comparison{grid-template-columns:1fr}.hero{padding-top:46px}.stage-card{min-height:440px}#heroCanvas{height:410px}section{padding:72px 0}.cta{padding:32px 20px}.quote{font-size:23px}.sb-verdict{padding:20px 21px}.sb-barrow{grid-template-columns:1fr;gap:5px}#sbCanvas{height:240px}.sb-cmp{font-size:13px}.sb-cmp th,.sb-cmp td{padding:9px 10px}canvas.mp-scene{height:160px}canvas.mp-graph{height:150px}}
   @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.pulse{animation:none}.sb-caret{animation:none}}
 </style>
 </head>
@@ -212,7 +253,7 @@
 <nav class="nav">
   <div class="wrap navin">
     <div class="brand"><span class="brandmark"></span> Painted UI</div>
-    <div class="links"><a href="#architecture">Architecture</a><a href="#proof">Proof</a><a href="#split-brain">Split brain</a><a href="#enterprise">Enterprise</a><a href="#library">Library</a><a href="#next">Next experiment</a></div>
+    <div class="links"><a href="#architecture">Architecture</a><a href="#proof">Proof</a><a href="#interruption">Motion physics</a><a href="#split-brain">Split brain</a><a href="#enterprise">Enterprise</a><a href="#library">Library</a><a href="#next">Next experiment</a></div>
   </div>
 </nav>
 
@@ -296,6 +337,87 @@ choreograph(patch) → {
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section id="interruption">
+    <div class="wrap reveal">
+      <div class="section-kicker">Motion physics · experiment 14</div>
+      <h2>Interrupt the choreographer.</h2>
+      <p class="section-lede">An agent changes its mind mid-animation. That is the normal case, not the edge case — and it is where duration-and-easing quietly falls apart. One patch stream, three motion engines, same scene, same targets, same frame loop.</p>
+
+      <div class="mp-rig">
+        <div class="mp-pane e0">
+          <div class="mp-phead"><b>A · tween ease-in-out</b><span id="mpLbl0">idle</span></div>
+          <canvas class="mp-scene" id="mpCv0"></canvas>
+        </div>
+        <div class="mp-pane e1">
+          <div class="mp-phead"><b>B · tween ease-out</b><span id="mpLbl1">idle</span></div>
+          <canvas class="mp-scene" id="mpCv1"></canvas>
+        </div>
+        <div class="mp-pane e2">
+          <div class="mp-phead"><b>C · analytic spring</b><span id="mpLbl2">idle</span></div>
+          <canvas class="mp-scene" id="mpCv2"></canvas>
+        </div>
+      </div>
+
+      <div class="mp-ctl">
+        <button class="sb-btn primary" id="mpMove">Move once</button>
+        <button class="sb-btn" id="mpInt">Interrupt mid-flight</button>
+        <button class="sb-btn" id="mpRapid">Rapid fire ×5</button>
+        <button class="sb-btn" id="mpReset">Reset</button>
+        <select id="mpScheme">
+          <option value="expressive">scheme: expressive (ζ 0.68)</option>
+          <option value="standard">scheme: standard (ζ 0.90)</option>
+          <option value="playful">scheme: playful (ζ 0.50)</option>
+        </select>
+        <span class="mp-hint">— or click any pane. Click again before it lands.</span>
+      </div>
+      <div class="mp-err" id="mpErr"></div>
+
+      <div class="mp-mets">
+        <div class="mp-met e0"><b id="mpJ0">—</b><u id="mpD0">—</u><span>A · max velocity jump / distance</span></div>
+        <div class="mp-met e1"><b id="mpJ1">—</b><u id="mpD1">—</u><span>B · max velocity jump / distance</span></div>
+        <div class="mp-met e2"><b id="mpJ2">—</b><u id="mpD2">—</u><span>C · max velocity jump / distance</span></div>
+      </div>
+
+      <canvas class="mp-graph" id="mpGraph"></canvas>
+      <div class="mp-legend">
+        <span><i style="background:#ef8f87"></i>A ease-in-out</span>
+        <span><i style="background:#e5c665"></i>B ease-out</span>
+        <span><i style="background:#7fe1cc"></i>C spring</span>
+        <span><i style="background:#f3a64b"></i>retarget instant</span>
+        <span>velocity of the hero card, sampled every frame</span>
+      </div>
+
+      <div class="sb-key warn"><b>Both tweens drop to zero at every retarget line.</b> A duration tween is a scripted path from A to B, so a new instruction restarts the script from rest. The spring passes through continuously — its velocity is <i>state</i>, not a function of scripted position. The jump is exactly zero, not merely small: <code style="font:12.5px ui-monospace,monospace;color:var(--accent2)">v₀</code> is assigned from the evaluated velocity, so continuity is structural rather than tuned.</div>
+
+      <h3 class="sb-h3">There is no easing that avoids both failures.</h3>
+      <p class="sb-p">The first version of this rig compared springs against a single cubic <i>ease-in-out</i> — the one easing that fails hardest — which was stacking the deck. Adding an <b>ease-out</b> arm produced a better finding than the original claim. Ease-in-out spends its opening barely moving: 180 ms into a 500 ms tween it has delivered <b>18.7%</b> of the commanded distance, so under rapid fire it restarts the slow-in ramp forever and <b>stalls</b>. Ease-out delivers <b>73.8%</b> in the same window and keeps up — but it is moving fastest at the exact moment it gets dead-stopped, so its snap is roughly <b>twice as violent</b>.</p>
+
+      <table class="sb-cmp">
+        <tr><th>engine</th><th>distance over rapid-fire ×5</th><th>max velocity jump</th><th>failure mode</th></tr>
+        <tr><td>tween cubic in-out</td><td>299 px</td><td>1276 px/s</td><td>stalls — arrives late</td></tr>
+        <tr><td>tween cubic out</td><td>1198 px</td><td>2461 px/s</td><td>snaps — visible jolt</td></tr>
+        <tr><td>analytic spring</td><td>2453 px</td><td><b style="color:var(--accent2)">0 px/s</b></td><td>none observed</td></tr>
+      </table>
+      <p class="sb-src">Headless simulation using the same sampler this page runs · playful scheme, ζ 0.50 · 180 ms retarget interval · normalised to a 700 px pane. Front-load the curve and you travel well but snap hard; back-load it and you snap softly but stall. The spring does neither — not by tuning, but because velocity is state.</p>
+
+      <div class="sb-key">All three engines finish at <b>0 px final error</b>. The tweens are not going to the wrong place — they are going there <i>late</i>. <b>The failure is temporal, which is why it survives screenshot review and dies on contact with a hand.</b></div>
+
+      <h3 class="sb-h3">The same physics on real components.</h3>
+      <p class="sb-p">Not just cards sliding around. Press and hold each button. The two spring buttons compress <i>immediately</i> — a spring front-loads its velocity, so the response lands inside the first frames. The tween button spends its ease-in ramp before anything visible happens, which is why it reads as though it didn't register the press.</p>
+
+      <div class="mp-btnrow">
+        <button class="mp-xb" id="mpXb1" data-eng="spring">Dispatch tug<small>spring · squish + cornerMorph</small></button>
+        <button class="mp-xb alt" id="mpXb2" data-eng="spring">Hold berth<small>spring · ζ from scheme</small></button>
+        <button class="mp-xb ghost" id="mpXb3" data-eng="tween">Cancel<small>tween · 500 ms ease-in-out</small></button>
+      </div>
+      <div class="mp-read" id="mpBtnRead">press a button…</div>
+
+      <div class="sb-key"><b>What this changes — and what it doesn't.</b> The protocol is untouched: the Director still emits <code style="font:12.5px ui-monospace,monospace;color:var(--accent2)">{"op":"update","id":"cost"}</code> and says nothing about motion. Only the Choreographer's <i>output type</i> changes — from a duration and an easing curve to a damping ratio and a stiffness. Same governance boundary, same token cost, one fewer failure mode. And it compounds with the section below: springs front-load velocity, so the first 100 ms after a tap carries almost all of the motion — which is exactly the window an on-device Director is trying to win.</div>
+
+      <div class="sb-key warn"><b>Status — measured, not yet validated.</b> The velocity discontinuity is instrumented and reproducible. Whether a naive viewer reads the tween's dead stop as <i>broken</i> or merely <i>different</i> is an open question awaiting a field run, and it is not claimed here. Nor is it settled whether the stall reads worse than the snap — if it doesn't, ease-out is the wrong tween default even though it travels better, which would invert common practice.</div>
     </div>
   </section>
 
@@ -451,6 +573,7 @@ choreograph(patch) → {
           <div class="limit"><b>Established ingredients:</b> scene graphs, tweening, streaming protocols, game loops, and immediate-mode rendering.</div>
           <div class="limit"><b>Distinctive synthesis:</b> using those ingredients as a semantic motion runtime for model-authored interfaces.</div>
           <div class="limit"><b>Not yet proven:</b> broad enterprise task coverage, accessibility, measurable usability gains, and superiority to component UI.</div>
+          <div class="limit"><b>Measured, not yet validated:</b> the interruption result above is instrumented and reproducible; whether a naive viewer reads the tween's dead stop as <i>broken</i> rather than merely <i>different</i> awaits a field run.</div>
           <div class="limit"><b>Likely production form:</b> a hybrid—standard accessible components plus Painted UI for focus, continuity, explanation, and transitions.</div>
         </div>
       </div>
@@ -473,6 +596,10 @@ choreograph(patch) → {
         <a class="role" style="--glow:rgba(127,225,204,.14)" href="how-it-works-together.html"><span class="num">explainer</span><h3>All Together</h3><p>How the four roles cooperate end to end — the full pipeline in one walkthrough.</p></a>
         <a class="role" style="--glow:rgba(243,166,75,.18)" href="raw/experiments/exp-10-expressive-verbs/index.html"><span class="num">live demo</span><h3>Watch It Sketch Itself</h3><p>strokeIn, materialize, typeSet — a scene drawn into existence, then painted, then alive.</p></a>
         <a class="role" style="--glow:rgba(171,156,255,.14)" href="pitch.html"><span class="num">one-pager</span><h3>The Pitch</h3><p>The whole idea on one page, with a live painted sample at the top.</p></a>
+      </div>
+      <div class="grid4" style="margin-top:14px;grid-template-columns:1fr 1fr">
+        <a class="role" style="--glow:rgba(239,143,135,.16)" href="raw/experiments/exp-14-interrupt-the-choreographer/index.html"><span class="num">experiment 14</span><h3>Interrupt the Choreographer</h3><p>The full rig: three engines, the velocity graph, expressive buttons and type, the opacity-overshoot proof, and a live ζ / stiffness explorer.</p></a>
+        <a class="role" style="--glow:rgba(171,156,255,.16)" href="raw/experiments/exp-08-perception-study/index.html"><span class="num">experiment 08</span><h3>Perception Study</h3><p>Does choreographed change actually read better than a cut? The rig, and the honest result.</p></a>
       </div>
       <div class="grid4" style="margin-top:14px;grid-template-columns:1fr">
         <a class="role" style="--glow:rgba(127,225,204,.18);min-height:0" href="https://github.com/nealm682/painted-ui"><span class="num">github</span><h3 style="margin-top:12px">The Repository</h3><p>The paper, ten experiments with failure logs, the research wiki, and the full history. MIT licensed.</p></a>
@@ -939,6 +1066,268 @@ new IntersectionObserver(function(es,o){
 },{threshold:.25}).observe(document.getElementById('sbBars'));
 
 ledger();
+})();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   MOTION PHYSICS · exp-14 — three engines, one patch stream.
+   Analytic damped spring vs two duration tweens, measured on velocity.
+   ══════════════════════════════════════════════════════════════════════ */
+(function(){
+"use strict";
+var errEl = document.getElementById('mpErr'); if(!errEl) return;
+var PX = 700;                    /* metrics normalised to a 700 px pane */
+var R = Math.min(window.devicePixelRatio||1, 2);
+function fit(c){ var r=c.getBoundingClientRect();
+  c.width=Math.max(1,Math.round(r.width*R)); c.height=Math.max(1,Math.round(r.height*R)); }
+
+/* ── analytic damped spring — closed form, no integration ─────────── */
+function springAt(u0,v0,zeta,w0,t){
+  var u,v,e;
+  if(zeta<1-1e-9){
+    var wd=w0*Math.sqrt(1-zeta*zeta), A=u0, B=(v0+zeta*w0*u0)/wd;
+    e=Math.exp(-zeta*w0*t);
+    var c=Math.cos(wd*t), s=Math.sin(wd*t);
+    u=e*(A*c+B*s);
+    v=e*((B*wd-zeta*w0*A)*c-(A*wd+zeta*w0*B)*s);
+  } else if(Math.abs(zeta-1)<=1e-9){
+    var k=v0+w0*u0; e=Math.exp(-w0*t);
+    u=(u0+k*t)*e; v=e*(k-w0*(u0+k*t));
+  } else {
+    var rt=Math.sqrt(zeta*zeta-1), r1=-w0*(zeta-rt), r2=-w0*(zeta+rt);
+    var c1=(v0-r2*u0)/(r1-r2), c2=u0-c1, e1=Math.exp(r1*t), e2=Math.exp(r2*t);
+    u=c1*e1+c2*e2; v=c1*r1*e1+c2*r2*e2;
+  }
+  return {u:u,v:v};
+}
+var EASE={
+  inout:[function(p){return p<0.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;},
+         function(p){return p<0.5?12*p*p:3*Math.pow(2-2*p,2);}],
+  out:  [function(p){return 1-Math.pow(1-p,3);},
+         function(p){return 3*Math.pow(1-p,2);}]
+};
+
+/* ── one animated property, either engine ─────────────────────────── */
+function Prop(v,cfg){ this.cfg=cfg; this.target=v; this.from=v; this.v0=0; this.t0=0; this.done=true; }
+Prop.prototype.value=function(t){
+  if(this.done) return this.target;
+  if(this.cfg.kind==='tween'){
+    var p=(t-this.t0)/this.cfg.dur;
+    if(p>=1){ this.done=true; return this.target; }
+    if(p<0) p=0;
+    return this.from+(this.target-this.from)*EASE[this.cfg.ease][0](p);
+  }
+  var r=springAt(this.from-this.target,this.v0,this.cfg.zeta,this.cfg.w0,t-this.t0);
+  if(Math.abs(r.u)<this.cfg.eps && Math.abs(r.v)<this.cfg.eps*10){ this.done=true; return this.target; }
+  return this.target+r.u;
+};
+Prop.prototype.vel=function(t){
+  if(this.done) return 0;
+  if(this.cfg.kind==='tween'){
+    var p=(t-this.t0)/this.cfg.dur;
+    if(p>=1||p<0) return 0;
+    return (this.target-this.from)*EASE[this.cfg.ease][1](p)/this.cfg.dur;
+  }
+  return springAt(this.from-this.target,this.v0,this.cfg.zeta,this.cfg.w0,t-this.t0).v;
+};
+Prop.prototype.set=function(target,t){
+  var cur=this.value(t), vv=this.vel(t);
+  this.from=cur; this.target=target; this.t0=t;
+  this.v0=(this.cfg.kind==='tween')?0:vv;   /* ← the entire difference */
+  this.done=false;
+};
+
+var SCHEMES={ expressive:{zeta:0.68,k:371}, standard:{zeta:0.90,k:138}, playful:{zeta:0.50,k:280} };
+var scheme=SCHEMES.expressive;
+var T0=performance.now();
+function nowS(){ return (performance.now()-T0)/1000; }
+
+/* ── the three-engine rig ─────────────────────────────────────────── */
+var HOME={x:0.24,y:0.55};
+var ENGINES=[
+ {id:0,color:'#ef8f87',cfg:{kind:'tween',ease:'inout',dur:0.5}},
+ {id:1,color:'#e5c665',cfg:{kind:'tween',ease:'out',dur:0.5}},
+ {id:2,color:'#7fe1cc',cfg:{kind:'spring',zeta:scheme.zeta,w0:Math.sqrt(scheme.k),eps:0.0006}}
+];
+ENGINES.forEach(function(E){
+  E.cv=document.getElementById('mpCv'+E.id); E.ctx=E.cv.getContext('2d');
+  E.lbl=document.getElementById('mpLbl'+E.id);
+  E.x=new Prop(HOME.x,E.cfg); E.y=new Prop(HOME.y,E.cfg);
+  E.jump=0; E.dist=0; E.trail=[]; E.last=[HOME.x,HOME.y];
+});
+var gcv=document.getElementById('mpGraph'), gctx=gcv.getContext('2d'), WINDOW=4.0;
+var marks=[], samples=[];
+function fitAll(){ ENGINES.forEach(function(E){ fit(E.cv); }); fit(gcv); }
+addEventListener('resize',fitAll); fitAll();
+
+function retarget(tx,ty){
+  var t=nowS();
+  marks.push(t); if(marks.length>40) marks.shift();
+  ENGINES.forEach(function(E){
+    var before=Math.hypot(E.x.vel(t),E.y.vel(t));
+    E.x.set(tx,t); E.y.set(ty,t);
+    var after=Math.hypot(E.x.vel(t),E.y.vel(t));
+    var d=Math.abs(before-after);
+    if(d>E.jump) E.jump=d;
+  });
+  paintMetrics();
+}
+function paintMetrics(){
+  ENGINES.forEach(function(E){
+    document.getElementById('mpJ'+E.id).textContent=(E.jump*PX).toFixed(0)+' px/s';
+    document.getElementById('mpD'+E.id).textContent=(E.dist*PX).toFixed(0)+' px travelled';
+  });
+}
+function rr(c,x,y,w,h,r){
+  c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+function drawEngine(E,t){
+  var c=E.ctx, W=E.cv.width, H=E.cv.height, u=H/200;   /* u = 1 CSS px at design height */
+  c.clearRect(0,0,W,H); c.fillStyle='#07080e'; c.fillRect(0,0,W,H);
+  c.strokeStyle='rgba(255,255,255,.045)'; c.lineWidth=1;
+  for(var gx=1;gx<6;gx++){ c.beginPath(); c.moveTo(gx*W/6,0); c.lineTo(gx*W/6,H); c.stroke(); }
+  for(var gy=1;gy<4;gy++){ c.beginPath(); c.moveTo(0,gy*H/4); c.lineTo(W,gy*H/4); c.stroke(); }
+
+  c.setLineDash([5*u,5*u]); c.strokeStyle='rgba(255,255,255,.22)'; c.lineWidth=1.3*u;
+  c.beginPath(); c.arc(E.x.target*W,E.y.target*H,17*u,0,Math.PI*2); c.stroke(); c.setLineDash([]);
+
+  var x=E.x.value(t), y=E.y.value(t);
+  E.dist+=Math.hypot(x-E.last[0],y-E.last[1]); E.last=[x,y];
+  E.trail.push([x,y]); if(E.trail.length>44) E.trail.shift();
+  for(var i=0;i<E.trail.length;i++){
+    c.globalAlpha=(i/E.trail.length)*0.3; c.fillStyle=E.color;
+    c.beginPath(); c.arc(E.trail[i][0]*W,E.trail[i][1]*H,2.4*u,0,Math.PI*2); c.fill();
+  }
+  c.globalAlpha=1;
+  var w=118*u, h=54*u, px=x*W-w/2, py=y*H-h/2;
+  rr(c,px,py,w,h,12*u);
+  var g=c.createLinearGradient(px,py,px,py+h);
+  g.addColorStop(0,'#1e2942'); g.addColorStop(1,'#141a2a');
+  c.fillStyle=g; c.fill(); c.strokeStyle=E.color; c.lineWidth=1.8*u; c.stroke();
+  c.fillStyle='#f5f1e8'; c.font=(15*u)+'px Georgia, serif';
+  c.textAlign='center'; c.textBaseline='middle';
+  c.fillText('Berth 7',x*W,y*H);
+
+  var sp=Math.hypot(E.x.vel(t),E.y.vel(t))*PX;
+  c.fillStyle='#8d92a3'; c.font=(11*u)+'px ui-monospace, monospace';
+  c.textAlign='left'; c.textBaseline='top';
+  c.fillText(sp.toFixed(0)+' px/s',10*u,9*u);
+  E.lbl.textContent=(E.x.done&&E.y.done)?'settled':'moving';
+  return sp/PX;
+}
+function drawGraph(t){
+  var W=gcv.width, H=gcv.height, u=H/180;
+  gctx.clearRect(0,0,W,H);
+  var t0=t-WINDOW, peak=0.05;
+  for(var i=0;i<samples.length;i++){ if(samples[i][0]<t0) continue;
+    for(var e=1;e<=3;e++) if(samples[i][e]>peak) peak=samples[i][e]; }
+  peak*=1.15;
+  var X=function(tt){ return (tt-t0)/WINDOW*W; }, Y=function(v){ return H-16*u-(v/peak)*(H-34*u); };
+  gctx.strokeStyle='rgba(255,255,255,.1)'; gctx.lineWidth=1.4*u;
+  gctx.beginPath(); gctx.moveTo(0,Y(0)); gctx.lineTo(W,Y(0)); gctx.stroke();
+  for(var m=0;m<marks.length;m++){
+    if(marks[m]<t0) continue;
+    gctx.strokeStyle='#f3a64b'; gctx.lineWidth=1.8*u; gctx.globalAlpha=.65;
+    gctx.beginPath(); gctx.moveTo(X(marks[m]),8*u); gctx.lineTo(X(marks[m]),H-8*u); gctx.stroke();
+    gctx.globalAlpha=1;
+  }
+  ENGINES.forEach(function(E,idx){
+    gctx.strokeStyle=E.color; gctx.lineWidth=2.2*u; gctx.beginPath(); var started=false;
+    for(var i=0;i<samples.length;i++){
+      var s=samples[i]; if(s[0]<t0) continue;
+      var sx=X(s[0]), sy=Y(s[idx+1]);
+      if(!started){ gctx.moveTo(sx,sy); started=true; } else gctx.lineTo(sx,sy);
+    }
+    gctx.stroke();
+  });
+  gctx.fillStyle='#7d8291'; gctx.font=(11*u)+'px ui-monospace, monospace';
+  gctx.textAlign='left'; gctx.textBaseline='top'; gctx.fillText('px/s',10*u,9*u);
+}
+
+/* ── expressive buttons — same sampler, DOM instead of canvas ─────── */
+var domProps=[];
+function mkProp(v,cfg){ var p=new Prop(v,cfg); domProps.push(p); return p; }
+function springCfg(mult){ return {kind:'spring',zeta:scheme.zeta,w0:Math.sqrt(scheme.k*(mult||1)),eps:0.0006}; }
+var IDS=['mpXb1','mpXb2','mpXb3'], BTNS=[];
+IDS.forEach(function(id){
+  var el=document.getElementById(id), isSpring=el.getAttribute('data-eng')==='spring';
+  var cfg=isSpring?springCfg(3):{kind:'tween',ease:'inout',dur:0.5};
+  var b={el:el,id:id,isSpring:isSpring,sx:mkProp(1,cfg),sy:mkProp(1,cfg),rad:mkProp(22,cfg)};
+  function press(){ var t=nowS(); b.sx.set(0.93,t); b.sy.set(0.86,t); b.rad.set(10,t); report(b,'press'); }
+  function release(){ var t=nowS(); b.sx.set(1,t); b.sy.set(1,t); b.rad.set(22,t); report(b,'release'); }
+  el.addEventListener('pointerdown',press);
+  el.addEventListener('pointerup',release);
+  el.addEventListener('pointerleave',function(){ if(!b.sx.done||b.sx.target!==1) release(); });
+  BTNS.push(b);
+});
+var btnRead=document.getElementById('mpBtnRead');
+function report(b,phase){
+  var t=nowS();
+  btnRead.textContent=b.id+'  '+phase+'   engine='+(b.isSpring?'spring':'tween')+
+    '   scaleY after 50 ms = '+b.sy.value(t+0.05).toFixed(3)+
+    (b.isSpring?'\n         spring front-loads — most of the response is already delivered'
+               :'\n         tween ease-in — barely started, so the press reads as unregistered');
+}
+
+/* ── main loop, self-healing, paused off-screen ───────────────────── */
+var visible=false, running=false;
+function loop(){
+  if(!visible){ running=false; return; }
+  try{
+    var t=nowS(), row=[t];
+    ENGINES.forEach(function(E){ row.push(drawEngine(E,t)); });
+    samples.push(row);
+    while(samples.length && samples[0][0]<t-WINDOW-0.5) samples.shift();
+    drawGraph(t);
+    BTNS.forEach(function(b){
+      b.el.style.transform='scale('+b.sx.value(t).toFixed(4)+','+b.sy.value(t).toFixed(4)+')';
+      b.el.style.borderRadius=b.rad.value(t).toFixed(2)+'px';
+    });
+    if(Math.floor(t*4)%2===0) paintMetrics();
+    errEl.textContent='';
+  }catch(e){ errEl.textContent='⚠ frame error: '+e.message+' (loop re-armed)'; }
+  requestAnimationFrame(loop);
+}
+new IntersectionObserver(function(es){
+  visible=es[0].isIntersecting;
+  if(visible && !running){ running=true; fitAll(); requestAnimationFrame(loop); }
+},{threshold:0}).observe(document.getElementById('interruption'));
+
+/* ── controls ─────────────────────────────────────────────────────── */
+function applyScheme(){
+  ENGINES[2].cfg.zeta=scheme.zeta; ENGINES[2].cfg.w0=Math.sqrt(scheme.k);
+  domProps.forEach(function(p){ if(p.cfg.kind==='spring' && p.cfg.zeta!==1.0) p.cfg.zeta=scheme.zeta; });
+}
+document.getElementById('mpScheme').onchange=function(e){ scheme=SCHEMES[e.target.value]; applyScheme(); };
+document.getElementById('mpMove').onclick=function(){ retarget(0.76,0.55); };
+document.getElementById('mpInt').onclick=function(){
+  retarget(0.76,0.28);
+  setTimeout(function(){ retarget(0.24,0.78); },150);
+};
+document.getElementById('mpRapid').onclick=function(){
+  [[0.76,0.28],[0.22,0.70],[0.70,0.72],[0.28,0.28],[0.50,0.55]].forEach(function(p,i){
+    setTimeout(function(){ retarget(p[0],p[1]); },i*180);
+  });
+};
+document.getElementById('mpReset').onclick=function(){
+  var t=nowS();
+  ENGINES.forEach(function(E){
+    E.x.set(HOME.x,t); E.y.set(HOME.y,t);
+    E.jump=0; E.dist=0; E.trail=[]; E.last=[HOME.x,HOME.y];
+  });
+  marks=[]; samples=[]; paintMetrics();
+};
+ENGINES.forEach(function(E){
+  E.cv.addEventListener('click',function(ev){
+    var r=E.cv.getBoundingClientRect();
+    retarget((ev.clientX-r.left)/r.width,(ev.clientY-r.top)/r.height);
+  });
+});
+applyScheme(); paintMetrics();
 })();
 </script>
 </body>
