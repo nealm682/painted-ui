@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>exp-14 — Interrupt the Choreographer</title>
+<style>
+ :root{--bg:#0b0a10;--panel:#14121c;--edge:#2c2840;--ink:#efe9dc;--dim:#8a86a0;
+       --accent:#e8a34c;--green:#7fd4c1;--soft:#9a8fd0;--red:#e08a7a;--gold:#d9c86a}
+ *{box-sizing:border-box}
+ html{background:var(--bg)}
+ body{margin:0;color:var(--ink);font:16px/1.6 Georgia,serif}
+ .wrap{max-width:1040px;margin:0 auto;padding:34px 18px 90px}
+ h1{font-size:27px;margin:0 0 4px}
+ h2{font-size:18px;color:var(--accent);margin:40px 0 8px;border-top:1px solid var(--edge);padding-top:18px}
+ h3{font-size:15px;margin:20px 0 6px}
+ .sub{color:var(--dim);font-size:14.5px}
+ p{margin:9px 0}
+ .dim{color:var(--dim)}
+ code{background:#1b1826;border-radius:4px;padding:1px 6px;font:12.5px ui-monospace,Menlo,Consolas,monospace;color:var(--green)}
+ .key{background:var(--panel);border-left:3px solid var(--accent);border-radius:8px;padding:10px 15px;margin:13px 0;font-size:14.5px}
+ .key.green{border-left-color:var(--green)} .key.red{border-left-color:var(--red)}
+ .key.gold{border-left-color:var(--gold)}
+
+ .rig{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+ @media(max-width:900px){.rig{grid-template-columns:1fr}}
+ .pane{background:#08070d;border:1px solid var(--edge);border-radius:11px;padding:8px}
+ .pane.e0{border-color:#54302a} .pane.e1{border-color:#4d452a} .pane.e2{border-color:#265449}
+ .phead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;
+        font:10px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase}
+ .pane.e0 .phead b{color:var(--red)} .pane.e1 .phead b{color:var(--gold)}
+ .pane.e2 .phead b{color:var(--green)}
+ .phead span{color:var(--dim)}
+ canvas.scene{width:100%;height:200px;display:block;border-radius:7px;background:#07060c;cursor:crosshair}
+
+ .ctl{margin:12px 0 4px}
+ button{background:#1d1a2a;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
+        padding:8px 14px;font:14px Georgia,serif;cursor:pointer;margin:0 6px 6px 0}
+ button:hover{background:#272238;border-color:#463f63}
+ button.primary{background:var(--accent);color:#140f22;border-color:var(--accent)}
+ button.primary:hover{filter:brightness(1.1)}
+ select{background:#1d1a2a;color:var(--ink);border:1px solid var(--edge);border-radius:8px;
+        padding:7px 10px;font:14px Georgia,serif;margin:0 6px 6px 0}
+
+ .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}
+ @media(max-width:760px){.metrics{grid-template-columns:1fr}}
+ .met{background:var(--panel);border:1px solid var(--edge);border-radius:9px;padding:9px 11px}
+ .met b{display:block;font:18px Georgia,serif} .met u{display:block;font:14px Georgia,serif;
+        text-decoration:none;color:var(--dim);margin-top:2px}
+ .met span{font:9.5px ui-monospace,monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
+ .met.e0 b{color:var(--red)} .met.e1 b{color:var(--gold)} .met.e2 b{color:var(--green)}
+
+ canvas.graph{width:100%;height:170px;display:block;border-radius:9px;background:#0f0d16;border:1px solid var(--edge)}
+ .legend{font:11.5px ui-monospace,monospace;color:var(--dim);margin-top:6px}
+ .legend i{display:inline-block;width:16px;height:2px;vertical-align:middle;margin-right:5px}
+
+ table{border-collapse:collapse;font-size:13px;margin:9px 0;width:100%}
+ td,th{border:1px solid var(--edge);padding:6px 9px;text-align:left}
+ th{color:var(--accent);font-weight:normal}
+
+ /* ---- expressive components ---- */
+ .demo{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:18px;margin:12px 0}
+ .btnrow{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:8px 0 4px}
+ .xb{position:relative;border:0;margin:0;cursor:pointer;user-select:none;
+     font:16px Georgia,serif;padding:14px 26px;color:#0d0b14;background:var(--green);
+     border-radius:22px;transform-origin:center;will-change:transform,border-radius;
+     box-shadow:0 6px 18px rgba(0,0,0,.35)}
+ .xb.alt{background:var(--accent)} .xb.ghost{background:#2a2438;color:var(--ink);box-shadow:none;
+     border:1px solid var(--edge)}
+ .xb small{display:block;font:10px ui-monospace,monospace;letter-spacing:.06em;
+     text-transform:uppercase;opacity:.6;margin-top:2px}
+ .grp{display:flex;gap:6px;background:#0f0d16;padding:6px;border-radius:26px;border:1px solid var(--edge)}
+ .seg{border:0;background:transparent;color:var(--dim);padding:11px 20px;border-radius:20px;
+      cursor:pointer;font:15px Georgia,serif;transform-origin:center;will-change:transform,border-radius}
+ .seg.on{background:var(--soft);color:#150f26}
+ .readout{font:11.5px ui-monospace,monospace;color:var(--dim);margin-top:10px;white-space:pre}
+
+ /* ---- typography ---- */
+ .type{background:#0f0d16;border:1px solid var(--edge);border-radius:11px;padding:26px 24px;margin:10px 0;
+       min-height:170px}
+ .tl{margin:0 0 2px;line-height:1.15}
+ .w{display:inline-block;white-space:pre;will-change:transform,opacity,font-size}
+ .tkicker{font:11px ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+ .tbody{color:var(--dim);font-size:15px;margin-top:10px;max-width:52ch}
+
+ .opq{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:10px 0}
+ @media(max-width:700px){.opq{grid-template-columns:1fr}}
+ .swatch{height:74px;border-radius:9px;border:1px solid var(--edge);position:relative;overflow:hidden;background:#07060c}
+ .swatch .fillbox{position:absolute;inset:0;background:var(--green)}
+ .swatch .val{position:absolute;right:9px;bottom:6px;font:12px ui-monospace,monospace;color:#08070d}
+ .swatch .cap{position:absolute;left:9px;top:6px;font:11px ui-monospace,monospace;color:#08070d}
+
+ .lab{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0}
+ @media(max-width:760px){.lab{grid-template-columns:1fr}}
+ .slider{margin:8px 0}
+ .slider label{font-size:13px;color:var(--dim);display:flex;justify-content:space-between}
+ input[type=range]{width:100%;accent-color:var(--accent)}
+ canvas.curve{width:100%;height:150px;display:block;border-radius:8px;background:#0f0d16;
+              border:1px solid var(--edge);margin-top:6px}
+ .err{color:var(--red);font:12px ui-monospace,monospace;min-height:16px}
+ .foot{margin-top:48px;border-top:1px solid var(--edge);padding-top:14px;font-size:13px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>exp-14 — Interrupt the Choreographer</h1>
+<div class="sub">One patch stream, <b>three</b> motion engines. The claim under
+test: <b>no easing curve avoids both failure modes — only a spring does.</b>
+Spec: <code>techniques/motion-physics</code>.</div>
+
+<div class="key gold"><b>v2 (2026-07-26).</b> v1 compared springs against a
+single cubic <i>ease-in-out</i> tween and made springs look better than the
+evidence supported. An <b>ease-out</b> arm is now included, because ease-out
+travels far better under interruption — and snaps <i>harder</i>. That
+trade is the real finding.</div>
+
+<div class="rig">
+ <div class="pane e0">
+  <div class="phead"><b>A · tween ease-in-out</b><span id="lbl0">idle</span></div>
+  <canvas class="scene" id="cv0" width="700" height="440"></canvas>
+ </div>
+ <div class="pane e1">
+  <div class="phead"><b>B · tween ease-out</b><span id="lbl1">idle</span></div>
+  <canvas class="scene" id="cv1" width="700" height="440"></canvas>
+ </div>
+ <div class="pane e2">
+  <div class="phead"><b>C · analytic spring</b><span id="lbl2">idle</span></div>
+  <canvas class="scene" id="cv2" width="700" height="440"></canvas>
+ </div>
+</div>
+
+<div class="ctl">
+ <button class="primary" id="bMove">Move once</button>
+ <button id="bInt">Interrupt mid-flight</button>
+ <button id="bRapid">Rapid fire ×5</button>
+ <button id="bReset">Reset</button>
+ <select id="scheme">
+  <option value="expressive">scheme: expressive (ζ 0.68)</option>
+  <option value="standard">scheme: standard (ζ 0.90)</option>
+  <option value="playful">scheme: playful (ζ 0.50)</option>
+ </select>
+ <span class="dim" style="font-size:13.5px">— or click any canvas. Click again before it lands.</span>
+</div>
+<div class="err" id="err"></div>
+
+<div class="metrics">
+ <div class="met e0"><b id="j0">—</b><u id="d0">—</u><span>A · velocity jump / distance travelled</span></div>
+ <div class="met e1"><b id="j1">—</b><u id="d1">—</u><span>B · velocity jump / distance travelled</span></div>
+ <div class="met e2"><b id="j2">—</b><u id="d2">—</u><span>C · velocity jump / distance travelled</span></div>
+</div>
+
+<h2>The measurement — velocity over time</h2>
+<canvas class="graph" id="graph" width="1900" height="340"></canvas>
+<div class="legend">
+ <i style="background:#e08a7a"></i> A ease-in-out &nbsp;&nbsp;
+ <i style="background:#d9c86a"></i> B ease-out &nbsp;&nbsp;
+ <i style="background:#7fd4c1"></i> C spring &nbsp;&nbsp;
+ <i style="background:#e8a34c"></i> retarget instant
+</div>
+
+<div class="key red"><b>Both tweens drop to zero at every retarget line.</b> A
+duration tween is a scripted path from A to B, so a new instruction restarts
+the script from rest. The spring passes through continuously — its velocity
+is <i>state</i>, not a function of scripted position.</div>
+
+<div class="key gold"><b>And the trade.</b> Ease-in-out spends its opening
+barely moving — at 180 ms into a 500 ms tween it has delivered only
+<b>18.7%</b> of the commanded distance — so under rapid fire it restarts the
+slow-in ramp forever and <b>stalls</b>. Ease-out delivers <b>73.8%</b> in the
+same window, so it keeps up — but it is moving fastest exactly when it gets
+dead-stopped, so its snap is roughly <b>twice as violent</b>. Front-load the
+curve and you travel well but snap hard; back-load it and you snap softly but
+stall. There is no third easing that escapes. The spring does neither,
+because velocity carries.</div>
+
+<table>
+<tr><th>engine</th><th>distance over rapid-fire ×5</th><th>max velocity jump</th><th>failure mode</th></tr>
+<tr><td>tween cubic in-out</td><td>299 px</td><td>1276 px/s</td><td>stalls — arrives late</td></tr>
+<tr><td>tween cubic out</td><td>1198 px</td><td>2461 px/s</td><td>snaps — visible jolt</td></tr>
+<tr><td>analytic spring</td><td>2453 px</td><td><b>0 px/s</b></td><td>none observed</td></tr>
+</table>
+<p class="dim" style="font-size:12.5px">Headless simulation using the same
+<code>Prop</code> engine the page runs, playful scheme, 180 ms retarget
+interval, 700 px canvas. All three finish at <b>0 px final error</b> — the
+tweens are not wrong, they are <i>late</i>. The failure is temporal, which is
+why it is easy to miss in a screenshot and obvious in the hand.</p>
+
+<h2>Expressive components — physical expression on real UI</h2>
+<p>Motion physics is not only for cards sliding around. Below: the same spring
+sampler driving <b>press response</b> and <b>shape morph</b> on buttons, and
+<b>emphasis</b> on type. This is <code>squish</code> / <code>cornerMorph</code>
+from the grammar-v2 Layer A addendum, in pixels.</p>
+
+<div class="demo">
+ <h3>Buttons — press them, and hold</h3>
+ <div class="btnrow">
+  <button class="xb" id="xb1" data-eng="spring">Dispatch tug<small>spring · ζ from scheme</small></button>
+  <button class="xb alt" id="xb2" data-eng="spring">Hold berth<small>spring · squish + cornerMorph</small></button>
+  <button class="xb ghost" id="xb3" data-eng="tween">Cancel<small>tween · 500ms ease-in-out</small></button>
+ </div>
+ <div class="readout" id="btnRead">press a button…</div>
+ <div class="key green" style="margin-top:14px"><b>What to feel.</b> The two
+ spring buttons compress <i>immediately</i> on press — the spring front-loads
+ velocity, so the response happens inside the first frames. Release and they
+ overshoot slightly past rest before settling: that reads as a material with
+ give. The tween button takes its ease-in ramp before anything visible
+ happens, which is why it feels like it didn't register the press. Tap all
+ three rapidly and the difference stops being subtle.</div>
+
+ <h3>Button group — one intent, six animations</h3>
+ <p class="dim" style="font-size:14px">The Director emits
+ <code>{"op":"focus","id":"berth7"}</code> and nothing else. The choreographer
+ turns it into: the selected segment advances and rounds, its siblings recede
+ and desaturate, the indicator morphs across. Spatial springs for scale and
+ radius; effects springs for colour and opacity.</p>
+ <div class="btnrow">
+  <div class="grp" id="grp">
+   <button class="seg on" data-i="0">Berth 4</button>
+   <button class="seg" data-i="1">Berth 7</button>
+   <button class="seg" data-i="2">Berth 9</button>
+   <button class="seg" data-i="3">Dry dock</button>
+  </div>
+ </div>
+ <div class="readout" id="grpRead">select a berth…</div>
+</div>
+
+<div class="demo">
+ <h3>Typography — emphasis is motion, not just weight</h3>
+ <div class="type" id="typeBox">
+  <div class="tkicker">harbor operations</div>
+  <h2 class="tl" id="headline" style="font-size:34px;margin:0;border:0;padding:0;color:var(--ink)"></h2>
+  <div class="tbody" id="tbody">Three delays on the eastern approach. Tide
+  window shifted forty minutes; two arrivals rescheduled.</div>
+ </div>
+ <button class="primary" id="bType">typeSet — replay</button>
+ <button id="bEmph">emphasise "delays"</button>
+ <button id="bCalm">restore</button>
+ <div class="readout" id="typeRead">—</div>
+ <div class="key" style="margin-top:14px"><b>Two engines, visible side by
+ side.</b> <code>typeSet</code> is a <b>performance</b> — the word-by-word
+ cadence <i>is</i> the content, so it runs on a <b>time track</b>. Emphasis is
+ a <b>state change</b> — the headline has a new size and spacing to arrive at,
+ with no opinion about the route — so it runs on <b>springs</b>, and you can
+ interrupt it by hitting the buttons in any order. That is the targets-vs-paths
+ rule from <code>techniques/motion-physics</code>, demonstrated.</div>
+</div>
+
+<h2>Why effects springs must not overshoot</h2>
+<p>Both swatches animate opacity 0 → 1. Left: a <i>spatial</i> spring
+(ζ = 0.65). Right: an <i>effects</i> spring (ζ = 1.0).</p>
+<div class="opq">
+ <div><div class="swatch"><div class="fillbox" id="opqA"></div>
+  <span class="cap">spatial ζ=0.65 — WRONG for opacity</span>
+  <span class="val" id="valA">0.00</span></div></div>
+ <div><div class="swatch"><div class="fillbox" id="opqB"></div>
+  <span class="cap">effects ζ=1.00 — correct</span>
+  <span class="val" id="valB">0.00</span></div></div>
+</div>
+<button id="bOpq">Run opacity test</button>
+<div class="key green" id="opqVerdict">Run it: the left swatch's value sails
+past 1.00, clips at full, and settles back — a visible flicker. The right
+arrives at 1.00 and stops.</div>
+
+<h2>Token explorer</h2>
+<div class="lab">
+ <div>
+  <div class="slider"><label>damping ratio ζ <span id="vZ">0.68</span></label>
+   <input type="range" id="sZ" min="0.30" max="1.40" step="0.01" value="0.68"></div>
+  <div class="slider"><label>stiffness (ω₀²) <span id="vK">371</span></label>
+   <input type="range" id="sK" min="30" max="3500" step="1" value="371"></div>
+  <table>
+   <tr><th>settles in</th><td id="oSettle">—</td></tr>
+   <tr><th>overshoot</th><td id="oOver">—</td></tr>
+   <tr><th>regime</th><td id="oReg">—</td></tr>
+   <tr><th>nearest token</th><td id="oTok">—</td></tr>
+  </table>
+ </div>
+ <div><canvas class="curve" id="curve" width="900" height="360"></canvas>
+  <div class="legend">value vs time · dashed line = target</div></div>
+</div>
+
+<div class="foot">
+exp-14 v2 · painted-ui · self-contained, no external resources. Spring sampler
+is the analytic damped-oscillator solution from
+<code>techniques/motion-physics</code> — closed-form in elapsed time, so the
+render loop stays frame-rate tolerant (<code>concepts/four-loops</code>).
+Self-healing rAF loop per the exp-09 lesson.
+</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var errEl=document.getElementById('err');
+
+/* ═══════ analytic damped spring — closed form, no integration ═══════ */
+function springAt(u0,v0,zeta,w0,t){
+  var u,v,e;
+  if(zeta<1-1e-9){
+    var wd=w0*Math.sqrt(1-zeta*zeta), A=u0, B=(v0+zeta*w0*u0)/wd;
+    e=Math.exp(-zeta*w0*t);
+    var c=Math.cos(wd*t), s=Math.sin(wd*t);
+    u=e*(A*c+B*s);
+    v=e*((B*wd-zeta*w0*A)*c-(A*wd+zeta*w0*B)*s);
+  } else if(Math.abs(zeta-1)<=1e-9){
+    var k=v0+w0*u0; e=Math.exp(-w0*t);
+    u=(u0+k*t)*e; v=e*(k-w0*(u0+k*t));
+  } else {
+    var rt=Math.sqrt(zeta*zeta-1), r1=-w0*(zeta-rt), r2=-w0*(zeta+rt);
+    var c1=(v0-r2*u0)/(r1-r2), c2=u0-c1;
+    var e1=Math.exp(r1*t), e2=Math.exp(r2*t);
+    u=c1*e1+c2*e2; v=c1*r1*e1+c2*r2*e2;
+  }
+  return {u:u,v:v};
+}
+var EASE={
+  inout:[function(p){return p<0.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;},
+         function(p){return p<0.5?12*p*p:3*Math.pow(2-2*p,2);}],
+  out:  [function(p){return 1-Math.pow(1-p,3);},
+         function(p){return 3*Math.pow(1-p,2);}]
+};
+
+/* ═══════ one animated property, either engine ═══════ */
+function Prop(v,cfg){ this.cfg=cfg; this.target=v; this.from=v; this.v0=0; this.t0=0; this.done=true; }
+Prop.prototype.value=function(t){
+  if(this.done) return this.target;
+  if(this.cfg.kind==='tween'){
+    var p=(t-this.t0)/this.cfg.dur;
+    if(p>=1){ this.done=true; return this.target; }
+    if(p<0)p=0;
+    return this.from+(this.target-this.from)*EASE[this.cfg.ease][0](p);
+  }
+  var r=springAt(this.from-this.target,this.v0,this.cfg.zeta,this.cfg.w0,t-this.t0);
+  if(Math.abs(r.u)<this.cfg.eps&&Math.abs(r.v)<this.cfg.eps*10){ this.done=true; return this.target; }
+  return this.target+r.u;
+};
+Prop.prototype.vel=function(t){
+  if(this.done) return 0;
+  if(this.cfg.kind==='tween'){
+    var p=(t-this.t0)/this.cfg.dur;
+    if(p>=1||p<0) return 0;
+    return (this.target-this.from)*EASE[this.cfg.ease][1](p)/this.cfg.dur;
+  }
+  return springAt(this.from-this.target,this.v0,this.cfg.zeta,this.cfg.w0,t-this.t0).v;
+};
+Prop.prototype.set=function(target,t){
+  var cur=this.value(t), vv=this.vel(t);
+  this.from=cur; this.target=target; this.t0=t;
+  this.v0=(this.cfg.kind==='tween')?0:vv;   /* ← the entire difference */
+  this.done=false;
+};
+
+/* ═══════ schemes ═══════ */
+var SCHEMES={ expressive:{zeta:0.68,k:371}, standard:{zeta:0.90,k:138}, playful:{zeta:0.50,k:280} };
+var scheme=SCHEMES.expressive;
+
+var T0=performance.now();
+function nowS(){ return (performance.now()-T0)/1000; }
+
+/* ═══════ the three-engine rig ═══════ */
+var HOME={x:0.24,y:0.55};
+var ENGINES=[
+ {id:0,color:'#e08a7a',cfg:{kind:'tween',ease:'inout',dur:0.5}},
+ {id:1,color:'#d9c86a',cfg:{kind:'tween',ease:'out',dur:0.5}},
+ {id:2,color:'#7fd4c1',cfg:{kind:'spring',zeta:scheme.zeta,w0:Math.sqrt(scheme.k),eps:0.0006}}
+];
+ENGINES.forEach(function(E){
+  E.cv=document.getElementById('cv'+E.id);
+  E.ctx=E.cv.getContext('2d');
+  E.lbl=document.getElementById('lbl'+E.id);
+  E.x=new Prop(HOME.x,E.cfg); E.y=new Prop(HOME.y,E.cfg);
+  E.jump=0; E.dist=0; E.trail=[]; E.last=[HOME.x,HOME.y];
+});
+var marks=[], samples=[];
+
+function retarget(tx,ty){
+  var t=nowS();
+  marks.push(t); if(marks.length>40) marks.shift();
+  ENGINES.forEach(function(E){
+    var before=Math.hypot(E.x.vel(t),E.y.vel(t));
+    E.x.set(tx,t); E.y.set(ty,t);
+    var after=Math.hypot(E.x.vel(t),E.y.vel(t));
+    var d=Math.abs(before-after);
+    if(d>E.jump) E.jump=d;
+  });
+  paintMetrics();
+}
+function paintMetrics(){
+  ENGINES.forEach(function(E){
+    document.getElementById('j'+E.id).textContent=(E.jump*700).toFixed(0)+' px/s';
+    document.getElementById('d'+E.id).textContent=(E.dist*700).toFixed(0)+' px travelled';
+  });
+}
+
+function rr(c,x,y,w,h,r){
+  c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+function drawEngine(E,t){
+  var c=E.ctx, cv=E.cv, W=cv.width, H=cv.height;
+  c.clearRect(0,0,W,H); c.fillStyle='#07060c'; c.fillRect(0,0,W,H);
+  c.strokeStyle='#151322'; c.lineWidth=1;
+  for(var gx=0;gx<=6;gx++){ c.beginPath(); c.moveTo(gx*W/6,0); c.lineTo(gx*W/6,H); c.stroke(); }
+  for(var gy=0;gy<=4;gy++){ c.beginPath(); c.moveTo(0,gy*H/4); c.lineTo(W,gy*H/4); c.stroke(); }
+
+  c.setLineDash([5,5]); c.strokeStyle='#3a3455'; c.lineWidth=1.4;
+  c.beginPath(); c.arc(E.x.target*W,E.y.target*H,30,0,Math.PI*2); c.stroke(); c.setLineDash([]);
+
+  var x=E.x.value(t), y=E.y.value(t);
+  E.dist+=Math.hypot(x-E.last[0],y-E.last[1]); E.last=[x,y];
+  E.trail.push([x,y]); if(E.trail.length>44) E.trail.shift();
+  for(var i=0;i<E.trail.length;i++){
+    c.globalAlpha=(i/E.trail.length)*0.30; c.fillStyle=E.color;
+    c.beginPath(); c.arc(E.trail[i][0]*W,E.trail[i][1]*H,3.5,0,Math.PI*2); c.fill();
+  }
+  c.globalAlpha=1;
+  var w=W*0.30, h=H*0.28, px=x*W-w/2, py=y*H-h/2;
+  rr(c,px,py,w,h,11);
+  var g=c.createLinearGradient(px,py,px,py+h);
+  g.addColorStop(0,'#1e2942'); g.addColorStop(1,'#141a2a');
+  c.fillStyle=g; c.fill(); c.strokeStyle=E.color; c.lineWidth=2; c.stroke();
+  c.fillStyle='#efe9dc'; c.font='24px Georgia, serif'; c.textAlign='center'; c.textBaseline='middle';
+  c.fillText('Berth 7',x*W,y*H);
+
+  var sp=Math.hypot(E.x.vel(t),E.y.vel(t))*W;
+  c.fillStyle='#8a86a0'; c.font='19px ui-monospace, monospace';
+  c.textAlign='left'; c.textBaseline='top';
+  c.fillText(sp.toFixed(0)+' px/s',12,10);
+  E.lbl.textContent=(E.x.done&&E.y.done)?'settled':'moving';
+  return sp;
+}
+
+/* ═══════ velocity graph ═══════ */
+var gcv=document.getElementById('graph'), gctx=gcv.getContext('2d'), WINDOW=4.0;
+function drawGraph(t){
+  var W=gcv.width,H=gcv.height;
+  gctx.clearRect(0,0,W,H); gctx.fillStyle='#0f0d16'; gctx.fillRect(0,0,W,H);
+  var t0=t-WINDOW, peak=0.05;
+  for(var i=0;i<samples.length;i++){ if(samples[i][0]<t0) continue;
+    for(var e=1;e<=3;e++) if(samples[i][e]>peak) peak=samples[i][e]; }
+  peak*=1.15;
+  var X=function(tt){return (tt-t0)/WINDOW*W;}, Y=function(v){return H-16-(v/peak)*(H-34);};
+  gctx.strokeStyle='#241f36'; gctx.lineWidth=1.5;
+  gctx.beginPath(); gctx.moveTo(0,Y(0)); gctx.lineTo(W,Y(0)); gctx.stroke();
+  for(var m=0;m<marks.length;m++){
+    if(marks[m]<t0) continue;
+    gctx.strokeStyle='#e8a34c'; gctx.lineWidth=2; gctx.globalAlpha=.7;
+    gctx.beginPath(); gctx.moveTo(X(marks[m]),8); gctx.lineTo(X(marks[m]),H-8); gctx.stroke();
+    gctx.globalAlpha=1;
+  }
+  ENGINES.forEach(function(E,idx){
+    gctx.strokeStyle=E.color; gctx.lineWidth=2.4; gctx.beginPath(); var started=false;
+    for(var i=0;i<samples.length;i++){
+      var s=samples[i]; if(s[0]<t0) continue;
+      var px=X(s[0]), py=Y(s[idx+1]);
+      if(!started){ gctx.moveTo(px,py); started=true; } else gctx.lineTo(px,py);
+    }
+    gctx.stroke();
+  });
+  gctx.fillStyle='#8a86a0'; gctx.font='18px ui-monospace, monospace';
+  gctx.textAlign='left'; gctx.textBaseline='top'; gctx.fillText('px/s',10,10);
+}
+
+/* ═══════ expressive buttons ═══════ */
+var domProps=[];
+function mkProp(v,cfg){ var p=new Prop(v,cfg); domProps.push(p); return p; }
+function springCfg(mult){ return {kind:'spring',zeta:scheme.zeta,
+  w0:Math.sqrt(scheme.k*(mult||1)),eps:0.0006}; }
+
+var BTNS=[];
+['xb1','xb2','xb3'].forEach(function(id){
+  var el=document.getElementById(id);
+  var isSpring=el.getAttribute('data-eng')==='spring';
+  var cfg=isSpring?springCfg(3):{kind:'tween',ease:'inout',dur:0.5};
+  var b={el:el,isSpring:isSpring,
+         sx:mkProp(1,cfg), sy:mkProp(1,cfg), rad:mkProp(22,cfg)};
+  function press(){ b.sx.set(0.93,nowS()); b.sy.set(0.86,nowS()); b.rad.set(10,nowS());
+    report(id,'press'); }
+  function release(){ b.sx.set(1,nowS()); b.sy.set(1,nowS()); b.rad.set(22,nowS());
+    report(id,'release'); }
+  el.addEventListener('pointerdown',press);
+  el.addEventListener('pointerup',release);
+  el.addEventListener('pointerleave',function(){ if(!b.sx.done||b.sx.target!==1) release(); });
+  BTNS.push(b);
+});
+var btnRead=document.getElementById('btnRead');
+function report(id,phase){
+  var b=BTNS[['xb1','xb2','xb3'].indexOf(id)];
+  setTimeout(function(){
+    var t=nowS();
+    btnRead.textContent=id+'  '+phase+'   engine='+(b.isSpring?'spring':'tween')+
+      '   scaleY after 50ms = '+b.sy.value(t+0.05).toFixed(3)+
+      (b.isSpring?'   (spring front-loads: most of the response is already done)'
+                 :'   (tween ease-in: barely started)');
+  },0);
+}
+
+/* button group — one intent, six animations */
+var SEGS=[];
+[].forEach.call(document.querySelectorAll('#grp .seg'),function(el,i){
+  var s={el:el, sc:mkProp(i===0?1.06:1,springCfg(3)),
+         rad:mkProp(20,springCfg(3)),
+         op:mkProp(i===0?1:0.55,{kind:'spring',zeta:1.0,w0:Math.sqrt(1806),eps:0.0006})};
+  el.addEventListener('click',function(){ selectSeg(i); });
+  SEGS.push(s);
+});
+var grpRead=document.getElementById('grpRead');
+function selectSeg(i){
+  var t=nowS(), n=0;
+  SEGS.forEach(function(s,j){
+    var on=(j===i);
+    s.el.classList.toggle('on',on);
+    s.sc.set(on?1.06:0.97,t);   n++;
+    s.rad.set(on?26:20,t);      n++;
+    s.op.set(on?1:0.5,t);       n++;
+  });
+  grpRead.textContent='patch: {"op":"focus","id":"'+SEGS[i].el.textContent.trim()+
+    '"}   →  choreographer produced '+n+' tweens across '+SEGS.length+' nodes'+
+    '\n         spatial springs: scale, corner radius   ·   effects spring: opacity (ζ=1, no overshoot)';
+}
+
+/* ═══════ typography ═══════ */
+var HEAD='Three delays on the eastern approach';
+var headEl=document.getElementById('headline'), WORDS=[];
+function buildHead(){
+  headEl.innerHTML='';
+  WORDS=HEAD.split(' ').map(function(word,i){
+    var sp=document.createElement('span');
+    sp.className='w'; sp.textContent=word+(i<HEAD.split(' ').length-1?' ':'');
+    headEl.appendChild(sp);
+    return {el:sp, word:word,
+      size:mkProp(34,springCfg(2)), rise:mkProp(0,springCfg(2)),
+      op:mkProp(1,{kind:'spring',zeta:1.0,w0:Math.sqrt(1806),eps:0.0006}),
+      track:null, weight:mkProp(400,springCfg(2))};
+  });
+}
+buildHead();
+var typeRead=document.getElementById('typeRead');
+
+/* typeSet is a PERFORMANCE — a time track, not a spring */
+var typeTrack=null;
+function runTypeSet(){
+  var t=nowS();
+  typeTrack={t0:t, per:0.085, dur:0.55};
+  WORDS.forEach(function(w){ w.op.done=true; w.op.target=0; w.rise.done=true; w.rise.target=0.5; });
+  typeRead.textContent='typeSet → TIME TRACK. cadence '+(typeTrack.per*1000).toFixed(0)+
+    ' ms/word × '+WORDS.length+' words. the route IS the content, so there is no target to spring toward.';
+}
+function tickTypeSet(t){
+  if(!typeTrack) return;
+  var done=true;
+  WORDS.forEach(function(w,i){
+    var local=(t-typeTrack.t0)-i*typeTrack.per;
+    var p=local/typeTrack.dur;
+    if(p<0){ w.op.target=0; w.op.done=true; w.rise.target=0.5; w.rise.done=true; done=false; return; }
+    if(p<1) done=false;
+    p=Math.max(0,Math.min(1,p));
+    var e=EASE.out[0](p);
+    w.op.target=e; w.op.done=true;
+    w.rise.target=0.5*(1-e); w.rise.done=true;
+  });
+  if(done) typeTrack=null;
+}
+document.getElementById('bType').onclick=runTypeSet;
+document.getElementById('bEmph').onclick=function(){
+  var t=nowS();
+  WORDS.forEach(function(w){
+    var hit=/delays/i.test(w.word);
+    w.size.set(hit?52:27,t);          /* spatial — may overshoot */
+    w.weight.set(hit?800:350,t);
+    w.op.set(hit?1:0.45,t);           /* effects — must not */
+  });
+  typeRead.textContent='emphasise → SPRINGS. size/weight are spatial (overshoot allowed); '+
+    'opacity is an effect (ζ=1, no overshoot). interruptible — press the buttons in any order.';
+};
+document.getElementById('bCalm').onclick=function(){
+  var t=nowS();
+  WORDS.forEach(function(w){ w.size.set(34,t); w.weight.set(400,t); w.op.set(1,t); });
+  typeRead.textContent='restore → springs retarget from wherever they are, carrying velocity.';
+};
+
+/* ═══════ main loop (self-healing) ═══════ */
+var alive=true;
+(function loop(){
+  try{
+    var t=nowS();
+    var row=[t];
+    ENGINES.forEach(function(E){ row.push(drawEngine(E,t)); });
+    samples.push(row);
+    while(samples.length && samples[0][0]<t-WINDOW-0.5) samples.shift();
+    drawGraph(t);
+
+    BTNS.forEach(function(b){
+      b.el.style.transform='scale('+b.sx.value(t).toFixed(4)+','+b.sy.value(t).toFixed(4)+')';
+      b.el.style.borderRadius=b.rad.value(t).toFixed(2)+'px';
+    });
+    SEGS.forEach(function(s){
+      s.el.style.transform='scale('+s.sc.value(t).toFixed(4)+')';
+      s.el.style.borderRadius=s.rad.value(t).toFixed(2)+'px';
+      s.el.style.opacity=Math.max(0,Math.min(1,s.op.value(t))).toFixed(3);
+    });
+    tickTypeSet(t);
+    WORDS.forEach(function(w){
+      w.el.style.fontSize=w.size.value(t).toFixed(2)+'px';
+      w.el.style.fontWeight=Math.round(w.weight.value(t));
+      w.el.style.opacity=Math.max(0,Math.min(1,w.op.value(t))).toFixed(3);
+      w.el.style.transform='translateY('+(w.rise.value(t)*34).toFixed(2)+'px)';
+    });
+    if(Math.floor(t*4)%2===0) paintMetrics();
+    errEl.textContent='';
+  }catch(e){ errEl.textContent='⚠ frame error: '+e.message+' (loop re-armed)'; }
+  if(alive) requestAnimationFrame(loop);
+})();
+
+/* ═══════ controls ═══════ */
+function applyScheme(){
+  ENGINES[2].cfg.zeta=scheme.zeta; ENGINES[2].cfg.w0=Math.sqrt(scheme.k);
+  domProps.forEach(function(p){
+    if(p.cfg.kind==='spring' && p.cfg.zeta!==1.0){ p.cfg.zeta=scheme.zeta; }
+  });
+}
+document.getElementById('scheme').onchange=function(e){ scheme=SCHEMES[e.target.value]; applyScheme(); };
+document.getElementById('bMove').onclick=function(){ retarget(0.76,0.55); };
+document.getElementById('bInt').onclick=function(){
+  retarget(0.76,0.28);
+  setTimeout(function(){ retarget(0.24,0.78); },150);
+};
+document.getElementById('bRapid').onclick=function(){
+  [[0.76,0.28],[0.22,0.70],[0.70,0.72],[0.28,0.28],[0.50,0.55]].forEach(function(p,i){
+    setTimeout(function(){ retarget(p[0],p[1]); },i*180);
+  });
+};
+document.getElementById('bReset').onclick=function(){
+  var t=nowS();
+  ENGINES.forEach(function(E){
+    E.x.set(HOME.x,t); E.y.set(HOME.y,t);
+    E.jump=0; E.dist=0; E.trail=[]; E.last=[HOME.x,HOME.y];
+  });
+  marks=[]; paintMetrics();
+};
+ENGINES.forEach(function(E){
+  E.cv.addEventListener('click',function(ev){
+    var r=E.cv.getBoundingClientRect();
+    retarget((ev.clientX-r.left)/r.width,(ev.clientY-r.top)/r.height);
+  });
+});
+
+/* ═══════ opacity proof ═══════ */
+var opqRun=false,opqT0=0,peakA=0;
+var elA=document.getElementById('opqA'),elB=document.getElementById('opqB');
+var vaA=document.getElementById('valA'),vaB=document.getElementById('valB');
+document.getElementById('bOpq').onclick=function(){ opqRun=true; opqT0=nowS(); peakA=0; };
+(function opqLoop(){
+  try{
+    if(opqRun){
+      var t=nowS()-opqT0;
+      var a=1+springAt(-1,0,0.65,Math.sqrt(233),t).u;
+      var b=1+springAt(-1,0,1.00,Math.sqrt(798),t).u;
+      if(a>peakA) peakA=a;
+      vaA.textContent=a.toFixed(3)+(a>1.0005?'  ⚠ >1':''); vaB.textContent=b.toFixed(3);
+      elA.style.opacity=Math.max(0,Math.min(1,a));
+      elB.style.opacity=Math.max(0,Math.min(1,b));
+      if(t>2.2){ opqRun=false;
+        document.getElementById('opqVerdict').innerHTML='<b>Result:</b> the spatial spring peaked at <b>'+
+          peakA.toFixed(3)+'</b> — it asked for '+((peakA-1)*100).toFixed(1)+
+          '% more than opaque, which the display clipped, then fell back. That clip-and-return is the '+
+          'flicker. The effects spring never exceeded 1.000. <b>Rule confirmed.</b>';
+      }
+    }
+  }catch(e){}
+  requestAnimationFrame(opqLoop);
+})();
+
+/* ═══════ token explorer ═══════ */
+var sZ=document.getElementById('sZ'),sK=document.getElementById('sK');
+var ccv=document.getElementById('curve'),cctx=ccv.getContext('2d');
+var TOKENS=[['expressive spatial.fast',0.72,462],['expressive spatial.default',0.68,371],
+            ['expressive spatial.slow',0.65,233],['effects.fast',1.0,3192],
+            ['effects.default',1.0,1806],['effects.slow',1.0,798],
+            ['standard spatial.default',0.90,138]];
+function updateLab(){
+  var zeta=parseFloat(sZ.value),k=parseFloat(sK.value),w0=Math.sqrt(k);
+  document.getElementById('vZ').textContent=zeta.toFixed(2);
+  document.getElementById('vK').textContent=k;
+  var settle=null,over=0;
+  for(var i=0;i<4000;i++){
+    var t=i*0.002,r=springAt(1,0,zeta,w0,t);
+    if(r.u<-over) over=-r.u;
+    if(settle===null&&Math.abs(r.u)<0.002&&Math.abs(r.v)<0.02){
+      var ok=true;
+      for(var kk=1;kk<=25;kk++){ if(Math.abs(springAt(1,0,zeta,w0,t+kk*0.01).u)>=0.002){ok=false;break;} }
+      if(ok) settle=t;
+    }
+  }
+  document.getElementById('oSettle').textContent=settle!==null?(settle*1000).toFixed(0)+' ms':'> 8 s';
+  document.getElementById('oOver').textContent=(over*100).toFixed(1)+'%';
+  document.getElementById('oReg').textContent=zeta<0.999?'underdamped — bounces':
+                                              zeta>1.001?'overdamped — sluggish':'critically damped';
+  var best=null;
+  TOKENS.forEach(function(tk){
+    var d=Math.abs(tk[1]-zeta)*6+Math.abs(Math.log(tk[2]/k));
+    if(!best||d<best[0]) best=[d,tk[0]];
+  });
+  document.getElementById('oTok').textContent=best[1];
+
+  var W=ccv.width,H=ccv.height,span=Math.max(0.6,(settle||1.2)*1.25);
+  cctx.clearRect(0,0,W,H); cctx.fillStyle='#0f0d16'; cctx.fillRect(0,0,W,H);
+  var Y=function(v){return H*0.86-v*(H*0.62);};
+  cctx.setLineDash([7,7]); cctx.strokeStyle='#3a3455'; cctx.lineWidth=2;
+  cctx.beginPath(); cctx.moveTo(0,Y(1)); cctx.lineTo(W,Y(1)); cctx.stroke(); cctx.setLineDash([]);
+  cctx.strokeStyle='#241f36'; cctx.beginPath(); cctx.moveTo(0,Y(0)); cctx.lineTo(W,Y(0)); cctx.stroke();
+  cctx.strokeStyle='#e8a34c'; cctx.lineWidth=3; cctx.beginPath();
+  for(var j=0;j<=600;j++){
+    var tt=j/600*span, val=1-springAt(1,0,zeta,w0,tt).u;
+    var px=j/600*W, py=Y(val);
+    if(j===0) cctx.moveTo(px,py); else cctx.lineTo(px,py);
+  }
+  cctx.stroke();
+  cctx.fillStyle='#8a86a0'; cctx.font='18px ui-monospace, monospace';
+  cctx.fillText('0 → '+span.toFixed(2)+'s',10,H-10);
+}
+sZ.oninput=updateLab; sK.oninput=updateLab;
+updateLab(); applyScheme(); paintMetrics(); selectSeg(0);
+})();
+</script>
+</body>
+</html>

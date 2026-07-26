@@ -60,6 +60,31 @@ choreographer-side only — no protocol change, no token cost:
 Full spec, the analytic solution, and a derived (ζ, stiffness) token table:
 [[techniques/motion-physics]].
 
+### Scope: springs are the default, not the only engine
+
+Refined 2026-07-26 after exp-14. The choreographer compiles to **two**
+backends, split by a rule crisp enough to remove the judgment call:
+
+> **Springs own targets. Time tracks own paths.**
+
+- **Spring** — the patch names a *destination* and the route is free:
+  `add`, `update`, `remove`, `focus`, `scene`, every geometry or effects
+  change. This is nearly everything, and all of it is interruptible.
+- **Time track** — the patch names a *performance* whose trajectory is the
+  content: `strokeIn` (drawn tip-first), `typeSet` (word cadence), `beam`
+  and the gardener cycle (scripted ambience), camera moves through
+  waypoints. There is no target to spring toward.
+
+The split was already latent in the verb library and simply unnamed:
+**state changes** vs **performances**. Which category a verb belongs to
+predicts its backend, so no caller ever chooses.
+
+This is the executor doctrine one level down — [[lint-2026-07-21]] §F
+established that the choreographer is a compiler and canvas/rAF vs
+WAAPI/View Transitions are *rendering* backends; targets-vs-paths is the
+same idea applied to *motion* backends. Same compiler, more than one
+target.
+
 ## Interruption — answered
 
 The open question below ("retarget-vs-queue") had no good answer while the

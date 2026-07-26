@@ -609,3 +609,137 @@ undercut the differentiator) and the branding (vendor-neutrality); noted
 that Android's own frame-timing class is literally named `Choreographer`,
 one layer downstream of ours — document before any Android build.
 exp-15 = implement the spring runtime + interruption demo.
+
+## [2026-07-26] experiment | exp-14 built: springs vs tweens, measured
+
+Built `raw/experiments/exp-14-interrupt-the-choreographer/` — a controlled
+A/B rig rather than a showpiece (Neal's call). One patch stream, two motion
+engines side by side: **A** = today's duration tween (cubic in-out, as
+exp-01/02/09/10 implement it), **B** = the analytic damped spring from
+[[techniques/motion-physics]]. Same scene, same targets, same frame loop;
+the engine is the only variable. Four probes: move-once (control),
+interrupt-mid-flight, rapid-fire ×5 (rapid agent turns), and click-to-
+retarget on either canvas — the last being the version that convinces in
+one gesture. **Instrumented**: per-frame velocity of the hero card plotted
+for both engines with retarget instants marked, plus two metrics (velocity
+jump at retarget; dead stops). Verified headless before declaring it built
+— tween: 1893 px/s → **0 px/s** at retarget (jump 1893); spring:
+131 → 131 px/s (**jump exactly 0** — continuity is structural, since `v₀`
+is assigned from the evaluated velocity, not numerical luck). Subordinate
+proof included: the opacity test shows a spatial spring (ζ=0.65) peaking at
+**1.068** — asking for 6.8% more than opaque, which clips and falls back,
+i.e. the flicker — against the effects spring's flat 1.000. **The
+spatial/effects rule is now demonstrated rather than asserted.** Third
+panel: a token explorer with live ζ/stiffness dials reporting settle time,
+overshoot and regime. Number reconciliation: this IS exp-14 (reserved by
+[[sources/chatgpt-motion-recommendations]] for "Interrupt the
+Choreographer") since springs turn out to be the interruption mechanism —
+no orphaned number, and the exp-15 line in the previous entry is
+superseded. **Unplanned finding from building it:** springs *front-load*
+velocity while ease-in-out tweens *back-load* it (spring 4013 px/s at
+60 ms vs tween 155; reversed by 210 ms). So springs feel more responsive
+even at identical settle times, because the first 100 ms — the window in
+which a user judges whether the interface reacted — carries most of the
+motion. That is a perceptual argument for springs *independent* of
+interruption, and it matters most for on-device tap latency
+([[concepts/on-device-models]]). It also forced an honesty fix: the
+interrupt probe was re-timed 210 ms → **150 ms**, where both engines are at
+comparable speed, so the demo isolates continuity instead of accidentally
+staging a speed contest — logged as the kind of unfairness a comparison rig
+must be audited for. Awaiting Neal's first field run; the run log in
+`notes.md` is open.
+
+## [2026-07-26] correction | scope rule: springs own targets, time tracks own paths
+
+Neal asked whether springs are actually more innovative than tweens, whether
+tweens retain any advantage, and whether the spring work is ours to use.
+Answers, and one correction that changed two pages.
+
+**On innovation — neither engine is a contribution.** Damped oscillators are
+1800s physics and have been in UI toolkits for a decade (iOS 7, rebound,
+react-spring, Compose). The novel part is *where the engine sits*:
+everywhere else a developer hand-attaches a spring to a named component;
+here the spring is selected by policy from a model's semantic intent. That
+belongs to [[concepts/choreographer]], not to the physics. Second novel
+item: instrumenting **velocity continuity as a protocol property** appears
+unclaimed, because the problem is new — toolkits were built for a *human*
+changing their mind, not an agent revising a scene mid-animation.
+
+**⚠️ Correction to a claim made while reasoning:** "springs can't do
+anticipation" is **false**. `v₀` is a free parameter the sampler already
+carries; an initial velocity *away* from the target produces exactly the
+pull-back-then-go shape. Most "springs can only make spring shapes"
+objections dissolve the same way. Recorded on
+[[techniques/motion-physics]] so it isn't re-litigated. "Springs have no
+predictable duration" is also overstated — settle time per token is stable,
+so sequences can schedule off *nominal* settle.
+
+**What survives, and the resulting rule.** Only reproducibility genuinely
+favours tweens (spring state depends on the full interruption history;
+a tween restart is memoryless) — and that is a test-harness problem, to be
+solved in `runtime/` with a recordable patch+timing log rather than by
+avoiding springs. So the scope is not a hedged "hybrid" but a boundary:
+**springs own targets, time tracks own paths.** A spring answers *where
+should this end up*; a time track answers *what performance should play*.
+The split was already latent in the verb library and unnamed — `add` /
+`update` / `focus` are **state changes**; `strokeIn` / `typeSet` / `beam`
+are **performances** whose trajectory IS the content. Filed into
+[[techniques/motion-physics]] (new scope section, tradeoff 1 revised, three
+new open questions) and [[concepts/choreographer]] (new scope subsection),
+framed as the executor doctrine one level down: [[lint-2026-07-21]] §F made
+the choreographer a compiler with *rendering* backends; this gives it
+*motion* backends by the same logic. Risk noted on both pages: two engines
+is more surface area against the twelve-copies finding, so the boundary has
+to stay crisp. **Highest-value open question:** does exp-13's nine-step
+golden path actually need time tracks, or does scheduling off nominal
+settle time let springs cover it? If springs cover it, the time-track
+engine is needed only for true performance verbs and `runtime/` shrinks.
+
+**Licensing (asked, checked):** the math is public domain; exp-14's ~25-line
+sampler is ours under MIT; Material's site content and code are Apache 2.0
+unless otherwise marked, and our token values were *derived* from published
+durations rather than copied. Conclusion: take no third-party animation
+dependency — a general-purpose library between choreographer and compositor
+would sit exactly on the seam where the differentiation lives, and would
+fight the `runtime/` extraction.
+
+## [2026-07-26] ⚠️ correction + build | exp-14 v2: the deck was stacked; expressive components added
+
+Neal ran rapid-fire and asked why the tween travels so much less. It does,
+and the answer exposed a design flaw in v1. **Mechanism:** cubic ease-in-out
+delivers only **18.7%** of the commanded distance in the first 180 ms of a
+500 ms tween, so each retarget restarts the slow-in ramp and it never
+reaches the fast middle of its own curve — under rapid fire it is
+permanently stuck in the opening third. Because the ease is cubic the
+collapse is non-linear (0.7% delivered at a 60 ms interval): it degrades
+**catastrophically, not gracefully**, precisely in the rapid-agent-turn
+regime that motivates [[concepts/choreographer]]. **But v1 compared springs
+against the single easing that fails hardest** — cubic ease-*out* delivers
+73.8% in the same window — which is not an honest test. v2 adds a third
+engine. Result, all three through one shared `Prop` sampler (playful scheme,
+180 ms interval, 700 px canvas): in-out **299 px / 1276 px/s jump**; out
+**1198 px / 2461 px/s jump**; spring **2453 px / 0 px/s**. **The finding is
+better than v1's:** no easing avoids both failures — front-load and you
+travel well but snap ~2× harder (you are moving fastest when dead-stopped);
+back-load and you snap softly but stall. Only the spring does neither, and
+not by tuning: velocity is *state*, not a function of scripted position. All
+three end at **0 px final error** — the tweens are not wrong, they are
+*late*, a temporal failure that survives screenshot review and dies on
+contact with a hand. Also added at Neal's request, applying the sampler to
+real UI: **expressive buttons** (`squish` + `cornerMorph` on press, spring
+vs tween, with a `scaleY`-at-50 ms readout so the difference is a number);
+a **button group** where one `{"op":"focus"}` becomes 12 tweens across 4
+nodes with spatial springs for scale/radius and an effects spring (ζ=1) for
+opacity; and **typography** — the clearest demonstration yet of the
+targets-vs-paths rule, with `typeSet` on a **time track** (the cadence IS
+the content) and emphasis on **springs** (a destination, interruptible in
+any order). New open question worth the most: **does the stall read worse
+than the snap?** v2 makes it askable — if naive viewers dislike the snap
+more, ease-out is the wrong tween default despite travelling better, which
+inverts common practice. Verification: the unified sampler was
+syntax-checked and behaviourally re-verified headless (three assertions
+pass); the full page could not be machine-checked in place because the
+sandbox mount served a truncated view (25,640 of 25,953 bytes) while the
+host file is complete at 729 lines — **second recorded instance of the
+`CLAUDE.md` mount quirk**, host copy authoritative, self-healing loop is the
+on-screen safety net.

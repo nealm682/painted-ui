@@ -61,8 +61,9 @@ there).
   duration+easing as the choreographer's output. The spatial/effects
   overshoot rule, the analytic damped-spring solution (closed-form, so
   frame-rate tolerance survives), a derived (ζ, stiffness) token table,
-  size/device speed axes, shape verbs, and the quiescence policy. Unblocks
-  exp-14. exp-15 candidate.
+  size/device speed axes, shape verbs, and the quiescence policy.
+  **Built and measured as exp-14** (`raw/experiments/exp-14-interrupt-the-choreographer/`):
+  tween velocity jump at retarget 1893 px/s vs spring 0.
 - [[techniques/scene-grammar-v2]] — the expressive protocol design:
   primitives (paths/masks/fx/texture) + compound catalog + constraint
   containers + scene diffs; new verbs (strokeIn, materialize, pageMorph);

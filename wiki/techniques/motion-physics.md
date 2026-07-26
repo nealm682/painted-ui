@@ -1,9 +1,10 @@
 # Technique: motion physics — springs as the choreographer's output
 
-*Filed 2026-07-25 from [[sources/m3-expressive]]. Status: designed, not yet
-implemented — exp-15 candidate. Replaces duration+easing as the
-choreographer's output format, and is the mathematically correct home for
-the interruption demo already planned as exp-14.*
+*Filed 2026-07-25 from [[sources/m3-expressive]]; scope corrected
+2026-07-26 after building exp-14. Status: **built and measured** as
+`raw/experiments/exp-14-interrupt-the-choreographer/`. Springs become the
+choreographer's **default** output — not its only one; the boundary is
+targets-vs-paths, below.*
 
 ## What it emulates
 
@@ -125,6 +126,63 @@ Springs converge asymptotically, so stop explicitly: retire the animation
 when `|u| < ε` and `|v| < εv` (ε ≈ 0.002 of the property's range works).
 Retiring matters for more than tidiness — see the quiescence note below.
 
+## Springs own targets; time tracks own paths (the scope rule)
+
+Added 2026-07-26. The first draft of this page read as though springs
+simply replace duration+easing. That is too strong, and the honest boundary
+is sharper than "use both, it depends":
+
+> **A spring answers "where should this end up?" A time track answers
+> "what performance should play?"**
+
+A spring has a *destination* and no opinion about the route. That covers
+nearly everything the Director emits — position, size, opacity, colour,
+corner radius, focus, emphasis, every scene diff. All interruptible, all
+better on springs. **This is the default.**
+
+A time track has a *scripted trajectory* whose shape is the content. In our
+verb library that is `strokeIn` (a path drawn tip-first — the route is the
+whole point), `typeSet` (word cadence), `beam` and the gardener cycle
+(continuous scripted ambience), and camera moves through waypoints. These
+cannot be sprung, because there is no target to spring toward.
+
+The distinction is already latent in the verb library and was simply never
+named: `add` / `update` / `focus` are **state changes**; `strokeIn` /
+`typeSet` / `beam` are **performances**. Which category a verb falls into
+predicts which engine it wants, with no judgment call at the call site.
+
+### Two arguments for tweens that do NOT survive
+
+Recorded so they don't get re-litigated:
+
+- *"Springs can't do anticipation."* False. `v₀` is a free parameter the
+  sampler already carries — give a spring an initial velocity *away* from
+  its target and you get exactly the pull-back-then-go shape. Most
+  "springs can only make spring shapes" objections dissolve the same way.
+- *"Springs have no predictable duration."* Overstated. Settle time per
+  token is tabled below and stable; sequences can schedule off *nominal*
+  settle time rather than actual completion. This only bites under
+  retargeting, which by definition means the sequence was already
+  interrupted.
+
+### The one that does survive
+
+**Reproducibility.** A spring's state depends on its entire interruption
+history, because velocity carries through every retarget. A tween restart
+is memoryless. Springs remain fully deterministic given `(u₀, v₀, t₀)`, so
+this is a *test-harness* problem, not a correctness one — but reproducing a
+reported motion bug requires recording the input timeline, not just the
+final state. Worth solving in `runtime/` with a recordable patch+timing log
+rather than by avoiding springs.
+
+### The risk of two engines
+
+Two engines is more surface area, and [[lint-2026-07-21]] §E already counts
+twelve independent copies of tween machinery awaiting extraction. If the
+boundary is fuzzy, `runtime/` acquires two overlapping systems and callers
+choose by habit. The targets/paths rule is worth its extra sentence
+precisely because it removes the judgment call.
+
 ## The token table (derived, ready to use)
 
 Material publishes durations, not spring constants, for the web. These
@@ -239,7 +297,10 @@ layering, independently confirmed.
 "this finishes at 800 ms so the next thing starts then" need rethinking as
 either stagger offsets or completion callbacks. Settling time is
 predictable per token (tabled above) but not exact under retargeting —
-which is the price of interruption tolerance.
+which is the price of interruption tolerance. Per the scope rule, the
+sequenced case is *not* automatically a time-track case: scheduling off
+nominal settle time should be tried first, and exp-13's nine-step golden
+path is the test that settles it.
 
 **2. Overshoot can break layout guarantees.** A spatial spring on `w`
 overshoots *past* the target width, which can collide with a neighbour that
@@ -272,6 +333,18 @@ rather than being switched off wholesale.
 
 ## Open questions
 
+- **Does exp-13's golden path actually need time tracks?** Nine sequenced
+  steps, each landing before the next begins. If scheduling off *nominal*
+  settle time holds up, springs cover it and the time-track engine is
+  needed only for genuine performance verbs — which would meaningfully
+  shrink `runtime/`. This is the highest-value open question on the page
+  and it is directly testable.
+- Where exactly does a verb declare its engine — is it a property of the
+  verb definition in the catalog, or does the choreographer infer it from
+  whether the patch carries a target?
+- Anticipation via negative `v₀` is possible (above), but what *selects*
+  it? Anticipation is an emphasis decision, so presumably the semantic
+  envelope's `importance` — untested.
 - Do Material's published durations transfer to a *painterly* canvas, or
   does canvas motion want slower settling than component motion? (Their
   values are tuned for widgets on a compositing UI toolkit.)

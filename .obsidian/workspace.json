@@ -182,6 +182,11 @@
   },
   "active": "8f69b5b4237304ed",
   "lastOpenFiles": [
+    "wiki/index.md.tmp.11788.2c4663556283",
+    "raw/experiments/exp-14-interrupt-the-choreographer/notes.md",
+    "raw/experiments/exp-14-interrupt-the-choreographer/notes.md.tmp.11788.0a07f9ed6cca",
+    "raw/experiments/exp-14-interrupt-the-choreographer/index.html",
+    "raw/experiments/exp-14-interrupt-the-choreographer",
     "README.md",
     "raw/experiments/exp-12-agent-dashboard/frontend/dist/assets/index-BvhRb1tk.js",
     "raw/experiments/exp-12-agent-dashboard/frontend/dist/assets/index-DTi5KlWj.js",
@@ -190,9 +195,6 @@
     "raw/experiments/exp-12-agent-dashboard/frontend/node_modules/@base-ui/utils/empty.mjs",
     "raw/experiments/exp-12-agent-dashboard/frontend/dist/assets/index--Kjef8Zj.js",
     "raw/experiments/exp-12-agent-dashboard/frontend/dist/assets/index-y9o4Bt5G.css",
-    "raw/experiments/exp-12-agent-dashboard/frontend/dist/assets/index-DSqzEbqc.js",
-    "raw/experiments/exp-12-agent-dashboard/frontend/node_modules/lightningcss-win32-x64-msvc/lightningcss.win32-x64-msvc.node",
-    "raw/experiments/exp-12-agent-dashboard/frontend/node_modules/lightningcss-win32-x64-msvc/package.json",
     "raw/experiments/exp-13-flagship/PLAN.md",
     "raw/experiments/exp-12-agent-dashboard/frontend/node_modules/to-regex-range/README.md",
     "raw/experiments/exp-12-agent-dashboard/frontend/node_modules/object-assign/readme.md",
@@ -216,8 +218,6 @@
     "raw/experiments/exp-12-agent-dashboard/frontend/node_modules/accepts/README.md",
     "raw/experiments/exp-12-agent-dashboard/frontend/node_modules/accepts/HISTORY.md",
     "wiki/sources/painted-ui-messaging-reframe-spec.md",
-    "raw/experiments/exp-12-agent-dashboard/frontend/node_modules/hasown/README.md",
-    "raw/experiments/exp-12-agent-dashboard/frontend/node_modules/hasown/CHANGELOG.md",
     "og-image.png",
     "raw/assets/flipbook-dive.gif"
   ]
